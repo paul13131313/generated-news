@@ -115,7 +115,8 @@ body::before {
   display: block;
   opacity: 0;
   overflow: hidden;
-  padding-right: 0.5em;
+  position: relative;
+  left: 0.3em;
 }
 
 .hero-sub {
@@ -157,11 +158,10 @@ body::before {
   position: absolute;
   bottom: 32px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - 0.1em));
   font-family: var(--font-gothic);
   font-size: 10px;
   letter-spacing: 0.2em;
-  margin-right: -0.2em;
   color: var(--caption);
   opacity: 0;
   animation: fadeIn 1s 3s forwards;
