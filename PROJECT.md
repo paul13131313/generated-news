@@ -111,24 +111,28 @@
   - 朝刊/夕刊切り替えでAPI再取得に対応
   - 動的レンダリング対象: 日付、号数、ティッカー、一面記事、カテゴリ記事5本、天声生成コラム、注目記事5本
 
-- [x] **ニュース写真 + 関連ニュースフロー（Unsplash API）**
-  - Claude生成プロンプトに `imageKeyword`（英語2-4語）および `relatedNews`（関連ニュース4件）フィールドを追加
+- [x] **ニュース写真（Unsplash API）**
+  - Claude生成プロンプトに `imageKeyword`（英語2-4語）フィールドを追加
   - news-generator WorkerでUnsplash Search API呼び出し（headline.imageKeyword → 写真URL取得）
-  - LIVE GENERATIVEセクション構成:
-    - ベース: Unsplashニュース写真（全幅、object-fit: cover）
-    - グラデーション: 下部に黒→透明（関連ニュースの可読性確保）
-    - 関連ニュースオーバーレイ: 赤1px区切り線 + 「関連ニュース」ラベル + 4件を2件×2セットでローテーション（7秒間隔）
-    - 各項目: カテゴリ（赤9px）+ タイトル（白12px）、右端フェードアウト（mask-image）、スライドインアニメーション
-  - 写真なし時: 黒背景 + 関連ニュースのみ表示
+  - 写真表示: Unsplashニュース写真（全幅、object-fit: cover）+ クレジット表示
+  - 写真なし時: 写真エリア自体を非表示
   - Unsplash利用規約準拠クレジット表示
-  - Canvas/ジェネラティブエフェクトは廃止
   - 環境変数: `UNSPLASH_ACCESS_KEY`（Cloudflare Workers Secrets）
 
-### 進行中
-- [ ] Phase 3: Cronスケジューラ＆キャッシュ ← 次のステップ
+- [x] **Phase 2 Step 4: Cronスケジューラ＆KVキャッシュ**
+  - Cloudflare KV namespace `NEWSPAPER_CACHE` を作成・バインド
+  - キャッシュキー形式: `{edition}-{YYYY-MM-DD}`（例: `morning-2026-02-12`）
+  - キャッシュTTL: 12時間
+  - API取得フロー: KVキャッシュ確認 → ヒット時はキャッシュ返却 → ミス時は生成してKV保存
+  - `force=true` パラメータでキャッシュ無視して再生成
+  - Cron Triggers:
+    - `0 21 * * *`（UTC 21:00 = JST 06:00）→ 朝刊自動生成・キャッシュ
+    - `0 8 * * *`（UTC 08:00 = JST 17:00）→ 夕刊自動生成・キャッシュ
+  - フロントエンド: JST時間からeditionを自動判定（6:00〜16:59→朝刊、17:00〜5:59→夕刊）
+  - エンドポイント追加: `GET /api/generate?force=true` — キャッシュ無視して再生成
+  - コード: `workers/news-generator/`
 
 ### TODO
-- [ ] Cronスケジューラ（朝5:30/夕16:30に自動生成、KVキャッシュ）
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
 - [ ] Stripe決済連携（300円/月）
@@ -151,6 +155,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 2 Step 4 完了 — KVキャッシュ＆Cron Triggers実装（朝刊06:00/夕刊17:00自動生成、12時間TTL、force再生成対応）
 - 2026-02-12: 関連ニュースフロー — LIVE GENERATIVEをニュース写真+関連ニュースオーバーレイに変更、Canvas廃止、relatedNews 4件ローテーション表示
 - 2026-02-12: ニュース写真連携 — Unsplash APIで一面記事写真を取得、クレジット表示対応
 - 2026-02-12: バグ修正 — 変数now重複宣言SyntaxError修正、fetchタイムアウト追加、セーフティタイムアウト追加、CORS制限

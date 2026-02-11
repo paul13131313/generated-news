@@ -846,9 +846,16 @@ function renderHighlights(highlights) {
   `).join('');
 }
 
+// ===== DETECT EDITION (JST) =====
+function detectEdition() {
+  const jstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getHours();
+  return (jstHour >= 6 && jstHour < 17) ? 'morning' : 'evening';
+}
+
 // ===== FETCH NEWSPAPER =====
 async function fetchNewspaper(edition) {
-  const url = edition ? `${API_URL}?edition=${edition}` : API_URL;
+  if (!edition) edition = detectEdition();
+  const url = `${API_URL}?edition=${edition}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000);
   try {
@@ -907,8 +914,15 @@ function switchEdition(ed) {
   let apiDone = false;
   let animDone = false;
 
-  // Start API fetch immediately
-  fetchNewspaper().then(data => {
+  // Set initial edition button state based on JST time
+  const initialEdition = detectEdition();
+  if (initialEdition === 'evening') {
+    document.getElementById('btnMorning').classList.remove('active');
+    document.getElementById('btnEvening').classList.add('active');
+  }
+
+  // Start API fetch immediately with detected edition
+  fetchNewspaper(initialEdition).then(data => {
     newspaperData = data;
   }).catch(err => {
     console.warn('API fetch failed, using fallback:', err);

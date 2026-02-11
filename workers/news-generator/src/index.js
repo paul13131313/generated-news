@@ -7,14 +7,20 @@ import { fetchAndParseFeed } from './parser.js';
  * 生成新聞 - 紙面生成 Worker
  *
  * Endpoints:
- *   GET /api/generate              → 紙面JSON生成（デフォルト: 時間帯に応じて朝刊/夕刊）
+ *   GET /api/generate              → 紙面JSON（キャッシュ優先、なければ生成）
  *   GET /api/generate?edition=morning → 朝刊指定
  *   GET /api/generate?edition=evening → 夕刊指定
+ *   GET /api/generate?force=true   → キャッシュ無視して再生成
  *   GET /health                    → ヘルスチェック
+ *
+ * Cron Triggers:
+ *   0 21 * * * (UTC) = 06:00 JST → 朝刊生成・キャッシュ
+ *   0  8 * * * (UTC) = 17:00 JST → 夕刊生成・キャッシュ
  *
  * Environment:
  *   CLAUDE_API_KEY (secret) — Anthropic API key
  *   UNSPLASH_ACCESS_KEY (secret) — Unsplash API key
+ *   NEWSPAPER_CACHE (KV) — キャッシュ用KV namespace
  */
 
 const ALLOWED_ORIGINS = [
@@ -22,6 +28,8 @@ const ALLOWED_ORIGINS = [
   'http://localhost:8080',
   'http://127.0.0.1:8080',
 ];
+
+const CACHE_TTL = 12 * 60 * 60; // 12時間（秒）
 
 function getCorsHeaders(request) {
   const origin = request?.headers?.get('Origin') || '';
@@ -51,6 +59,21 @@ function jsonResponse(data, status = 200, request = null) {
 function detectEdition() {
   const jstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getHours();
   return (jstHour >= 6 && jstHour < 17) ? 'morning' : 'evening';
+}
+
+/**
+ * JSTの日付文字列を取得 (例: "2026-02-12")
+ */
+function getJstDateString() {
+  const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 10);
+}
+
+/**
+ * キャッシュキーを生成 (例: "morning-2026-02-12")
+ */
+function getCacheKey(edition) {
+  return `${edition}-${getJstDateString()}`;
 }
 
 /**
@@ -160,6 +183,36 @@ async function generateNewspaper(apiKey, edition, unsplashKey) {
 }
 
 /**
+ * 紙面を生成してKVにキャッシュ
+ */
+async function generateAndCache(env, edition) {
+  const startTime = Date.now();
+  const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY);
+  const elapsed = Date.now() - startTime;
+
+  const cached = {
+    ...result,
+    meta: {
+      ...result.meta,
+      elapsedMs: elapsed,
+      cached: true,
+      cachedAt: new Date().toISOString(),
+    },
+  };
+
+  // KVに保存（TTL: 12時間）
+  const cacheKey = getCacheKey(edition);
+  if (env.NEWSPAPER_CACHE) {
+    await env.NEWSPAPER_CACHE.put(cacheKey, JSON.stringify(cached), {
+      expirationTtl: CACHE_TTL,
+    });
+    console.log(`Cached ${cacheKey} (${elapsed}ms, TTL ${CACHE_TTL}s)`);
+  }
+
+  return cached;
+}
+
+/**
  * ルーティング
  */
 async function handleRequest(request, env) {
@@ -179,10 +232,11 @@ async function handleRequest(request, env) {
       timestamp: new Date().toISOString(),
       hasApiKey: !!env.CLAUDE_API_KEY,
       hasUnsplashKey: !!env.UNSPLASH_ACCESS_KEY,
+      hasCache: !!env.NEWSPAPER_CACHE,
     }, 200, request);
   }
 
-  // 紙面生成
+  // 紙面生成（キャッシュ優先）
   if (path === '/api/generate') {
     if (!env.CLAUDE_API_KEY) {
       return jsonResponse({ error: 'CLAUDE_API_KEY not configured' }, 500, request);
@@ -193,18 +247,24 @@ async function handleRequest(request, env) {
       return jsonResponse({ error: 'Invalid edition. Use "morning" or "evening".' }, 400, request);
     }
 
-    try {
-      const startTime = Date.now();
-      const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY);
-      const elapsed = Date.now() - startTime;
+    const force = url.searchParams.get('force') === 'true';
 
-      return jsonResponse({
-        ...result,
-        meta: {
-          ...result.meta,
-          elapsedMs: elapsed,
-        },
-      }, 200, request);
+    // キャッシュ確認（force=true でなければ）
+    if (!force && env.NEWSPAPER_CACHE) {
+      const cacheKey = getCacheKey(edition);
+      const cachedData = await env.NEWSPAPER_CACHE.get(cacheKey);
+      if (cachedData) {
+        console.log(`Cache hit: ${cacheKey}`);
+        const parsed = JSON.parse(cachedData);
+        return jsonResponse(parsed, 200, request);
+      }
+      console.log(`Cache miss: ${cacheKey}`);
+    }
+
+    // キャッシュなし or force → 生成してキャッシュ
+    try {
+      const result = await generateAndCache(env, edition);
+      return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Generation error:', error);
       return jsonResponse({
@@ -221,18 +281,41 @@ async function handleRequest(request, env) {
       'GET /api/generate',
       'GET /api/generate?edition=morning',
       'GET /api/generate?edition=evening',
+      'GET /api/generate?force=true',
       'GET /health',
     ],
   }, 404, request);
 }
 
 export default {
+  // HTTP handler
   async fetch(request, env, ctx) {
     try {
       return await handleRequest(request, env);
     } catch (error) {
       console.error('Worker error:', error);
       return jsonResponse({ error: 'Internal Server Error', message: error.message }, 500, request);
+    }
+  },
+
+  // Cron Trigger handler
+  async scheduled(event, env, ctx) {
+    if (!env.CLAUDE_API_KEY) {
+      console.error('Cron: CLAUDE_API_KEY not configured');
+      return;
+    }
+
+    // UTC 21:00 = JST 06:00 → 朝刊, UTC 08:00 = JST 17:00 → 夕刊
+    const hour = new Date(event.scheduledTime).getUTCHours();
+    const edition = (hour === 21) ? 'morning' : 'evening';
+
+    console.log(`Cron triggered: generating ${edition} edition (UTC ${hour}:00)`);
+
+    try {
+      const result = await generateAndCache(env, edition);
+      console.log(`Cron: ${edition} generated and cached (${result.meta.elapsedMs}ms)`);
+    } catch (error) {
+      console.error(`Cron: ${edition} generation failed:`, error);
     }
   },
 };

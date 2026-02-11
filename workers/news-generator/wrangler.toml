@@ -4,3 +4,12 @@ compatibility_date = "2024-12-01"
 
 [observability]
 enabled = true
+
+# KV namespace for newspaper cache
+[[kv_namespaces]]
+binding = "NEWSPAPER_CACHE"
+id = "49aa8a52de304cd5b4c3a3625b7f3899"
+
+# Cron Triggers: 朝刊 06:00 JST (21:00 UTC前日), 夕刊 17:00 JST (08:00 UTC)
+[triggers]
+crons = ["0 21 * * *", "0 8 * * *"]
