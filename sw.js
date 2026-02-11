@@ -1,4 +1,4 @@
-const CACHE = 'generated-news-v2';
+const CACHE = 'generated-news-v3';
 const ASSETS = [
   './manifest.json',
   './icon-192.png',

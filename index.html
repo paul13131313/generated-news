@@ -1109,10 +1109,13 @@ function updateHeroTheme(data) {
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  // 古いキャッシュを全て削除してから新しいSWを登録
+  // 既存のSWを全てunregisterしてキャッシュも削除
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
   caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+  // 新しいSWを登録
   navigator.serviceWorker.register('sw.js').then(reg => {
-    // 新しいSWがあれば即座に更新
     reg.addEventListener('updatefound', () => {
       const newSW = reg.installing;
       newSW.addEventListener('statechange', () => {
