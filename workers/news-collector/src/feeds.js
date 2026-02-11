@@ -1,6 +1,6 @@
 /**
  * RSSフィードソース定義
- * category: 総合, テクノロジー, 国際, 経済, 文化, 社会, 政治, スポーツ
+ * category: 総合, テクノロジー, 国際, 経済, 文化, 社会, 政治, スポーツ, エンタメ, 暮らし
  */
 export const FEED_SOURCES = [
   // --- 総合 ---
@@ -82,6 +82,36 @@ export const FEED_SOURCES = [
     category: 'スポーツ',
     format: 'rss2',
   },
+
+  // --- エンタメ ---
+  {
+    name: 'NHKニュース（エンタメ）',
+    url: 'https://www.nhk.or.jp/rss/news/cat06.xml',
+    category: 'エンタメ',
+    format: 'rss2',
+  },
+  {
+    name: 'ナタリー',
+    url: 'https://natalie.mu/rss/all',
+    category: 'エンタメ',
+    format: 'rss2',
+  },
+
+  // --- 文化 ---
+  {
+    name: 'NHKニュース（文化）',
+    url: 'https://www.nhk.or.jp/rss/news/cat02.xml',
+    category: '文化',
+    format: 'rss2',
+  },
+
+  // --- 暮らし ---
+  {
+    name: 'NHKニュース（生活）',
+    url: 'https://www.nhk.or.jp/rss/news/cat09.xml',
+    category: '暮らし',
+    format: 'rss2',
+  },
 ];
 
 /**
@@ -97,6 +127,8 @@ export const CATEGORY_MAP = {
   society: '社会',
   politics: '政治',
   sports: 'スポーツ',
+  entertainment: 'エンタメ',
+  lifestyle: '暮らし',
   // 日本語でもそのまま引ける
   '総合': '総合',
   'テクノロジー': 'テクノロジー',
@@ -106,4 +138,6 @@ export const CATEGORY_MAP = {
   '社会': '社会',
   '政治': '政治',
   'スポーツ': 'スポーツ',
+  'エンタメ': 'エンタメ',
+  '暮らし': '暮らし',
 };
