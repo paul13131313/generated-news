@@ -115,6 +115,7 @@ body::before {
   display: block;
   opacity: 0;
   overflow: hidden;
+  padding-right: 0.5em;
 }
 
 .hero-sub {
@@ -160,9 +161,11 @@ body::before {
   font-family: var(--font-gothic);
   font-size: 10px;
   letter-spacing: 0.2em;
+  margin-right: -0.2em;
   color: var(--caption);
   opacity: 0;
   animation: fadeIn 1s 3s forwards;
+  text-align: center;
 }
 
 .hero-scroll::after {
@@ -228,56 +231,20 @@ body::before {
   letter-spacing: 0.25em;
 }
 
-/* ===== CONCEPT ===== */
-.concepts {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
-}
-
-@media (min-width: 640px) {
-  .concepts { grid-template-columns: repeat(3, 1fr); gap: 32px; }
-}
-
-.concept-card {
-  text-align: center;
-  padding: 0;
-}
-
-.concept-icon {
-  font-size: 32px;
-  margin-bottom: 16px;
-  display: block;
-}
-
-.concept-title {
-  font-family: var(--font-mincho);
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  letter-spacing: 0.04em;
-}
-
-.concept-title::after {
-  content: '';
-  display: block;
-  width: 24px;
-  height: 2px;
-  background: var(--accent);
-  margin: 10px auto 0;
-}
-
-.concept-text {
-  font-size: 14px;
-  line-height: 1.9;
-  color: #4a4a4a;
-}
-
 /* ===== PREVIEW ===== */
 .preview-wrap {
   position: relative;
   max-width: 640px;
   margin: 0 auto;
+  text-align: center;
+}
+
+.preview-frame-link {
+  display: block;
+  max-width: 320px;
+  margin: 0 auto;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .preview-frame {
@@ -292,7 +259,7 @@ body::before {
   max-height: 480px;
 }
 
-.preview-frame:hover {
+.preview-frame-link:hover .preview-frame {
   transform: perspective(800px) rotateY(0deg) rotateX(0deg);
 }
 
@@ -407,7 +374,7 @@ body::before {
 .pricing-price {
   font-family: var(--font-mincho);
   font-weight: 800;
-  margin-bottom: 8px;
+  margin-bottom: 20px;
   line-height: 1;
 }
 
@@ -426,13 +393,6 @@ body::before {
   font-weight: 400;
   color: var(--caption);
   vertical-align: baseline;
-}
-
-.pricing-per {
-  font-family: var(--font-gothic);
-  font-size: 13px;
-  color: var(--caption);
-  margin-bottom: 20px;
 }
 
 .pricing-tagline {
@@ -455,21 +415,6 @@ body::before {
   padding: 80px 24px;
   max-width: 560px;
   margin: 0 auto;
-}
-
-.cta-heading {
-  font-family: var(--font-mincho);
-  font-size: clamp(22px, 5vw, 28px);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  margin-bottom: 16px;
-}
-
-.cta-sub {
-  font-size: 14px;
-  color: #4a4a4a;
-  margin-bottom: 32px;
-  line-height: 1.8;
 }
 
 .cta-form {
@@ -602,38 +547,16 @@ body::before {
   <div class="hero-scroll">SCROLL</div>
 </section>
 
-<!-- ===== CONCEPT ===== -->
-<section class="section">
-  <div class="section-reveal">
-    <div class="sec-divider"><span>三つの価値</span></div>
-    <div class="concepts">
-      <div class="concept-card">
-        <span class="concept-icon">筆</span>
-        <h3 class="concept-title">あなたのために生まれる</h3>
-        <p class="concept-text">同じニュースでも、あなたの関心や専門に合わせて記事が再構成されます。技術者には技術の深掘りを。経営者には市場インパクトを。</p>
-      </div>
-      <div class="concept-card">
-        <span class="concept-icon">朝夕</span>
-        <h3 class="concept-title">朝刊と夕刊、1日2回</h3>
-        <p class="concept-text">朝6時と夕方5時。新聞配達のように、あなたの1日に寄り添います。</p>
-      </div>
-      <div class="concept-card">
-        <span class="concept-icon">邂逅</span>
-        <h3 class="concept-title">偶然の出会い</h3>
-        <p class="concept-text">関心の外にあるニュースとの邂逅も、意図的に設計。フィルターバブルの外へ連れ出します。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ===== PREVIEW ===== -->
 <section class="section">
   <div class="section-reveal">
     <div class="sec-divider"><span>紙面プレビュー</span></div>
     <div class="preview-wrap">
-      <div class="preview-frame">
-        <iframe src="index.html" title="生成新聞プレビュー" loading="lazy" sandbox></iframe>
-      </div>
+      <a href="index.html" class="preview-frame-link">
+        <div class="preview-frame">
+          <iframe src="index.html" title="生成新聞プレビュー" loading="lazy" sandbox></iframe>
+        </div>
+      </a>
       <a href="index.html" class="preview-link">紙面サンプルを見る</a>
     </div>
   </div>
@@ -676,9 +599,8 @@ body::before {
     <div class="pricing-card">
       <div class="pricing-amount">MONTHLY SUBSCRIPTION</div>
       <div class="pricing-price">
-        <span class="pricing-yen">¥</span><span class="pricing-num count-up" data-to="300">0</span><span class="pricing-tax">（税込）</span>
+        <span class="pricing-yen">¥</span><span class="pricing-num count-up" data-to="300">0</span><span class="pricing-tax">（税込）/ 月</span>
       </div>
-      <div class="pricing-per">/ 月</div>
       <p class="pricing-tagline">新聞一部より安く、あなた専用の紙面を。</p>
       <p class="pricing-daily">1日あたり約10円</p>
     </div>
@@ -690,13 +612,11 @@ body::before {
   <div class="section-reveal">
     <div class="sec-divider"><span>事前登録</span></div>
     <div class="cta-section">
-      <h2 class="cta-heading">あなたの朝に、<br>新しい新聞を。</h2>
-      <p class="cta-sub">正式リリース時にご案内をお送りします。</p>
       <form class="cta-form" id="waitlistForm" action="https://formspree.io/f/placeholder" method="POST">
         <input type="email" name="email" class="cta-input" placeholder="メールアドレス" required autocomplete="email">
         <button type="submit" class="cta-submit">事前登録する</button>
       </form>
-      <p class="cta-note">※ メールアドレスは事前登録の案内のみに使用します</p>
+      <p class="cta-note">※ 正式リリース時にご案内をお送りします</p>
     </div>
   </div>
 </section>
