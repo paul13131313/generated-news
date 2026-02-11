@@ -817,40 +817,54 @@ function articlePhotoHtml(a) {
   return `<div class="art-photo-wrap"><img class="art-photo" src="${a.imageUrl}" alt="" loading="lazy"></div>${credit}`;
 }
 
-function renderArticles(articles) {
-  const container = document.getElementById('articlesContainer');
-  if (!articles.length) return;
-
-  // Group articles into pairs for duo layout, by category sections
-  let html = '';
-  const categories = [...new Set(articles.map(a => a.category))];
-
-  // First pair: use duo layout
-  if (articles.length >= 2) {
-    const cat = articles[0].category || categories[0] || 'ニュース';
-    html += `<div class="sec-rule gen-animate"><span>${cat}</span></div>`;
-    html += '<div class="duo gen-animate">';
-    html += articles.slice(0, 2).map(a => `
-      <div class="duo-item">
-        ${articlePhotoHtml(a)}
-        <div class="duo-tag">${a.label || a.category}</div>
-        <h3>${a.title}</h3>
-        <p>${a.body}</p>
-      </div>
-    `).join('');
-    html += '</div>';
-  }
-
-  // Remaining articles as individual items
-  articles.slice(2).forEach(a => {
-    html += `<div class="sec-rule gen-animate"><span>${a.category}</span></div>`;
-    html += `<div class="duo gen-animate"><div class="duo-item" style="grid-column:1/-1;padding:0;">
+function renderArticleFull(a) {
+  return `<div class="sec-rule gen-animate"><span>${a.category}</span></div>
+    <div class="duo gen-animate"><div class="duo-item" style="grid-column:1/-1;padding:0;">
       ${articlePhotoHtml(a)}
       <div class="duo-tag">${a.label || a.category}</div>
       <h3>${a.title}</h3>
       <p>${a.body}</p>
     </div></div>`;
-  });
+}
+
+function renderArticles(articles) {
+  const container = document.getElementById('articlesContainer');
+  if (!articles.length) return;
+
+  let html = '';
+  let i = 0;
+
+  while (i < articles.length) {
+    const a = articles[i];
+
+    // 写真あり → 全幅1カラム
+    if (a.imageUrl) {
+      html += renderArticleFull(a);
+      i++;
+      continue;
+    }
+
+    // 写真なし → 次の記事も写真なしなら2カラム並び
+    const next = articles[i + 1];
+    if (next && !next.imageUrl) {
+      const cat = a.category || 'ニュース';
+      html += `<div class="sec-rule gen-animate"><span>${cat}</span></div>`;
+      html += '<div class="duo gen-animate">';
+      html += [a, next].map(x => `
+        <div class="duo-item">
+          <div class="duo-tag">${x.label || x.category}</div>
+          <h3>${x.title}</h3>
+          <p>${x.body}</p>
+        </div>
+      `).join('');
+      html += '</div>';
+      i += 2;
+    } else {
+      // 写真なし + 次が写真あり（or 最後の1件） → 全幅
+      html += renderArticleFull(a);
+      i++;
+    }
+  }
 
   container.innerHTML = html;
 }
