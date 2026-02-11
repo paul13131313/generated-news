@@ -238,205 +238,123 @@ body::before {
 .preview-section {
   max-width: 600px;
   margin: 0 auto;
-  padding: 0 24px 80px;
+  padding: 0 24px 40px;
 }
 
-.preview-masthead {
-  background: #f3ede2;
-  padding: 16px 16px 0;
-  border-bottom: 3px solid #111;
+.preview-area {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   position: relative;
-}
-
-.preview-masthead::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  pointer-events: none;
-}
-
-.preview-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #c4b9a8;
-  margin-bottom: 8px;
-  font-family: var(--font-gothic);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #6b6358;
-}
-
-.preview-edition {
-  display: flex;
-  gap: 0;
-}
-
-.preview-edition-btn {
-  padding: 3px 12px;
-  border: 1px solid #222;
-  background: none;
-  color: #6b6358;
-  font-family: var(--font-gothic);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-}
-
-.preview-edition-btn:first-child {
-  border-right: none;
-}
-
-.preview-edition-btn.active {
-  background: #111;
-  color: #f3ede2;
-  border-color: #111;
-}
-
-.preview-center {
-  text-align: center;
-  padding: 10px 0 8px;
-}
-
-.preview-center h2 {
-  font-family: var(--font-mincho);
-  font-weight: 800;
-  font-size: 42px;
-  letter-spacing: 0.3em;
-  margin-right: -0.3em;
-  line-height: 1;
-}
-
-.preview-en {
-  font-family: var(--font-gothic);
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.45em;
-  color: #6b6358;
-  margin-top: 5px;
-}
-
-.preview-rule {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-top: 1px solid #c4b9a8;
-}
-
-.preview-rule::before,
-.preview-rule::after {
-  content: '';
-  flex: 1;
-  height: 0;
-  border-top: 1px solid #c4b9a8;
-}
-
-.preview-badge {
-  font-family: var(--font-gothic);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: #111;
-  padding: 2px 10px;
-  border: 1px solid #222;
-}
-
-.preview-nav {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px 0;
-  font-family: var(--font-mincho);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: #6b6358;
-}
-
-.preview-nav span.active {
-  color: #111;
-  font-weight: 700;
-  position: relative;
-}
-
-.preview-nav span.active::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--accent);
-}
-
-.preview-fade {
-  position: relative;
-  background: #f3ede2;
-  padding: 16px 16px 60px;
+  background: var(--paper);
+  padding: 32px 20px 80px;
   overflow: hidden;
+  min-height: 380px;
 }
 
-.preview-fade::before {
+.preview-area::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
 }
 
-.preview-fade::after {
+.preview-area::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120px;
-  background: linear-gradient(to bottom, rgba(243,237,226,0), rgba(250,248,244,1));
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(250,248,244,0), rgba(250,248,244,1));
   pointer-events: none;
+  z-index: 2;
 }
 
-.preview-ticker {
-  background: #111;
-  color: #f3ede2;
-  padding: 10px 0;
-  overflow: hidden;
-  margin: 0 -16px 16px;
-  font-family: var(--font-gothic);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  padding-left: 16px;
-}
-
-.preview-ticker .up { color: #5cc779; }
-.preview-ticker .dn { color: #e05040; }
-
-.preview-kicker {
+.pv-kicker {
   font-family: var(--font-gothic);
   font-size: 12px;
   font-weight: 700;
   color: var(--accent);
   letter-spacing: 0.12em;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  opacity: 0;
 }
 
-.preview-headline {
+.pv-headline {
   font-family: var(--font-mincho);
   font-weight: 800;
-  font-size: 26px;
-  line-height: 1.35;
+  font-size: clamp(22px, 5.5vw, 30px);
+  line-height: 1.4;
   letter-spacing: -0.02em;
   color: #111;
+  margin-bottom: 20px;
+  min-height: 2.8em;
+}
+
+.pv-headline .pv-cursor {
+  color: var(--accent);
+  animation: pvBlink 0.7s step-end infinite;
+}
+
+@keyframes pvBlink { 50% { opacity: 0; } }
+
+.pv-canvas-wrap {
+  width: 100%;
+  height: 140px;
+  background: #111;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  border: 1px solid #333;
+}
+
+.pv-canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pv-canvas-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-gothic);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 10px;
+  letter-spacing: 0.12em;
+}
+
+.pv-body {
+  column-count: 2;
+  column-gap: 14px;
+  column-rule: 1px solid var(--border);
+  font-family: var(--font-mincho);
+  font-size: 14px;
+  line-height: 1.9;
+  text-align: justify;
+  color: #111;
+}
+
+.pv-body p {
+  margin-bottom: 0.5em;
+  text-indent: 1em;
+  opacity: 0;
+}
+
+.pv-body p:first-child {
+  text-indent: 0;
 }
 
 .preview-cta {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .preview-link {
@@ -715,39 +633,18 @@ body::before {
 
 <!-- ===== PREVIEW ===== -->
 <section class="preview-section section-reveal">
-  <div class="preview-masthead">
-    <div class="preview-top">
-      <span>令和七年 二月十二日（水曜日）</span>
-      <div class="preview-edition">
-        <span class="preview-edition-btn active">朝刊</span>
-        <span class="preview-edition-btn">夕刊</span>
-      </div>
+  <a href="index.html" class="preview-area" id="previewArea">
+    <div class="pv-kicker" id="pvKicker">一面</div>
+    <div class="pv-headline" id="pvHeadline"></div>
+    <div class="pv-canvas-wrap" id="pvCanvasWrap">
+      <canvas id="pvCanvas"></canvas>
+      <div class="pv-canvas-label">LIVE GENERATIVE</div>
     </div>
-    <div class="preview-center">
-      <h2>生成新聞</h2>
-      <div class="preview-en">GENERATED DAILY NEWS</div>
+    <div class="pv-body" id="pvBody">
+      <p>二〇二五年、ニュースの届き方が再び大きな転換点を迎えている。かつて新聞配達員が毎朝届けた朝刊のように、いまAIが個人の関心に沿った紙面を生成し、届ける時代が始まった。</p>
+      <p>従来のアルゴリズム推薦とは根本的に異なる。記事そのものが読者のために再構成されるのだ。同じ出来事でも、技術者には技術の詳細が、経営者には市場インパクトが語られる。</p>
     </div>
-    <div class="preview-rule">
-      <span class="preview-badge">第〇〇七号</span>
-    </div>
-    <nav class="preview-nav">
-      <span class="active">総合</span>
-      <span>テクノロジー</span>
-      <span>国際</span>
-      <span>経済</span>
-      <span>文化</span>
-    </nav>
-  </div>
-  <div class="preview-fade">
-    <div class="preview-ticker">
-      日経平均 38,942.18 <span class="up">▲312.40 (+0.81%)</span>
-      TOPIX 2,748.52 <span class="up">▲18.90</span>
-      ドル円 152.34 <span class="dn">▼0.42</span>
-      NYダウ 44,128.56 <span class="up">▲186.22</span>
-    </div>
-    <div class="preview-kicker">一面</div>
-    <div class="preview-headline">生成AIが変える報道の未来——「読む」から「生成される」時代へ</div>
-  </div>
+  </a>
   <div class="preview-cta">
     <a href="index.html" class="preview-link">紙面サンプルを見る</a>
   </div>
@@ -908,6 +805,184 @@ body::before {
   }, { threshold: 0.5 });
 
   document.querySelectorAll('.count-up').forEach(el => obs.observe(el));
+})();
+
+// ===== PREVIEW ANIMATION =====
+(function() {
+  const headlines = [
+    '生成AIが変える報道の未来——「読む」から「生成される」時代へ',
+    'マルチモーダルAI、コード生成精度が人間を凌駕——現場導入が加速',
+    '量子コンピュータ、実用化の臨界点に到達か——日米欧が同時発表',
+  ];
+  const kickerEl = document.getElementById('pvKicker');
+  const headlineEl = document.getElementById('pvHeadline');
+  const canvasWrap = document.getElementById('pvCanvasWrap');
+  const bodyEl = document.getElementById('pvBody');
+  const bodyPs = bodyEl.querySelectorAll('p');
+  const canvas = document.getElementById('pvCanvas');
+  const ctx = canvas.getContext('2d');
+  let cycle = 0, animId, started = false;
+
+  // Canvas setup
+  function resizeCanvas() {
+    const r = canvasWrap.getBoundingClientRect();
+    canvas.width = r.width * 2;
+    canvas.height = r.height * 2;
+  }
+
+  // Particle system
+  class Particle {
+    constructor(W, H) { this.W = W; this.H = H; this.reset(true); }
+    reset(init) {
+      this.x = Math.random() * this.W;
+      this.y = init ? Math.random() * this.H : this.H + 10;
+      this.speed = 0.3 + Math.random() * 1.5;
+      this.r = 1 + Math.random() * 2;
+      this.opacity = 0.05 + Math.random() * 0.4;
+      this.isRed = Math.random() < 0.1;
+    }
+    update() {
+      this.y -= this.speed;
+      this.x += Math.sin(this.y * 0.005) * 0.5;
+      if (this.y < -10) this.reset(false);
+    }
+    draw(ctx) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.isRed
+        ? 'rgba(196,30,58,' + this.opacity + ')'
+        : 'rgba(243,237,226,' + (this.opacity * 0.4) + ')';
+      ctx.fill();
+    }
+  }
+
+  let particles = [];
+
+  function initCanvas() {
+    resizeCanvas();
+    particles = [];
+    for (let i = 0; i < 50; i++) particles.push(new Particle(canvas.width, canvas.height));
+  }
+
+  function drawCanvas(t) {
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = 'rgba(17,17,17,0.12)';
+    ctx.fillRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(ctx); });
+
+    // Flow lines
+    const cols = 50, rows = 12;
+    const cw = W / cols, ch = H / rows;
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        const n = Math.sin(x * 0.14 + t * 0.0009) * Math.cos(y * 0.2 + t * 0.0007);
+        const v = (n + 1) / 2;
+        if (v > 0.6) {
+          ctx.fillStyle = v > 0.85
+            ? 'rgba(196,30,58,' + ((v - 0.6) * 1.5) + ')'
+            : 'rgba(243,237,226,' + ((v - 0.6) * 0.3) + ')';
+          const s = cw * v * 0.7;
+          ctx.fillRect(x * cw + (cw - s) / 2, y * ch + (ch - s) / 2, s, s);
+        }
+      }
+    }
+
+    // Scan line
+    const sy = (t * 0.06) % H;
+    ctx.strokeStyle = 'rgba(196,30,58,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(W, sy);
+    ctx.stroke();
+  }
+
+  let canvasRunning = false;
+  function startCanvasLoop() {
+    if (canvasRunning) return;
+    canvasRunning = true;
+    function loop(t) {
+      if (!canvasRunning) return;
+      drawCanvas(t);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+  function stopCanvasLoop() { canvasRunning = false; }
+
+  // Fade helper
+  function fade(el, inOut, dur) {
+    return new Promise(resolve => {
+      el.style.transition = 'opacity ' + dur + 'ms ease';
+      el.style.opacity = inOut ? '1' : '0';
+      setTimeout(resolve, dur);
+    });
+  }
+
+  // Typewriter
+  function typewrite(el, text, speed) {
+    return new Promise(resolve => {
+      el.innerHTML = '';
+      const cursor = document.createElement('span');
+      cursor.className = 'pv-cursor';
+      cursor.textContent = '｜';
+      el.appendChild(cursor);
+      let i = 0;
+      const timer = setInterval(() => {
+        el.textContent = text.slice(0, ++i);
+        el.appendChild(cursor);
+        if (i >= text.length) {
+          clearInterval(timer);
+          setTimeout(() => { cursor.remove(); resolve(); }, 400);
+        }
+      }, 50);
+    });
+  }
+
+  // One cycle
+  async function runCycle() {
+    const headline = headlines[cycle % headlines.length];
+    cycle++;
+
+    // Phase 1: kicker + headline typewriter
+    await fade(kickerEl, true, 300);
+    await typewrite(headlineEl, headline, 50);
+
+    // Phase 2: canvas fade in
+    initCanvas();
+    startCanvasLoop();
+    await fade(canvasWrap, true, 600);
+
+    // Phase 3: body paragraphs fade in one by one
+    for (const p of bodyPs) {
+      await fade(p, true, 500);
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Hold
+    await new Promise(r => setTimeout(r, 3000));
+
+    // Fade everything out
+    const all = [kickerEl, headlineEl, canvasWrap, ...bodyPs];
+    all.forEach(el => {
+      el.style.transition = 'opacity 0.8s ease';
+      el.style.opacity = '0';
+    });
+    await new Promise(r => setTimeout(r, 1000));
+    stopCanvasLoop();
+
+    // Next cycle
+    runCycle();
+  }
+
+  // Start on scroll into view
+  const obs = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !started) {
+      started = true;
+      runCycle();
+    }
+  }, { threshold: 0.2 });
+  obs.observe(document.getElementById('previewArea'));
 })();
 
 // ===== FORM (prevent default for now, show confirmation) =====
