@@ -153,11 +153,20 @@
   - CORS: GitHub Pagesドメイン許可
   - コード: `workers/waitlist-api/`
 
-### Phase 3: Stripe決済 ← 次のステップ
-- Stripeアカウント作成済（Test Mode）
-- [ ] Phase 3 Step 1: Stripe APIキー取得 → payment-api Worker作成 → Checkout Session実装
-- [ ] Phase 3 Step 2: 月額300円サブスクリプション商品設定
-- [ ] Phase 3 Step 3: lp.html / index.htmlに決済導線を追加
+- [x] **Phase 3 Step 1: Stripe決済（Checkout Session）**
+  - Cloudflare Worker `payment-api` をデプロイ
+  - URL: https://payment-api.hiroshinagano0113.workers.dev
+  - Stripe Checkout Session方式（サーバーサイドでSession作成 → クライアントをCheckoutページにリダイレクト）
+  - 商品: 生成新聞 月額300円（JPY）サブスクリプション（price_dataでインライン定義）
+  - エンドポイント:
+    - `POST /api/checkout` — Stripe Checkout Session作成、{ url } を返す
+    - `GET /health` — ヘルスチェック
+  - success_url: index.html?subscribed=true
+  - cancel_url: lp.html
+  - CORS: GitHub Pagesドメイン許可
+  - 環境変数: `STRIPE_SECRET_KEY`（Cloudflare Workers Secrets、Test Mode）
+  - lp.htmlの料金セクションに「月額300円で購読する」ボタン追加
+  - コード: `workers/payment-api/`
 
 ### TODO
 - [ ] ユーザー認証（サインアップ/ログイン）
@@ -181,6 +190,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 3 Step 1 完了 — Stripe Checkout Session実装（payment-api Worker、月額300円サブスク、lp.htmlに購読ボタン追加）
 - 2026-02-12: RSSソース拡充 — 15フィード10カテゴリに拡大（エンタメ/文化/暮らし追加）、記事バランスを硬3+柔2に
 - 2026-02-12: 記事写真・レイアウト改善 — articles 5件中2-3件にUnsplash写真追加、写真付き記事は全幅1カラム表示、SWキャッシュ問題修正(v3)
 - 2026-02-12: Phase 2 Step 5 完了 — ウェイトリスト登録フォーム実装（waitlist-api Worker + KV、lp.html API連携）
