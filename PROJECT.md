@@ -88,11 +88,27 @@
     - `GET /health` — ヘルスチェック
   - コード: `workers/news-collector/`
 
+- [x] **Phase 2 Step 2: AI紙面生成パイプライン**
+  - Cloudflare Worker `news-generator` をデプロイ
+  - URL: https://news-generator.hiroshinagano0113.workers.dev
+  - RSSフィードから直接ニュース取得 → Claude Haiku 4.5で紙面JSON生成
+  - 生成内容: 一面記事、カテゴリ別記事5本、天声生成コラム、ティッカー6銘柄、注目記事5本
+  - 出力JSON構造: date, edition, issueNumber, headline, articles, column, ticker, highlights
+  - 文体: 格式ある新聞調、漢語・熟語多用、漢数字表記
+  - コスト: 1回あたり約1.8円（目標5円以内をクリア）
+  - エンドポイント:
+    - `GET /api/generate` — 紙面JSON生成（時間帯で朝刊/夕刊自動判定）
+    - `GET /api/generate?edition=morning` — 朝刊指定
+    - `GET /api/generate?edition=evening` — 夕刊指定
+    - `GET /health` — ヘルスチェック
+  - コード: `workers/news-generator/`
+
 ### 進行中
-- [ ] Phase 2 Step 2: AI要約・紙面構成パイプライン ← 次のステップ
+- [ ] Phase 2 Step 3: フロントエンド連携（生成JSONで紙面レンダリング） ← 次のステップ
 
 ### TODO
-- [ ] AI要約・紙面構成（Claude API連携）
+- [ ] フロントエンド連携（index.htmlで生成APIを呼んでリアル紙面表示）
+- [ ] Cronスケジューラ（朝5:30/夕16:30に自動生成）
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
 - [ ] Stripe決済連携（300円/月）
@@ -115,6 +131,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-11: Phase 2 Step 2 完了 — news-generator Worker デプロイ（Claude Haiku 4.5で紙面生成、約1.8円/回）
 - 2026-02-11: Phase 2 Step 1 完了 — news-collector Worker デプロイ（11 RSS、7カテゴリ）
 - 2026-02-11: LP制作完了・公開
 - 2026-02-11: PROJECT.md作成、LP制作再開

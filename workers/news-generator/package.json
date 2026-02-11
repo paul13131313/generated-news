@@ -1,0 +1,14 @@
+{
+  "name": "news-generator",
+  "version": "1.0.0",
+  "description": "生成新聞 - AI紙面生成パイプライン",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.64.0"
+  }
+}
