@@ -1,0 +1,11 @@
+name = "waitlist-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+# KV namespace for waitlist
+[[kv_namespaces]]
+binding = "WAITLIST"
+id = "6c23085f0f37487da5ca996c760abe32"

@@ -132,6 +132,23 @@
   - エンドポイント追加: `GET /api/generate?force=true` — キャッシュ無視して再生成
   - コード: `workers/news-generator/`
 
+- [x] **Phase 2 Step 5: ウェイトリスト登録フォーム**
+  - Cloudflare Worker `waitlist-api` をデプロイ
+  - URL: https://waitlist-api.hiroshinagano0113.workers.dev
+  - Cloudflare KV namespace `WAITLIST` を作成・バインド
+  - エンドポイント:
+    - `POST /api/waitlist` — メールアドレス登録（バリデーション＋重複チェック）
+    - `GET /api/waitlist/count` — 登録者数取得
+    - `GET /health` — ヘルスチェック
+  - KV保存形式: キー=メールアドレス、値={ email, registeredAt, source: "lp" }
+  - lp.htmlのフォームをAPI連携に変更:
+    - 成功時: 「ご登録ありがとうございます。正式リリース時にご案内いたします。」
+    - 重複時: 「すでにご登録いただいています。」
+    - エラー時: 「登録に失敗しました。時間をおいてお試しください。」
+    - 送信中はボタン「登録中...」で連打防止
+  - CORS: GitHub Pagesドメイン許可
+  - コード: `workers/waitlist-api/`
+
 ### TODO
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
@@ -155,6 +172,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 2 Step 5 完了 — ウェイトリスト登録フォーム実装（waitlist-api Worker + KV、lp.html API連携）
 - 2026-02-12: Phase 2 Step 4 完了 — KVキャッシュ＆Cron Triggers実装（朝刊06:00/夕刊17:00自動生成、12時間TTL、force再生成対応）
 - 2026-02-12: 関連ニュースフロー — LIVE GENERATIVEをニュース写真+関連ニュースオーバーレイに変更、Canvas廃止、relatedNews 4件ローテーション表示
 - 2026-02-12: ニュース写真連携 — Unsplash APIで一面記事写真を取得、クレジット表示対応

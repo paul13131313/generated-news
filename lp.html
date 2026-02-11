@@ -551,6 +551,22 @@ body::before {
 .cta-note {
   font-size: 12px;
   color: var(--caption);
+  transition: color 0.3s;
+}
+
+.cta-note.success {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.cta-note.error {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.cta-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {
@@ -700,11 +716,11 @@ body::before {
   <div class="section-reveal">
     <div class="sec-divider"><span>事前登録</span></div>
     <div class="cta-section">
-      <form class="cta-form" id="waitlistForm" action="https://formspree.io/f/placeholder" method="POST">
-        <input type="email" name="email" class="cta-input" placeholder="メールアドレス" required autocomplete="email">
-        <button type="submit" class="cta-submit">事前登録する</button>
+      <form class="cta-form" id="waitlistForm">
+        <input type="email" name="email" class="cta-input" id="waitlistEmail" placeholder="メールアドレス" required autocomplete="email">
+        <button type="submit" class="cta-submit" id="waitlistBtn">事前登録する</button>
       </form>
-      <p class="cta-note">※ 正式リリース時にご案内をお送りします</p>
+      <p class="cta-note" id="waitlistMsg">※ 正式リリース時にご案内をお送りします</p>
     </div>
   </div>
 </section>
@@ -990,17 +1006,66 @@ body::before {
   obs.observe(document.getElementById('previewArea'));
 })();
 
-// ===== FORM (prevent default for now, show confirmation) =====
+// ===== WAITLIST FORM =====
 (function() {
+  const WAITLIST_API = 'https://waitlist-api.hiroshinagano0113.workers.dev/api/waitlist';
   const form = document.getElementById('waitlistForm');
-  form.addEventListener('submit', function(e) {
+  const emailInput = document.getElementById('waitlistEmail');
+  const btn = document.getElementById('waitlistBtn');
+  const msg = document.getElementById('waitlistMsg');
+
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
-    const btn = form.querySelector('.cta-submit');
-    btn.textContent = '登録しました';
-    btn.style.background = 'var(--green)';
-    btn.style.borderColor = 'var(--green)';
+
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    // 送信中状態
+    btn.textContent = '登録中...';
     btn.disabled = true;
-    form.querySelector('.cta-input').disabled = true;
+    emailInput.disabled = true;
+    msg.className = 'cta-note';
+    msg.textContent = '';
+
+    try {
+      const res = await fetch(WAITLIST_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 201) {
+        // 成功
+        btn.textContent = '登録完了';
+        btn.style.background = 'var(--green)';
+        btn.style.borderColor = 'var(--green)';
+        msg.className = 'cta-note success';
+        msg.textContent = 'ご登録ありがとうございます。正式リリース時にご案内いたします。';
+      } else if (res.status === 409) {
+        // 重複
+        btn.textContent = '事前登録する';
+        btn.disabled = false;
+        emailInput.disabled = false;
+        msg.className = 'cta-note error';
+        msg.textContent = 'すでにご登録いただいています。';
+      } else {
+        // その他エラー
+        btn.textContent = '事前登録する';
+        btn.disabled = false;
+        emailInput.disabled = false;
+        msg.className = 'cta-note error';
+        msg.textContent = data.message || '登録に失敗しました。時間をおいてお試しください。';
+      }
+    } catch (err) {
+      // ネットワークエラー
+      btn.textContent = '事前登録する';
+      btn.disabled = false;
+      emailInput.disabled = false;
+      msg.className = 'cta-note error';
+      msg.textContent = '登録に失敗しました。時間をおいてお試しください。';
+    }
   });
 })();
 </script>
