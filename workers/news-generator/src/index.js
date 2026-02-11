@@ -14,6 +14,7 @@ import { fetchAndParseFeed } from './parser.js';
  *
  * Environment:
  *   CLAUDE_API_KEY (secret) — Anthropic API key
+ *   UNSPLASH_ACCESS_KEY (secret) — Unsplash API key
  */
 
 const ALLOWED_ORIGINS = [
@@ -87,9 +88,40 @@ async function fetchNews(limit = 50) {
 }
 
 /**
+ * Unsplash APIで写真を検索
+ * @returns {{ imageUrl: string, imageCredit: string } | null}
+ */
+async function fetchUnsplashImage(accessKey, keyword) {
+  if (!accessKey || !keyword) return null;
+  try {
+    const query = encodeURIComponent(keyword);
+    const res = await fetch(
+      `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&per_page=1`,
+      { headers: { Authorization: `Client-ID ${accessKey}` } }
+    );
+    if (!res.ok) {
+      console.error(`Unsplash API error: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) return null;
+    const photo = data.results[0];
+    return {
+      imageUrl: photo.urls.regular,
+      imageCredit: photo.user.name,
+      imageCreditLink: photo.user.links.html,
+      unsplashLink: photo.links.html,
+    };
+  } catch (err) {
+    console.error('Unsplash fetch error:', err);
+    return null;
+  }
+}
+
+/**
  * 紙面を生成
  */
-async function generateNewspaper(apiKey, edition) {
+async function generateNewspaper(apiKey, edition, unsplashKey) {
   // 1. ニュース取得
   const articles = await fetchNews(50);
   if (articles.length === 0) {
@@ -104,6 +136,18 @@ async function generateNewspaper(apiKey, edition) {
 
   // 4. JSONパース
   const newspaper = parseGeneratedJson(rawText);
+
+  // 5. Unsplash写真取得（imageKeywordがあれば）
+  const imageKeyword = newspaper.headline?.imageKeyword;
+  if (imageKeyword && unsplashKey) {
+    const photo = await fetchUnsplashImage(unsplashKey, imageKeyword);
+    if (photo) {
+      newspaper.headline.imageUrl = photo.imageUrl;
+      newspaper.headline.imageCredit = photo.imageCredit;
+      newspaper.headline.imageCreditLink = photo.imageCreditLink;
+      newspaper.headline.unsplashLink = photo.unsplashLink;
+    }
+  }
 
   return {
     newspaper,
@@ -134,6 +178,7 @@ async function handleRequest(request, env) {
       service: 'news-generator',
       timestamp: new Date().toISOString(),
       hasApiKey: !!env.CLAUDE_API_KEY,
+      hasUnsplashKey: !!env.UNSPLASH_ACCESS_KEY,
     }, 200, request);
   }
 
@@ -150,7 +195,7 @@ async function handleRequest(request, env) {
 
     try {
       const startTime = Date.now();
-      const result = await generateNewspaper(env.CLAUDE_API_KEY, edition);
+      const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY);
       const elapsed = Date.now() - startTime;
 
       return jsonResponse({

@@ -111,6 +111,20 @@
   - 朝刊/夕刊切り替えでAPI再取得に対応
   - 動的レンダリング対象: 日付、号数、ティッカー、一面記事、カテゴリ記事5本、天声生成コラム、注目記事5本
 
+- [x] **ニュース写真連携（Unsplash API）**
+  - Claude生成プロンプトに `imageKeyword`（英語写真検索キーワード）フィールドを追加
+  - news-generator WorkerでUnsplash Search API呼び出し（headline.imageKeyword → 写真URL取得）
+  - フロントエンドのLIVE GENERATIVEセクションを「ニュース写真 + ジェネラティブオーバーレイ」に変更
+    - ベース: Unsplashのニュース写真を全幅表示
+    - オーバーレイ1: 半透明暗グラデーション（テキスト可読性確保）
+    - オーバーレイ2: Canvas（パーティクル + スキャンライン）を `mix-blend-mode: screen` で重ねる
+  - 写真なし時のフォールバック: 従来のジェネラティブアートをそのまま表示
+  - Unsplash利用規約準拠のクレジット表示（写真右下に「Photo by {name} on Unsplash」）
+  - CORS設定: `https://paul13131313.github.io` + localhost限定
+  - フロントエンドfetchタイムアウト: 45秒、セーフティタイムアウト: 50秒
+  - Unsplash無料枠: 50リクエスト/時間（Demo）
+  - 環境変数: `UNSPLASH_ACCESS_KEY`（Cloudflare Workers Secrets）
+
 ### 進行中
 - [ ] Phase 3: Cronスケジューラ＆キャッシュ ← 次のステップ
 
@@ -138,6 +152,8 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: ニュース写真連携 — Unsplash APIで一面記事写真を取得、LIVE GENERATIVEセクションを写真+ジェネラティブオーバーレイに変更、クレジット表示対応
+- 2026-02-12: バグ修正 — 変数now重複宣言SyntaxError修正、fetchタイムアウト追加、セーフティタイムアウト追加、CORS制限
 - 2026-02-11: UI改善 — ヒーローキャンバスをキーワード連動ジェネラティブアートに変更、号数自動採番、一面記事本文200-300字に増量、ステータスバーをフッター付近に移動
 - 2026-02-11: Phase 2 Step 3 完了 — フロントエンド連携（リアルニュースで紙面動的生成）
 - 2026-02-11: Phase 2 Step 2 完了 — news-generator Worker デプロイ（Claude Haiku 4.5で紙面生成、約1.8円/回）
