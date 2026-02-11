@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>生成新聞 — 第〇〇七号</title>
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="生成新聞">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;600;700;800&family=Shippori+Mincho+B1:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111;
+    --paper: #f3ede2;
+    --paper-mid: #e9e1d3;
+    --accent: #b82010;
+    --rule: #222;
+    --rule-light: #c4b9a8;
+    --caption: #6b6358;
+    --font-mincho: 'Shippori Mincho B1', 'Shippori Mincho', 'Noto Serif JP', serif;
+    --font-gothic: 'Noto Sans JP', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-mincho);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ===== GENERATION OVERLAY ===== */
+  .gen-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1s ease;
+  }
+  .gen-overlay.done { opacity: 0; pointer-events: none; }
+
+  .gen-overlay .gen-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--paper);
+    letter-spacing: 0.5em;
+    margin-right: -0.5em;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.3s forwards;
+  }
+
+  .gen-overlay .gen-steps {
+    list-style: none;
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    color: rgba(243,237,226,0.3);
+    letter-spacing: 0.12em;
+    line-height: 2.4;
+    text-align: left;
+    width: 260px;
+  }
+
+  .gen-steps li {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.5s ease;
+  }
+  .gen-steps li.active {
+    opacity: 1;
+    color: rgba(243,237,226,0.9);
+    transform: translateY(0);
+  }
+  .gen-steps li.done-step {
+    opacity: 1;
+    color: rgba(243,237,226,0.35);
+    transform: translateY(0);
+  }
+  .gen-steps li::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+    background: rgba(243,237,226,0.15);
+    transition: background 0.4s;
+  }
+  .gen-steps li.active::before {
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(184,32,16,0.5);
+  }
+  .gen-steps li.done-step::before { background: rgba(243,237,226,0.3); }
+
+  @keyframes fadeUp { to { opacity: 1; } }
+
+  /* ===== GEN CONTENT ANIM ===== */
+  .gen-animate {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(3px);
+    transition: opacity 0.7s ease, transform 0.7s ease, filter 0.7s ease;
+  }
+  .gen-animate.gen-visible {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  .typing-cursor::after {
+    content: '｜';
+    color: var(--accent);
+    animation: blink 0.7s step-end infinite;
+    font-weight: 400;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ===== MASTHEAD ===== */
+  .masthead {
+    padding: 16px 16px 0;
+    border-bottom: 3px solid var(--rule);
+  }
+
+  .masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-light);
+    margin-bottom: 8px;
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--caption);
+  }
+
+  /* Edition toggle */
+  .edition-toggle {
+    display: flex;
+    gap: 0;
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .edition-btn {
+    padding: 3px 12px;
+    border: 1px solid var(--rule);
+    background: none;
+    color: var(--caption);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    transition: all 0.3s;
+  }
+
+  .edition-btn:first-child { border-right: none; }
+
+  .edition-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .masthead-center {
+    text-align: center;
+    padding: 10px 0 8px;
+  }
+
+  .masthead-center h1 {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 42px;
+    letter-spacing: 0.3em;
+    margin-right: -0.3em;
+    line-height: 1;
+  }
+
+  .masthead-en {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.45em;
+    color: var(--caption);
+    margin-top: 5px;
+  }
+
+  .masthead-rule {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--rule-light);
+  }
+  .masthead-rule::before, .masthead-rule::after {
+    content: ''; flex: 1; height: 0; border-top: 1px solid var(--rule-light);
+  }
+
+  .issue-badge {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+    padding: 2px 10px;
+    border: 1px solid var(--rule);
+  }
+
+  .masthead-nav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+    font-family: var(--font-mincho);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--caption);
+  }
+  .masthead-nav span.active {
+    color: var(--ink);
+    font-weight: 700;
+    position: relative;
+  }
+  .masthead-nav span.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ===== TICKER ===== */
+  .ticker {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 0;
+    overflow: hidden;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 48px;
+    animation: scroll 30s linear infinite;
+    white-space: nowrap;
+    font-family: var(--font-gothic);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .ticker-track .up { color: #5cc779; }
+  .ticker-track .dn { color: #e05040; }
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ===== CONTENT ===== */
+  .content { padding: 0 16px; }
+
+  /* ===== TOP ARTICLE ===== */
+  .top-article {
+    padding: 20px 0 18px;
+    border-bottom: 2px solid var(--rule);
+  }
+
+  .kicker {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+
+  .top-headline {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    min-height: 2.7em;
+  }
+
+  .top-sub {
+    font-family: var(--font-mincho);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #3a3a3a;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+    min-height: 1.5em;
+  }
+
+  /* ===== MEDIA ===== */
+  .media-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--ink);
+    margin-bottom: 6px;
+    overflow: hidden;
+    border: 1px solid #333;
+  }
+  .media-frame canvas { width: 100%; height: 100%; display: block; }
+  .media-label {
+    position: absolute;
+    top: 0; left: 0;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 10px;
+    letter-spacing: 0.12em;
+  }
+  .media-cap {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    color: var(--caption);
+    line-height: 1.7;
+    margin-bottom: 14px;
+    padding-left: 10px;
+    border-left: 2px solid var(--accent);
+  }
+
+  /* ===== BODY TEXT ===== */
+  .body-text {
+    column-count: 2;
+    column-gap: 14px;
+    column-rule: 1px solid var(--rule-light);
+    font-size: 15px;
+    line-height: 1.9;
+    letter-spacing: -0.01em;
+    text-align: justify;
+  }
+  .body-text p { margin-bottom: 0.6em; text-indent: 1em; }
+  .body-text p:first-child { text-indent: 0; }
+  .body-text .dropcap::first-letter {
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.8;
+    margin: 4px 6px 0 0;
+    font-weight: 800;
+  }
+
+  /* ===== SECTION RULE ===== */
+  .sec-rule {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 0 14px;
+  }
+  .sec-rule::before, .sec-rule::after {
+    content: ''; flex: 1; height: 1px; background: var(--rule);
+  }
+  .sec-rule span {
+    font-family: var(--font-mincho);
+    font-size: 14px; font-weight: 700; letter-spacing: 0.2em;
+  }
+
+  /* ===== DUO STORIES ===== */
+  .duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 16px;
+  }
+  .duo-item { padding: 0 12px; }
+  .duo-item:first-child { padding-left: 0; border-right: 1px solid var(--rule-light); }
+  .duo-item:last-child { padding-right: 0; }
+  .duo-tag {
+    font-family: var(--font-gothic);
+    font-size: 10px; font-weight: 700;
+    color: var(--accent); letter-spacing: 0.1em; margin-bottom: 5px;
+  }
+  .duo-item h3 {
+    font-family: var(--font-mincho);
+    font-weight: 700; font-size: 18px;
+    line-height: 1.4; letter-spacing: -0.02em; margin-bottom: 8px;
+  }
+  .duo-item p {
+    font-size: 13px; line-height: 1.8; color: #3a3a3a; letter-spacing: -0.01em;
+  }
+
+  /* ===== STATS ===== */
+  .stats {
+    display: flex;
+    border-bottom: 2px solid var(--rule);
+    padding: 16px 0;
+  }
+  .stat { flex: 1; text-align: center; }
+  .stat:not(:last-child) { border-right: 1px solid var(--rule-light); }
+  .stat-num {
+    font-family: var(--font-gothic);
+    font-size: 32px; font-weight: 900;
+    letter-spacing: -0.02em; line-height: 1;
+  }
+  .stat-lbl {
+    font-family: var(--font-gothic);
+    font-size: 11px; color: var(--caption); margin-top: 4px;
+  }
+  .stat-chg {
+    font-family: var(--font-gothic);
+    font-size: 11px; font-weight: 700; margin-top: 3px;
+  }
+  .stat-chg.up { color: #2a8a4a; }
+  .stat-chg.dn { color: var(--accent); }
+
+  /* ===== DATA VIZ ===== */
+  .data-block {
+    padding: 18px 0;
+    border-bottom: 2px solid var(--rule);
+  }
+  .data-block h3 {
+    font-family: var(--font-mincho);
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em; margin-bottom: 3px;
+  }
+  .data-block .data-sub {
+    font-family: var(--font-gothic);
+    font-size: 12px; color: var(--caption); margin-bottom: 14px;
+  }
+  .chart-wrap {
+    width: 100%; height: 260px;
+    position: relative; margin-bottom: 6px;
+  }
+  .chart-wrap canvas { width: 100%; height: 100%; display: block; }
+
+  /* Chart tooltip */
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 6px 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .chart-tooltip.show { opacity: 1; }
+  .chart-tooltip .tt-year {
+    font-weight: 700; margin-bottom: 3px; font-size: 12px;
+  }
+  .chart-tooltip .tt-row {
+    display: flex; align-items: center; gap: 6px; line-height: 1.6;
+  }
+  .chart-tooltip .tt-dot {
+    width: 6px; height: 6px; display: inline-block; flex-shrink: 0;
+  }
+
+  .legend {
+    display: flex; gap: 18px;
+    font-family: var(--font-gothic);
+    font-size: 11px; color: var(--caption); margin-bottom: 14px;
+  }
+  .legend i {
+    display: inline-block; width: 10px; height: 10px;
+    margin-right: 5px; vertical-align: middle; font-style: normal;
+  }
+  .data-text {
+    font-size: 14px; line-height: 1.85;
+    color: #3a3a3a; letter-spacing: -0.01em;
+  }
+
+  /* ===== GEN ART ===== */
+  .gen-art {
+    position: relative; width: 100%; height: 160px;
+    background: var(--ink); margin: 18px 0; overflow: hidden;
+    border-top: 1px solid #333; border-bottom: 1px solid #333;
+  }
+  .gen-art canvas { width: 100%; height: 100%; }
+  .gen-art-tag {
+    position: absolute; bottom: 6px; left: 8px;
+    font-family: var(--font-gothic);
+    font-size: 8px; color: rgba(255,255,255,0.35); letter-spacing: 0.18em;
+  }
+
+  /* ===== COLUMN (天声生成) ===== */
+  .column-block {
+    padding: 20px 0;
+    border-bottom: 2px solid var(--rule);
+  }
+  .column-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .column-stamp {
+    font-family: var(--font-mincho);
+    font-weight: 800; font-size: 20px; letter-spacing: 0.08em;
+  }
+  .column-stamp-sub {
+    font-family: var(--font-gothic);
+    font-size: 10px; color: var(--caption); letter-spacing: 0.06em;
+  }
+  .column-body {
+    font-family: var(--font-mincho);
+    font-size: 15px; line-height: 2;
+    letter-spacing: -0.01em; text-align: justify;
+    position: relative;
+  }
+  .column-body::before {
+    content: '';
+    position: absolute; left: -16px; top: 0; bottom: 0;
+    width: 3px; background: var(--accent);
+  }
+  .column-body p { text-indent: 1em; margin-bottom: 0.4em; }
+
+  /* ===== SMALL STORIES ===== */
+  .stories-list { padding: 12px 0 8px; }
+  .s-item {
+    display: flex; gap: 12px; padding: 14px 0;
+    border-bottom: 1px solid var(--rule-light); align-items: flex-start;
+  }
+  .s-item:last-child { border-bottom: none; }
+  .s-num {
+    font-family: var(--font-gothic);
+    font-size: 30px; font-weight: 900;
+    color: var(--rule-light); line-height: 1; min-width: 36px;
+  }
+  .s-item h4 {
+    font-family: var(--font-mincho);
+    font-weight: 700; font-size: 16px;
+    line-height: 1.45; letter-spacing: -0.02em; margin-bottom: 4px;
+  }
+  .s-item p {
+    font-size: 13px; color: var(--caption); line-height: 1.6;
+    font-family: var(--font-gothic);
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    padding: 24px 16px;
+    text-align: center;
+    border-top: 3px solid var(--rule);
+    margin-top: 16px;
+  }
+  footer .f-logo {
+    font-family: var(--font-mincho);
+    font-weight: 800; font-size: 18px;
+    letter-spacing: 0.3em; margin-right: -0.3em;
+  }
+  footer .f-tagline {
+    font-family: var(--font-mincho);
+    font-size: 14px; color: var(--caption);
+    margin-top: 6px; letter-spacing: 0.06em;
+  }
+  footer .f-edition-info {
+    font-family: var(--font-gothic);
+    font-size: 11px; color: var(--caption);
+    margin-top: 10px; letter-spacing: 0.04em;
+    line-height: 1.8;
+  }
+  footer .f-stamp {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 14px; padding: 5px 14px;
+    border: 1px solid var(--rule-light);
+    font-family: var(--font-gothic);
+    font-size: 10px; color: var(--caption); letter-spacing: 0.12em;
+  }
+  footer .f-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+</style>
+</head>
+<body>
+
+<!-- GENERATION OVERLAY -->
+<div class="gen-overlay" id="genOverlay">
+  <div class="gen-title">生成新聞</div>
+  <ul class="gen-steps" id="genSteps">
+    <li>関心領域を分析中…</li>
+    <li>ニュースソースを収集中…</li>
+    <li>記事を構成中…</li>
+    <li>紙面レイアウトを生成中…</li>
+    <li>データを可視化中…</li>
+    <li id="genDeliverStep">朝刊を配達中…</li>
+  </ul>
+</div>
+
+<!-- MASTHEAD -->
+<header class="masthead gen-animate">
+  <div class="masthead-top">
+    <span>令和七年 二月十二日（水曜日）</span>
+    <div class="edition-toggle">
+      <button class="edition-btn active" id="btnMorning" onclick="switchEdition('morning')">朝刊</button>
+      <button class="edition-btn" id="btnEvening" onclick="switchEdition('evening')">夕刊</button>
+    </div>
+  </div>
+  <div class="masthead-center">
+    <h1>生成新聞</h1>
+    <div class="masthead-en">GENERATED DAILY NEWS</div>
+  </div>
+  <div class="masthead-rule">
+    <span class="issue-badge">第〇〇七号</span>
+  </div>
+  <nav class="masthead-nav">
+    <span class="active">総合</span>
+    <span>テクノロジー</span>
+    <span>国際</span>
+    <span>経済</span>
+    <span>文化</span>
+  </nav>
+</header>
+
+<!-- TICKER -->
+<div class="ticker gen-animate">
+  <div class="ticker-track" id="ticker">
+    <span>日経平均 38,942.18 <span class="up">▲312.40 (+0.81%)</span></span>
+    <span>TOPIX 2,748.52 <span class="up">▲18.90</span></span>
+    <span>ドル円 152.34 <span class="dn">▼0.42</span></span>
+    <span>ユーロ円 164.12 <span class="up">▲0.18</span></span>
+    <span>NYダウ 44,128.56 <span class="up">▲186.22</span></span>
+    <span>S&P500 6,012.44 <span class="up">▲22.40</span></span>
+    <span>NASDAQ 19,478.20 <span class="dn">▼31.88</span></span>
+    <span>BTC $97,420 <span class="up">▲2.8%</span></span>
+    <span>金 $2,890 <span class="up">▲0.1%</span></span>
+    <span>日経平均 38,942.18 <span class="up">▲312.40 (+0.81%)</span></span>
+    <span>TOPIX 2,748.52 <span class="up">▲18.90</span></span>
+    <span>ドル円 152.34 <span class="dn">▼0.42</span></span>
+    <span>ユーロ円 164.12 <span class="up">▲0.18</span></span>
+    <span>NYダウ 44,128.56 <span class="up">▲186.22</span></span>
+    <span>S&P500 6,012.44 <span class="up">▲22.40</span></span>
+    <span>NASDAQ 19,478.20 <span class="dn">▼31.88</span></span>
+    <span>BTC $97,420 <span class="up">▲2.8%</span></span>
+    <span>金 $2,890 <span class="up">▲0.1%</span></span>
+  </div>
+</div>
+
+<main class="content">
+
+  <!-- TOP ARTICLE -->
+  <article class="top-article gen-animate">
+    <div class="kicker">一面</div>
+    <h2 class="top-headline" id="topHeadline"></h2>
+    <p class="top-sub" id="topSub"></p>
+
+    <div class="media-frame">
+      <canvas id="heroCanvas"></canvas>
+      <div class="media-label">LIVE GENERATIVE</div>
+    </div>
+    <p class="media-cap">情報伝達の歴史的変遷を時系列に可視化。活版印刷からAI生成へ——各時代の速度とパーソナライゼーション度合いをリアルタイム描画。</p>
+
+    <div class="body-text">
+      <p class="dropcap">二〇二五年、ニュースの届き方が再び大きな転換点を迎えている。かつて新聞配達員が毎朝届けた朝刊のように、いまAIが個人の関心に沿った紙面を生成し、毎朝届ける時代が始まった。紙の時代に培われた「紙面を組む」という行為が、アルゴリズムと大規模言語モデルの手に委ねられつつある。</p>
+      <p>従来のアルゴリズム推薦とは根本的に異なる点がある。記事そのものが読者のために再構成されるのだ。同じ出来事でも、技術者にはアーキテクチャの詳細が、経営者には市場へのインパクトが、学生には歴史的文脈が語られる。ニュースが「選ばれる」のではなく「生まれる」。</p>
+      <p>一方で、生成されたニュースのみに依存することへの懸念も根強い。フィルターバブルの深化、事実検証の困難さ、情報の均質化。生成新聞はこの問題に対し「偶然の出会い」という概念を紙面設計の中核に据えた。関心の外にあるニュースとの邂逅を、意図的に設計する試みである。</p>
+    </div>
+  </article>
+
+  <!-- STATS -->
+  <div class="stats gen-animate">
+    <div class="stat">
+      <div class="stat-num" data-to="1847" data-suf="">0</div>
+      <div class="stat-lbl">本日の生成記事数</div>
+      <div class="stat-chg up">▲ 12%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-to="342" data-suf="K">0</div>
+      <div class="stat-lbl">読者数</div>
+      <div class="stat-chg up">▲ 8.3%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-to="94" data-suf="%">0</div>
+      <div class="stat-lbl">関連度スコア</div>
+      <div class="stat-chg up">▲ 2.1pt</div>
+    </div>
+  </div>
+
+  <!-- TECH -->
+  <div class="sec-rule gen-animate"><span>テクノロジー</span></div>
+
+  <div class="duo gen-animate">
+    <div class="duo-item">
+      <div class="duo-tag">人工知能</div>
+      <h3>マルチモーダルAI、コード生成精度が人間を凌駕</h3>
+      <p>最新のベンチマークで大規模言語モデルがソフトウェア工学の複合タスクにおいて人間の成績を初めて上回った。特にデバッグとリファクタリング領域の飛躍が著しく、現場への導入が加速している。</p>
+    </div>
+    <div class="duo-item">
+      <div class="duo-tag">量子計算</div>
+      <h3>量子コンピュータ、実用化の臨界点に到達か</h3>
+      <p>日米欧の研究機関が同時に、エラー耐性を持つ論理量子ビットの安定動作に成功と発表。商用化に向けた最大の障壁が崩れつつあるとの見方が業界に広がっている。</p>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="data-block gen-animate">
+    <h3>世界のAI関連投資額の推移</h3>
+    <p class="data-sub">単位：十億ドル ｜ 各国政府発表・民間調査機関推計値の統合</p>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="barChart"></canvas>
+      <div class="chart-tooltip" id="chartTip">
+        <div class="tt-year"></div>
+        <div class="tt-row"><span class="tt-dot" style="background:#b82010"></span><span class="tt-val-a"></span></div>
+        <div class="tt-row"><span class="tt-dot" style="background:#111"></span><span class="tt-val-b"></span></div>
+        <div class="tt-row"><span class="tt-dot" style="background:#c4b9a8"></span><span class="tt-val-c"></span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i style="background:#b82010"></i>北米</span>
+      <span><i style="background:#111"></i>アジア太平洋</span>
+      <span><i style="background:#c4b9a8"></i>欧州</span>
+    </div>
+    <p class="data-text">北米が引き続き世界を牽引するが、アジア太平洋地域の前年比成長率は最も高い。日本は国家戦略として半導体とAIの一体推進を掲げ投資額を倍増。欧州はAI規制法の施行後、一時的に投資が減速したものの、規制適合型AIへの需要が新市場を生みつつある。</p>
+  </div>
+
+  <!-- GEN ART -->
+  <div class="gen-art gen-animate">
+    <canvas id="genArt"></canvas>
+    <div class="gen-art-tag">INFORMATION FLOW — REAL-TIME GENERATIVE VISUALIZATION</div>
+  </div>
+
+  <!-- 天声生成 -->
+  <div class="column-block gen-animate">
+    <div class="column-head">
+      <div>
+        <div class="column-stamp">天声生成</div>
+        <div class="column-stamp-sub">TENSEI GENERATED — AI朝刊コラム</div>
+      </div>
+    </div>
+    <div class="column-body">
+      <p>朝、目が覚めて最初にすることが「画面を見る」になったのは、いつからだろう。かつてそれは新聞を広げることだった。インクの匂い、紙の擦れる音。あの所作には、一日を始める儀式としての重みがあった。</p>
+      <p>新聞が衰退したのは、情報が遅いからではない。私たちが「待つ」ことをやめたからだ。ニュースは流れてくるものになり、見出しをスワイプで消費するものになった。記事を読むのではなく、見出しを読む。理解するのではなく、知った気になる。</p>
+      <p>生成新聞という矛盾した名前のメディアが目指すのは、おそらくその逆である。最新の技術を使って、最も古い体験を取り戻す。あなたのために組まれた紙面を、朝、一枚ずつめくるように読む。急がなくていい。この紙面は、あなたが読み終わるまで、どこにも行かない。</p>
+      <p>テクノロジーの最良の使い方は、失われた時間を取り戻すことかもしれない。少なくとも今朝、この紙面を開いたあなたは、ほんの少しだけ、新聞を広げていた頃の朝に近い場所にいる。</p>
+    </div>
+  </div>
+
+  <!-- TOPICS -->
+  <div class="sec-rule gen-animate"><span>注目の記事</span></div>
+
+  <div class="stories-list gen-animate">
+    <div class="s-item">
+      <div class="s-num">01</div>
+      <div>
+        <h4>東京都、来年度予算にAIリテラシー教育を大幅拡充へ</h4>
+        <p>全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。</p>
+      </div>
+    </div>
+    <div class="s-item">
+      <div class="s-num">02</div>
+      <div>
+        <h4>SpaceX、民間初の火星往還ミッション日程を正式発表</h4>
+        <p>二〇二七年打ち上げ予定。乗組員六名の選考が来月より開始される。</p>
+      </div>
+    </div>
+    <div class="s-item">
+      <div class="s-num">03</div>
+      <div>
+        <h4>日経平均、四万円台を視野——半導体関連銘柄が牽引</h4>
+        <p>国内メーカーの設備投資拡大が市場の楽観ムードを後押し。</p>
+      </div>
+    </div>
+    <div class="s-item">
+      <div class="s-num">04</div>
+      <div>
+        <h4>新たな音楽生成AIが作曲家との「共創モデル」を提示</h4>
+        <p>人間の創造性を補完するAI活用の新しい標準形として注目を集める。</p>
+      </div>
+    </div>
+    <div class="s-item">
+      <div class="s-num">05</div>
+      <div>
+        <h4>世界の平均気温、観測史上最高を三年連続で更新</h4>
+        <p>COP30を控え、各国が排出削減目標の上方修正を迫られる状況に。</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="f-logo">生成新聞</div>
+  <div class="f-tagline">あなたの関心から、生まれる新聞。</div>
+  <div class="f-edition-info">朝刊 06:00 ／ 夕刊 17:00</div>
+  <div class="f-stamp">
+    <span class="f-dot"></span>
+    <span id="genTimeStamp">GENERATED AT 06:00 JST</span>
+  </div>
+</footer>
+
+<script>
+// ===== EDITION SWITCH =====
+function switchEdition(ed) {
+  const mBtn = document.getElementById('btnMorning');
+  const eBtn = document.getElementById('btnEvening');
+  const stamp = document.getElementById('genTimeStamp');
+
+  if (ed === 'morning') {
+    mBtn.classList.add('active'); eBtn.classList.remove('active');
+    stamp.textContent = 'GENERATED AT 06:00 JST';
+  } else {
+    eBtn.classList.add('active'); mBtn.classList.remove('active');
+    stamp.textContent = 'GENERATED AT 17:00 JST';
+  }
+
+  // Mini re-generation flash
+  document.querySelectorAll('.gen-animate').forEach(el => {
+    el.classList.remove('gen-visible');
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.gen-animate').forEach((el, i) => {
+      setTimeout(() => el.classList.add('gen-visible'), i * 80);
+    });
+  }, 150);
+}
+
+// ===== GENERATION SEQUENCE =====
+(function() {
+  const overlay = document.getElementById('genOverlay');
+  const steps = document.querySelectorAll('#genSteps li');
+  const animEls = document.querySelectorAll('.gen-animate');
+  let step = 0;
+
+  function nextStep() {
+    if (step > 0) { steps[step-1].classList.remove('active'); steps[step-1].classList.add('done-step'); }
+    if (step < steps.length) {
+      steps[step].classList.add('active');
+      step++;
+      setTimeout(nextStep, 500 + Math.random() * 400);
+    } else {
+      setTimeout(() => { overlay.classList.add('done'); revealContent(); }, 600);
+    }
+  }
+
+  function revealContent() {
+    let d = 0;
+    animEls.forEach(el => { setTimeout(() => el.classList.add('gen-visible'), d); d += 180; });
+    setTimeout(typeHeadline, 400);
+    setTimeout(typeSub, 2200);
+  }
+
+  setTimeout(nextStep, 600);
+})();
+
+// ===== TYPEWRITER =====
+const headlineText = '生成AIが変える報道の未来——「読む」から「生成される」時代へ';
+const subText = 'パーソナライズされたニュース体験が、情報との向き合い方を根本から問い直す';
+
+function typeHeadline() {
+  const el = document.getElementById('topHeadline');
+  el.classList.add('typing-cursor');
+  let i = 0;
+  const t = setInterval(() => {
+    el.textContent = headlineText.slice(0, ++i);
+    if (i >= headlineText.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
+  }, 45);
+}
+function typeSub() {
+  const el = document.getElementById('topSub');
+  el.classList.add('typing-cursor');
+  let i = 0;
+  const t = setInterval(() => {
+    el.textContent = subText.slice(0, ++i);
+    if (i >= subText.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
+  }, 35);
+}
+
+// ===== COUNTER =====
+const statObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target, to = +el.dataset.to, suf = el.dataset.suf || '';
+    let cur = 0; const inc = to / 50;
+    const t = setInterval(() => {
+      cur += inc; if (cur >= to) { cur = to; clearInterval(t); }
+      el.textContent = Math.floor(cur).toLocaleString() + suf;
+    }, 30);
+    statObs.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-num').forEach(el => statObs.observe(el));
+
+// ===== HERO CANVAS =====
+(function() {
+  const c = document.getElementById('heroCanvas'), ctx = c.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    const r = c.parentElement.getBoundingClientRect();
+    c.width = r.width * 2; c.height = r.height * 2;
+    W = c.width; H = c.height;
+  }
+
+  class P {
+    constructor() { this.reset(true); }
+    reset(init) {
+      this.x = Math.random() * W;
+      this.y = init ? Math.random() * H : H + 10;
+      this.s = 0.4 + Math.random() * 1.8;
+      this.r = 1 + Math.random() * 2;
+      this.o = 0.08 + Math.random() * 0.5;
+      this.red = Math.random() < 0.12;
+    }
+    update() { this.y -= this.s; this.x += Math.sin(this.y * 0.006) * 0.6; if (this.y < -10) this.reset(false); }
+    draw() {
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.red ? `rgba(184,32,16,${this.o})` : `rgba(243,237,226,${this.o*0.4})`;
+      ctx.fill();
+    }
+  }
+
+  const eras = ['活版印刷','放送','WEB','SNS','生成'];
+  const years = ['1600','1920','1995','2006','2025'];
+
+  function drawTimeline(t) {
+    const y = H*0.48, sx = W*0.1, ex = W*0.9, step = (ex-sx)/(eras.length-1);
+    ctx.strokeStyle='rgba(243,237,226,0.1)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(sx,y); ctx.lineTo(ex,y); ctx.stroke();
+
+    eras.forEach((e,i) => {
+      const x = sx+step*i, p = Math.sin(t*0.002+i)*0.3+0.7, last = i===eras.length-1;
+      ctx.beginPath(); ctx.arc(x,y,last?8:4,0,Math.PI*2);
+      ctx.fillStyle = last ? `rgba(184,32,16,${p})` : `rgba(243,237,226,${0.25+p*0.15})`;
+      ctx.fill();
+      if (last) { ctx.beginPath(); ctx.arc(x,y,16*p,0,Math.PI*2); ctx.strokeStyle=`rgba(184,32,16,${0.25*p})`; ctx.lineWidth=1; ctx.stroke(); }
+      ctx.font=`${last?'800 ':'500 '}${last?22:16}px "Noto Sans JP",sans-serif`;
+      ctx.fillStyle=last?`rgba(184,32,16,${p})`:`rgba(243,237,226,${0.35+p*0.15})`;
+      ctx.textAlign='center'; ctx.fillText(e,x,y-24);
+      ctx.font='12px "Noto Sans JP",sans-serif'; ctx.fillStyle='rgba(243,237,226,0.2)'; ctx.fillText(years[i],x,y+30);
+    });
+  }
+
+  function init() { resize(); for (let i=0;i<70;i++) particles.push(new P()); }
+  function loop(t) {
+    ctx.fillStyle='rgba(17,17,17,0.1)'; ctx.fillRect(0,0,W,H);
+    particles.forEach(p=>{p.update();p.draw();}); drawTimeline(t);
+    requestAnimationFrame(loop);
+  }
+  init(); window.addEventListener('resize', resize); requestAnimationFrame(loop);
+})();
+
+// ===== BAR CHART WITH INTERACTIVE TOOLTIPS =====
+(function() {
+  const c = document.getElementById('barChart'), ctx = c.getContext('2d');
+  const wrap = document.getElementById('chartWrap');
+  const tip = document.getElementById('chartTip');
+  let CW, CH;
+
+  function resize() {
+    const r = c.parentElement.getBoundingClientRect();
+    c.width = r.width * 2; c.height = r.height * 2;
+    CW = c.width; CH = c.height;
+  }
+  resize();
+
+  const data = [
+    { y:'2020', a:48, b:28, c:18 },
+    { y:'2021', a:56, b:35, c:21 },
+    { y:'2022', a:72, b:48, c:26 },
+    { y:'2023', a:98, b:68, c:32 },
+    { y:'2024', a:132, b:96, c:42 },
+    { y:'2025', a:178, b:134, c:58 },
+  ];
+  const max = 190;
+  let prog = 0, started = false;
+  let hoveredGroup = -1;
+  let barRects = []; // store {x,y,w,h,group} for hover detection
+
+  const obs = new IntersectionObserver(e => {
+    if (e[0].isIntersecting && !started) { started = true; anim(); }
+  }, { threshold: 0.3 });
+  obs.observe(c);
+
+  const pL=60, pR=30, pT=25, pB=55;
+
+  function draw(p) {
+    ctx.clearRect(0,0,CW,CH);
+    barRects = [];
+    const cW=CW-pL-pR, cH=CH-pT-pB;
+    const gW=cW/data.length, bW=gW*0.22;
+
+    // grid
+    for (let i=0;i<=4;i++) {
+      const yy=pT+(cH/4)*i;
+      ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(pL,yy); ctx.lineTo(CW-pR,yy); ctx.stroke();
+      ctx.font='20px "Noto Sans JP",sans-serif'; ctx.fillStyle='#c4b9a8'; ctx.textAlign='right';
+      ctx.fillText(Math.round(max-(max/4)*i), pL-10, yy+6);
+    }
+
+    const ease = Math.min(p, 1);
+
+    data.forEach((d,i) => {
+      const gx=pL+gW*i+gW*0.12;
+      const isHovered = hoveredGroup === i;
+      const alpha = (hoveredGroup >= 0 && !isHovered) ? 0.35 : 1;
+
+      const hA=(d.a/max)*cH*ease;
+      const hB=(d.b/max)*cH*ease;
+      const hC=(d.c/max)*cH*ease;
+
+      // Bars with hover emphasis
+      ctx.globalAlpha = alpha;
+
+      // NA
+      ctx.fillStyle='#b82010';
+      const bx1 = gx, by1 = pT+cH-hA;
+      ctx.fillRect(bx1, by1, bW, hA);
+      barRects.push({x:bx1,y:by1,w:bW,h:hA,group:i});
+
+      // Animated value labels on hover
+      if (isHovered && ease >= 1) {
+        ctx.font='bold 16px "Noto Sans JP",sans-serif'; ctx.fillStyle='#b82010';
+        ctx.textAlign='center'; ctx.fillText(d.a, bx1+bW/2, by1-6);
+      }
+
+      // AP
+      ctx.fillStyle='#111';
+      const bx2 = gx+bW+4, by2 = pT+cH-hB;
+      ctx.fillRect(bx2, by2, bW, hB);
+      barRects.push({x:bx2,y:by2,w:bW,h:hB,group:i});
+
+      if (isHovered && ease >= 1) {
+        ctx.font='bold 16px "Noto Sans JP",sans-serif'; ctx.fillStyle='#111';
+        ctx.textAlign='center'; ctx.fillText(d.b, bx2+bW/2, by2-6);
+      }
+
+      // EU
+      ctx.fillStyle='#c4b9a8';
+      const bx3 = gx+(bW+4)*2, by3 = pT+cH-hC;
+      ctx.fillRect(bx3, by3, bW, hC);
+      barRects.push({x:bx3,y:by3,w:bW,h:hC,group:i});
+
+      if (isHovered && ease >= 1) {
+        ctx.font='bold 16px "Noto Sans JP",sans-serif'; ctx.fillStyle='#8a7f70';
+        ctx.textAlign='center'; ctx.fillText(d.c, bx3+bW/2, by3-6);
+      }
+
+      ctx.globalAlpha = 1;
+
+      // Highlight bar for hovered group
+      if (isHovered) {
+        ctx.strokeStyle = 'rgba(184,32,16,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(gx - 4, pT, (bW+4)*3 + 8, cH);
+      }
+
+      // Year label
+      ctx.font = `${isHovered ? 'bold ' : ''}20px "Noto Sans JP",sans-serif`;
+      ctx.fillStyle = isHovered ? var_ink : '#6b6358';
+      ctx.textAlign='center';
+      ctx.fillText(d.y, gx+bW*1.5+4, pT+cH+35);
+    });
+  }
+
+  // For year label bold color
+  const var_ink = '#111';
+
+  function anim() {
+    prog += 0.02;
+    draw(prog);
+    if (prog < 1) requestAnimationFrame(anim); else draw(1);
+  }
+
+  // Touch/mouse hover for chart interaction
+  function getGroupFromPos(clientX, clientY) {
+    const rect = c.getBoundingClientRect();
+    const scaleX = c.width / rect.width;
+    const scaleY = c.height / rect.height;
+    const cx = (clientX - rect.left) * scaleX;
+    const cy = (clientY - rect.top) * scaleY;
+
+    const cW = CW-pL-pR;
+    const gW = cW / data.length;
+
+    for (let i = 0; i < data.length; i++) {
+      const gx = pL + gW * i;
+      if (cx >= gx && cx <= gx + gW) return i;
+    }
+    return -1;
+  }
+
+  function showTooltip(group, clientX, clientY) {
+    if (group < 0 || prog < 1) { tip.classList.remove('show'); return; }
+    const d = data[group];
+    tip.querySelector('.tt-year').textContent = d.y + '年';
+    tip.querySelector('.tt-val-a').textContent = '北米 ' + d.a + 'B$';
+    tip.querySelector('.tt-val-b').textContent = 'アジア太平洋 ' + d.b + 'B$';
+    tip.querySelector('.tt-val-c').textContent = '欧州 ' + d.c + 'B$';
+
+    const wrapRect = wrap.getBoundingClientRect();
+    let tx = clientX - wrapRect.left + 12;
+    let ty = clientY - wrapRect.top - 10;
+    if (tx + 160 > wrapRect.width) tx = tx - 170;
+    if (ty < 0) ty = 10;
+    tip.style.left = tx + 'px';
+    tip.style.top = ty + 'px';
+    tip.classList.add('show');
+  }
+
+  c.addEventListener('mousemove', e => {
+    const g = getGroupFromPos(e.clientX, e.clientY);
+    if (g !== hoveredGroup) { hoveredGroup = g; if (prog >= 1) draw(1); }
+    showTooltip(g, e.clientX, e.clientY);
+  });
+
+  c.addEventListener('mouseleave', () => {
+    hoveredGroup = -1;
+    tip.classList.remove('show');
+    if (prog >= 1) draw(1);
+  });
+
+  // Touch support
+  c.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    const g = getGroupFromPos(t.clientX, t.clientY);
+    hoveredGroup = g;
+    if (prog >= 1) draw(1);
+    showTooltip(g, t.clientX, t.clientY);
+  }, { passive: true });
+
+  c.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    const g = getGroupFromPos(t.clientX, t.clientY);
+    if (g !== hoveredGroup) { hoveredGroup = g; if (prog >= 1) draw(1); }
+    showTooltip(g, t.clientX, t.clientY);
+  }, { passive: true });
+
+  c.addEventListener('touchend', () => {
+    setTimeout(() => {
+      hoveredGroup = -1; tip.classList.remove('show');
+      if (prog >= 1) draw(1);
+    }, 1500);
+  });
+})();
+
+// ===== GEN ART =====
+(function() {
+  const c = document.getElementById('genArt'), ctx = c.getContext('2d');
+  function resize() {
+    const r = c.parentElement.getBoundingClientRect();
+    c.width = r.width * 2; c.height = r.height * 2;
+  }
+  resize();
+  const W=c.width, H=c.height, cols=70, rows=18, cw=W/cols, ch=H/rows;
+
+  function loop(t) {
+    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
+    for (let x=0;x<cols;x++) for (let y=0;y<rows;y++) {
+      const n=Math.sin(x*0.12+t*0.0008)*Math.cos(y*0.18+t*0.0006);
+      const v=(n+1)/2;
+      if (v>0.55) {
+        ctx.fillStyle = v>0.82 ? `rgba(184,32,16,${(v-0.55)*1.8})` : `rgba(243,237,226,${(v-0.55)*0.35})`;
+        const s=cw*v*0.85;
+        ctx.fillRect(x*cw+(cw-s)/2, y*ch+(ch-s)/2, s, s);
+      }
+    }
+    const sy=(t*0.08)%H;
+    ctx.strokeStyle='rgba(184,32,16,0.12)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(W,sy); ctx.stroke();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+</body>
+</html>
