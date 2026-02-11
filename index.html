@@ -654,29 +654,10 @@
       <canvas id="heroCanvas"></canvas>
       <div class="media-label">LIVE GENERATIVE</div>
     </div>
-    <p class="media-cap">情報伝達の歴史的変遷を時系列に可視化。活版印刷からAI生成へ——各時代の速度とパーソナライゼーション度合いをリアルタイム描画。</p>
+    <p class="media-cap" id="mediaCap">一面記事のキーワードから生成されたジェネラティブアート。カテゴリに応じた色彩とパーティクルが紙面の主題をリアルタイムに可視化。</p>
 
     <div class="body-text" id="headlineBody"></div>
   </article>
-
-  <!-- STATS -->
-  <div class="stats gen-animate">
-    <div class="stat">
-      <div class="stat-num" data-to="1847" data-suf="">0</div>
-      <div class="stat-lbl">本日の生成記事数</div>
-      <div class="stat-chg up">▲ 12%</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" data-to="342" data-suf="K">0</div>
-      <div class="stat-lbl">読者数</div>
-      <div class="stat-chg up">▲ 8.3%</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" data-to="94" data-suf="%">0</div>
-      <div class="stat-lbl">関連度スコア</div>
-      <div class="stat-chg up">▲ 2.1pt</div>
-    </div>
-  </div>
 
   <!-- ARTICLES (generated dynamically) -->
   <div id="articlesContainer"></div>
@@ -723,6 +704,25 @@
   <div class="sec-rule gen-animate"><span>注目の記事</span></div>
 
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
+
+  <!-- STATS -->
+  <div class="stats gen-animate">
+    <div class="stat">
+      <div class="stat-num" data-to="1847" data-suf="">0</div>
+      <div class="stat-lbl">本日の生成記事数</div>
+      <div class="stat-chg up">▲ 12%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-to="342" data-suf="K">0</div>
+      <div class="stat-lbl">読者数</div>
+      <div class="stat-chg up">▲ 8.3%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-to="2" data-suf="回">0</div>
+      <div class="stat-lbl">本日の生成回数</div>
+      <div class="stat-chg up">朝刊・夕刊</div>
+    </div>
+  </div>
 
 </main>
 
@@ -783,12 +783,26 @@ const FALLBACK = {
 function renderNewspaper(data) {
   currentNewspaper = data;
 
+  // 号数を日付ベースで自動採番（2026年1月1日=第〇〇一号）
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const base = new Date('2026-01-01T00:00:00+09:00');
+  const diffDays = Math.floor((jst - base) / (1000 * 60 * 60 * 24)) + 1;
+  const issueNum = Math.max(1, diffDays);
+  const padded = String(issueNum).padStart(3, '0');
+  const kanjiMap = {'0':'〇','1':'一','2':'二','3':'三','4':'四','5':'五','6':'六','7':'七','8':'八','9':'九'};
+  const kanjiIssue = '第' + padded.split('').map(c => kanjiMap[c]).join('') + '号';
+  data.issueNumber = kanjiIssue;
+
   // Title
   document.title = `生成新聞 — ${data.issueNumber}`;
 
   // Masthead
   document.getElementById('mastheadDate').textContent = data.date;
   document.getElementById('issueNumber').textContent = data.issueNumber;
+
+  // ヒーローキャンバスのテーマ更新
+  updateHeroTheme(data);
 
   // Edition buttons
   const mBtn = document.getElementById('btnMorning');
@@ -1054,63 +1068,173 @@ const statObs = new IntersectionObserver(entries => {
 }, { threshold: 0.5 });
 document.querySelectorAll('.stat-num').forEach(el => statObs.observe(el));
 
-// ===== HERO CANVAS =====
+// ===== HERO CANVAS (Keyword-Connected Generative Art) =====
+// カテゴリ別カラーパレット
+const CATEGORY_COLORS = {
+  '政治': { primary: [184, 32, 16], secondary: [30, 40, 90] },       // 赤と紺
+  '社会': { primary: [184, 32, 16], secondary: [30, 40, 90] },       // 赤と紺
+  '経済': { primary: [34, 120, 60], secondary: [180, 155, 50] },     // 緑とゴールド
+  '株式市場': { primary: [34, 120, 60], secondary: [180, 155, 50] }, // 緑とゴールド
+  'テクノロジー': { primary: [30, 100, 200], secondary: [0, 180, 210] }, // 青とシアン
+  '人工知能': { primary: [30, 100, 200], secondary: [0, 180, 210] },     // 青とシアン
+  '国際': { primary: [140, 80, 170], secondary: [200, 120, 60] },    // 紫とオレンジ
+  '宇宙開発': { primary: [140, 80, 170], secondary: [200, 120, 60] },
+  '文化': { primary: [170, 100, 50], secondary: [200, 170, 100] },   // ブラウンとクリーム
+  'スポーツ': { primary: [200, 80, 30], secondary: [240, 180, 40] }, // オレンジとイエロー
+  '科学': { primary: [30, 100, 200], secondary: [0, 180, 210] },     // 青とシアン
+  'default': { primary: [184, 32, 16], secondary: [243, 237, 226] }   // デフォルト: 赤と紙色
+};
+
+let heroKeywords = [];
+let heroColors = CATEGORY_COLORS['default'];
+
+function updateHeroTheme(data) {
+  if (!data || !data.headline) return;
+  // カテゴリから色を決定
+  const category = data.headline.kicker || '';
+  const firstArticleCategory = (data.articles && data.articles[0]) ? data.articles[0].category : '';
+  const label = (data.articles && data.articles[0]) ? (data.articles[0].label || '') : '';
+
+  // カテゴリマッチ
+  for (const key of [label, firstArticleCategory, category]) {
+    if (key && CATEGORY_COLORS[key]) {
+      heroColors = CATEGORY_COLORS[key];
+      break;
+    }
+  }
+
+  // キーワード抽出（見出しから漢字2-6文字の単語を抽出）
+  const title = data.headline.title || '';
+  const matches = title.match(/[\u4e00-\u9fff\u3041-\u3096\u30a1-\u30f6]{2,6}/g) || [];
+  heroKeywords = matches.slice(0, 5);
+  if (heroKeywords.length === 0) heroKeywords = ['生成', '新聞', 'AI'];
+}
+
 (function() {
   const c = document.getElementById('heroCanvas'), ctx = c.getContext('2d');
-  let W, H, particles = [];
+  let W, H, particles = [], flowField = [];
+  const COLS = 40, ROWS = 25;
 
   function resize() {
     const r = c.parentElement.getBoundingClientRect();
     c.width = r.width * 2; c.height = r.height * 2;
     W = c.width; H = c.height;
+    initFlowField();
   }
 
-  class P {
+  function initFlowField() {
+    flowField = [];
+    for (let i = 0; i < COLS * ROWS; i++) flowField.push(0);
+  }
+
+  function updateFlowField(t) {
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const angle = Math.sin(x * 0.08 + t * 0.0006) * Math.cos(y * 0.1 + t * 0.0004) * Math.PI * 2
+                    + Math.sin((x + y) * 0.05 + t * 0.0003) * Math.PI;
+        flowField[y * COLS + x] = angle;
+      }
+    }
+  }
+
+  class Particle {
     constructor() { this.reset(true); }
     reset(init) {
       this.x = Math.random() * W;
-      this.y = init ? Math.random() * H : H + 10;
-      this.s = 0.4 + Math.random() * 1.8;
-      this.r = 1 + Math.random() * 2;
-      this.o = 0.08 + Math.random() * 0.5;
-      this.red = Math.random() < 0.12;
+      this.y = init ? Math.random() * H : (Math.random() < 0.5 ? -10 : H + 10);
+      this.vx = 0; this.vy = 0;
+      this.life = 200 + Math.random() * 300;
+      this.maxLife = this.life;
+      this.r = 1 + Math.random() * 2.5;
+      this.usePrimary = Math.random() < 0.6;
     }
-    update() { this.y -= this.s; this.x += Math.sin(this.y * 0.006) * 0.6; if (this.y < -10) this.reset(false); }
+    update() {
+      const col = Math.floor((this.x / W) * COLS);
+      const row = Math.floor((this.y / H) * ROWS);
+      if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+        const angle = flowField[row * COLS + col];
+        this.vx += Math.cos(angle) * 0.3;
+        this.vy += Math.sin(angle) * 0.3;
+      }
+      this.vx *= 0.96; this.vy *= 0.96;
+      this.x += this.vx; this.y += this.vy;
+      this.life--;
+      if (this.life <= 0 || this.x < -20 || this.x > W + 20 || this.y < -20 || this.y > H + 20) this.reset(false);
+    }
     draw() {
-      ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-      ctx.fillStyle = this.red ? `rgba(184,32,16,${this.o})` : `rgba(243,237,226,${this.o*0.4})`;
+      const alpha = Math.min(1, this.life / this.maxLife) * 0.6;
+      const c = this.usePrimary ? heroColors.primary : heroColors.secondary;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
       ctx.fill();
     }
   }
 
-  const eras = ['活版印刷','放送','WEB','SNS','生成'];
-  const years = ['1600','1920','1995','2006','2025'];
+  function drawKeywords(t) {
+    if (!heroKeywords.length) return;
+    ctx.save();
+    heroKeywords.forEach((kw, i) => {
+      const xBase = W * (0.15 + (i / heroKeywords.length) * 0.7);
+      const yBase = H * 0.5 + Math.sin(t * 0.001 + i * 1.2) * H * 0.12;
+      const pulse = Math.sin(t * 0.002 + i) * 0.15 + 0.85;
+      const size = 18 + i * 2;
 
-  function drawTimeline(t) {
-    const y = H*0.48, sx = W*0.1, ex = W*0.9, step = (ex-sx)/(eras.length-1);
-    ctx.strokeStyle='rgba(243,237,226,0.1)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(sx,y); ctx.lineTo(ex,y); ctx.stroke();
+      // Glow
+      const c = i % 2 === 0 ? heroColors.primary : heroColors.secondary;
+      ctx.font = `700 ${size}px "Noto Sans JP", sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.12 * pulse})`;
+      ctx.fillText(kw, xBase, yBase);
 
-    eras.forEach((e,i) => {
-      const x = sx+step*i, p = Math.sin(t*0.002+i)*0.3+0.7, last = i===eras.length-1;
-      ctx.beginPath(); ctx.arc(x,y,last?8:4,0,Math.PI*2);
-      ctx.fillStyle = last ? `rgba(184,32,16,${p})` : `rgba(243,237,226,${0.25+p*0.15})`;
-      ctx.fill();
-      if (last) { ctx.beginPath(); ctx.arc(x,y,16*p,0,Math.PI*2); ctx.strokeStyle=`rgba(184,32,16,${0.25*p})`; ctx.lineWidth=1; ctx.stroke(); }
-      ctx.font=`${last?'800 ':'500 '}${last?22:16}px "Noto Sans JP",sans-serif`;
-      ctx.fillStyle=last?`rgba(184,32,16,${p})`:`rgba(243,237,226,${0.35+p*0.15})`;
-      ctx.textAlign='center'; ctx.fillText(e,x,y-24);
-      ctx.font='12px "Noto Sans JP",sans-serif'; ctx.fillStyle='rgba(243,237,226,0.2)'; ctx.fillText(years[i],x,y+30);
+      // Main text
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.3 * pulse})`;
+      ctx.fillText(kw, xBase, yBase);
     });
+    ctx.restore();
   }
 
-  function init() { resize(); for (let i=0;i<70;i++) particles.push(new P()); }
+  function drawConnections(t) {
+    // Draw flowing lines connecting keyword regions
+    const c1 = heroColors.primary, c2 = heroColors.secondary;
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i < 6; i++) {
+      const startX = W * (0.1 + Math.sin(t * 0.0004 + i * 0.8) * 0.4 + 0.4);
+      const startY = H * (0.2 + Math.cos(t * 0.0005 + i * 1.1) * 0.3);
+      const endX = W * (0.1 + Math.cos(t * 0.0003 + i * 0.6) * 0.4 + 0.4);
+      const endY = H * (0.5 + Math.sin(t * 0.0006 + i * 0.9) * 0.3);
+      const cpX = (startX + endX) / 2 + Math.sin(t * 0.001 + i) * 60;
+      const cpY = (startY + endY) / 2 + Math.cos(t * 0.001 + i) * 60;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+      const c = i % 2 === 0 ? c1 : c2;
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.08)`;
+      ctx.stroke();
+    }
+  }
+
+  function init() {
+    resize();
+    for (let i = 0; i < 100; i++) particles.push(new Particle());
+  }
+
   function loop(t) {
-    ctx.fillStyle='rgba(17,17,17,0.1)'; ctx.fillRect(0,0,W,H);
-    particles.forEach(p=>{p.update();p.draw();}); drawTimeline(t);
+    ctx.fillStyle = 'rgba(17,17,17,0.12)';
+    ctx.fillRect(0, 0, W, H);
+
+    updateFlowField(t);
+    drawConnections(t);
+    particles.forEach(p => { p.update(); p.draw(); });
+    drawKeywords(t);
+
     requestAnimationFrame(loop);
   }
-  init(); window.addEventListener('resize', resize); requestAnimationFrame(loop);
+
+  init();
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(loop);
 })();
 
 // ===== BAR CHART WITH INTERACTIVE TOOLTIPS =====

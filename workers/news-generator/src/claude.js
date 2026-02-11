@@ -5,7 +5,7 @@
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
-const MAX_TOKENS = 2500;
+const MAX_TOKENS = 3000;
 
 /**
  * Claude APIを呼び出して紙面JSONを生成
