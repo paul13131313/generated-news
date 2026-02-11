@@ -159,6 +159,76 @@
     font-size: 10px;
   }
   .user-bar-link:hover { color: var(--accent); }
+  .user-bar-sep { margin: 0 2px; }
+
+  /* ===== PROFILE MODAL ===== */
+  .profile-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 10001;
+    align-items: center; justify-content: center;
+  }
+  .profile-overlay.show { display: flex; }
+  .profile-modal {
+    background: var(--paper); width: 100%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto; margin: 24px;
+    padding: 32px 28px; position: relative; border: 1px solid var(--rule);
+  }
+  .profile-modal-close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; font-size: 22px;
+    cursor: pointer; color: var(--caption); line-height: 1;
+  }
+  .profile-modal-close:hover { color: var(--ink); }
+  .profile-title {
+    font-family: var(--font-mincho); font-size: 20px;
+    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 6px;
+  }
+  .profile-sub {
+    font-family: var(--font-gothic); font-size: 12px;
+    color: var(--caption); margin-bottom: 24px;
+  }
+  .profile-section-label {
+    font-family: var(--font-gothic); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--caption);
+    margin-bottom: 12px; border-bottom: 1px solid var(--rule-light); padding-bottom: 6px;
+  }
+  .profile-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .profile-cat {
+    font-family: var(--font-gothic); font-size: 13px; padding: 8px 16px;
+    border: 1px solid var(--rule-light); background: transparent;
+    color: var(--ink); cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em;
+  }
+  .profile-cat:hover { border-color: var(--accent); color: var(--accent); }
+  .profile-cat.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .profile-keywords-input {
+    width: 100%; font-family: var(--font-gothic); font-size: 14px;
+    padding: 10px 14px; border: 1px solid var(--rule-light);
+    background: #fff; color: var(--ink); outline: none; margin-bottom: 8px;
+  }
+  .profile-keywords-input:focus { border-color: var(--accent); }
+  .profile-keywords-hint { font-size: 11px; color: var(--caption); margin-bottom: 16px; }
+  .profile-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
+  .profile-tag {
+    font-family: var(--font-gothic); font-size: 12px; padding: 4px 12px;
+    background: var(--paper-mid); color: var(--ink);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .profile-tag-x { cursor: pointer; font-size: 14px; color: var(--caption); line-height: 1; }
+  .profile-tag-x:hover { color: var(--accent); }
+  .profile-save {
+    width: 100%; font-family: var(--font-gothic); font-size: 14px;
+    font-weight: 700; letter-spacing: 0.1em; padding: 14px;
+    background: var(--ink); color: var(--paper); border: none;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .profile-save:hover { background: var(--accent); }
+  .profile-save:disabled { opacity: 0.7; cursor: not-allowed; }
+  .profile-msg {
+    font-family: var(--font-gothic); font-size: 12px; text-align: center;
+    margin-top: 10px; min-height: 1.5em;
+  }
+  .profile-msg.success { color: #2d5016; }
+  .profile-msg.error { color: var(--accent); }
 
   /* ===== MASTHEAD ===== */
   .masthead {
@@ -646,6 +716,26 @@
   </ul>
 </div>
 
+<!-- PROFILE MODAL -->
+<div class="profile-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
+  <div class="profile-modal">
+    <button class="profile-modal-close" onclick="closeProfile()">&times;</button>
+    <div class="profile-title">関心プロファイル</div>
+    <div class="profile-sub">あなたの関心に合わせて紙面をカスタマイズします</div>
+
+    <div class="profile-section-label">カテゴリ（複数選択可）</div>
+    <div class="profile-cats" id="profileCats"></div>
+
+    <div class="profile-section-label">キーワード（最大10個）</div>
+    <input class="profile-keywords-input" id="profileKeywordInput" placeholder="キーワードを入力してEnter" onkeydown="if(event.key==='Enter'){event.preventDefault();addKeyword()}">
+    <div class="profile-keywords-hint">例: AI、半導体、スタートアップ、宇宙開発</div>
+    <div class="profile-tags" id="profileTags"></div>
+
+    <button class="profile-save" id="profileSave" onclick="saveProfile()">保存する</button>
+    <div class="profile-msg" id="profileMsg"></div>
+  </div>
+</div>
+
 <!-- USER BAR -->
 <div class="user-bar gen-animate" id="userBar"></div>
 
@@ -762,6 +852,9 @@ function updateUserBar() {
   const email = localStorage.getItem('auth_email');
   if (email) {
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
+      '<span class="user-bar-sep">|</span>' +
+      '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
+      '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
   } else {
     bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>';
@@ -779,6 +872,116 @@ function handleLogoutIndex() {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('auth_email');
   updateUserBar();
+}
+
+// ===== PROFILE MODAL =====
+const ALL_CATEGORIES = ['総合', 'テクノロジー', '国際', '経済', '社会', '政治', 'スポーツ', 'エンタメ', '文化', '暮らし'];
+let profileCategories = [];
+let profileKeywords = [];
+
+function openProfile() {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return;
+
+  const overlay = document.getElementById('profileOverlay');
+  const msg = document.getElementById('profileMsg');
+  msg.textContent = '';
+  msg.className = 'profile-msg';
+
+  // カテゴリボタン生成
+  renderCategoryButtons();
+  renderKeywordTags();
+
+  // サーバーからプロファイル取得
+  fetch(AUTH_API + '/api/profile', {
+    headers: { 'Authorization': 'Bearer ' + token },
+  }).then(r => r.json()).then(data => {
+    if (data.profile) {
+      profileCategories = data.profile.categories || [];
+      profileKeywords = data.profile.keywords || [];
+      renderCategoryButtons();
+      renderKeywordTags();
+    }
+  }).catch(() => {});
+
+  overlay.classList.add('show');
+}
+
+function closeProfile() {
+  document.getElementById('profileOverlay').classList.remove('show');
+}
+
+function renderCategoryButtons() {
+  const container = document.getElementById('profileCats');
+  container.innerHTML = ALL_CATEGORIES.map(cat => {
+    const sel = profileCategories.includes(cat) ? ' selected' : '';
+    return '<button class="profile-cat' + sel + '" onclick="toggleCategory(\'' + cat + '\')">' + cat + '</button>';
+  }).join('');
+}
+
+function toggleCategory(cat) {
+  const idx = profileCategories.indexOf(cat);
+  if (idx >= 0) profileCategories.splice(idx, 1);
+  else profileCategories.push(cat);
+  renderCategoryButtons();
+}
+
+function renderKeywordTags() {
+  const container = document.getElementById('profileTags');
+  container.innerHTML = profileKeywords.map((kw, i) =>
+    '<span class="profile-tag">' + kw + '<span class="profile-tag-x" onclick="removeKeyword(' + i + ')">×</span></span>'
+  ).join('');
+}
+
+function addKeyword() {
+  const input = document.getElementById('profileKeywordInput');
+  const kw = input.value.trim();
+  if (!kw || profileKeywords.length >= 10 || profileKeywords.includes(kw)) return;
+  profileKeywords.push(kw);
+  input.value = '';
+  renderKeywordTags();
+}
+
+function removeKeyword(idx) {
+  profileKeywords.splice(idx, 1);
+  renderKeywordTags();
+}
+
+async function saveProfile() {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return;
+
+  const btn = document.getElementById('profileSave');
+  const msg = document.getElementById('profileMsg');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  msg.textContent = '';
+  msg.className = 'profile-msg';
+
+  try {
+    const res = await fetch(AUTH_API + '/api/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ categories: profileCategories, keywords: profileKeywords }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      msg.textContent = '保存しました';
+      msg.className = 'profile-msg success';
+      setTimeout(() => closeProfile(), 1200);
+    } else {
+      msg.textContent = data.error || '保存に失敗しました';
+      msg.className = 'profile-msg error';
+    }
+  } catch {
+    msg.textContent = '通信エラーが発生しました';
+    msg.className = 'profile-msg error';
+  }
+  btn.disabled = false;
+  btn.textContent = '保存する';
 }
 
 // セッション検証

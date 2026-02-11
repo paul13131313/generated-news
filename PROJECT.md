@@ -202,9 +202,18 @@
   - ページ読み込み時にGET /api/meでセッション有効性を検証
   - コード: `workers/auth-api/`
 
+- [x] **Phase 3 Step 4: 関心プロファイル設定**
+  - auth-api に `GET /api/profile`、`PUT /api/profile` エンドポイント追加
+  - プロファイル: categories（カテゴリ配列）、keywords（キーワード配列、最大10個）
+  - カテゴリバリデーション（10カテゴリのみ許可）
+  - GET /api/me にもプロファイル情報を含める
+  - index.html: ユーザーバーに「関心設定」リンク追加
+  - プロファイルモーダル: カテゴリ選択（トグルボタン）+ キーワード入力（Enter追加、×削除）
+  - プロファイルはUSERS KV内のユーザーデータに保存
+
 ### TODO
 - [x] Stripe DashboardでWebhookエンドポイント登録 & STRIPE_WEBHOOK_SECRET設定
-- [ ] 関心プロファイル設定UI
+- [x] 関心プロファイル設定UI
 - [ ] PWA化・プッシュ通知
 - [ ] 本番運用開始
 
@@ -224,6 +233,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 3 Step 4 完了 — 関心プロファイル設定（カテゴリ選択、キーワード登録、プロファイルモーダルUI）
 - 2026-02-12: Phase 3 Step 3 完了 — ユーザー認証実装（auth-api Worker、PBKDF2パスワードハッシュ、セッション管理、LP＋紙面のログインUI）
 - 2026-02-12: Phase 3 Step 2 完了 — Stripe Webhook実装（署名検証、購読者KV保存、ステータス確認API、購読成功トースト）
 - 2026-02-12: Phase 3 Step 1 完了 — Stripe Checkout Session実装（payment-api Worker、月額300円サブスク、lp.htmlに購読ボタン追加）

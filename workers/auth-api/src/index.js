@@ -26,7 +26,7 @@ function getCorsHeaders(request) {
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
     'Vary': 'Origin',
@@ -235,15 +235,87 @@ async function handleRequest(request, env) {
     return jsonResponse({ success: true, message: 'ログアウトしました' }, 200, request);
   }
 
-  // GET /api/me — 現在のユーザー情報
+  // GET /api/me — 現在のユーザー情報（プロファイル含む）
   if (path === '/api/me' && request.method === 'GET') {
     const user = await getUserFromToken(request, env);
     if (!user) {
       return jsonResponse({ authenticated: false }, 200, request);
     }
+    // ユーザーデータからプロファイルも取得
+    const userData = await env.USERS.get(user.email);
+    const fullUser = userData ? JSON.parse(userData) : {};
     return jsonResponse({
       authenticated: true,
-      user: { email: user.email, createdAt: user.createdAt },
+      user: {
+        email: user.email,
+        createdAt: user.createdAt,
+        profile: fullUser.profile || null,
+      },
+    }, 200, request);
+  }
+
+  // GET /api/profile — プロファイル取得
+  if (path === '/api/profile' && request.method === 'GET') {
+    const user = await getUserFromToken(request, env);
+    if (!user) {
+      return jsonResponse({ error: 'Unauthorized' }, 401, request);
+    }
+    const userData = JSON.parse(await env.USERS.get(user.email));
+    return jsonResponse({
+      profile: userData.profile || {
+        categories: [],
+        keywords: [],
+      },
+    }, 200, request);
+  }
+
+  // PUT /api/profile — プロファイル更新
+  if (path === '/api/profile' && request.method === 'PUT') {
+    const user = await getUserFromToken(request, env);
+    if (!user) {
+      return jsonResponse({ error: 'Unauthorized' }, 401, request);
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonResponse({ error: 'Invalid JSON' }, 400, request);
+    }
+
+    const { categories, keywords } = body;
+
+    // バリデーション
+    const validCategories = ['総合', 'テクノロジー', '国際', '経済', '社会', '政治', 'スポーツ', 'エンタメ', '文化', '暮らし'];
+    if (categories && !Array.isArray(categories)) {
+      return jsonResponse({ error: 'categoriesは配列にしてください' }, 400, request);
+    }
+    if (categories) {
+      const invalid = categories.filter(c => !validCategories.includes(c));
+      if (invalid.length > 0) {
+        return jsonResponse({ error: `無効なカテゴリ: ${invalid.join(', ')}` }, 400, request);
+      }
+    }
+    if (keywords && !Array.isArray(keywords)) {
+      return jsonResponse({ error: 'keywordsは配列にしてください' }, 400, request);
+    }
+    if (keywords && keywords.length > 10) {
+      return jsonResponse({ error: 'キーワードは最大10個までです' }, 400, request);
+    }
+
+    // ユーザーデータ更新
+    const userData = JSON.parse(await env.USERS.get(user.email));
+    userData.profile = {
+      categories: categories || userData.profile?.categories || [],
+      keywords: (keywords || userData.profile?.keywords || []).map(k => k.trim()).filter(Boolean).slice(0, 10),
+      updatedAt: new Date().toISOString(),
+    };
+    await env.USERS.put(user.email, JSON.stringify(userData));
+
+    return jsonResponse({
+      success: true,
+      message: 'プロファイルを更新しました',
+      profile: userData.profile,
     }, 200, request);
   }
 
@@ -255,6 +327,8 @@ async function handleRequest(request, env) {
       'POST /api/login',
       'POST /api/logout',
       'GET /api/me',
+      'GET /api/profile',
+      'PUT /api/profile',
       'GET /health',
     ],
   }, 404, request);
