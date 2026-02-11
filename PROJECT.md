@@ -211,10 +211,15 @@
   - プロファイルモーダル: カテゴリ選択（トグルボタン）+ キーワード入力（Enter追加、×削除）
   - プロファイルはUSERS KV内のユーザーデータに保存
 
+- [x] **PWA強化**
+  - manifest.json: id, scope, categories, shortcuts（朝刊/夕刊）, maskableアイコン追加
+  - offline.html: 新聞風デザインのオフラインフォールバックページ
+  - sw.js v4: offline.htmlプリキャッシュ、navigate失敗時オフラインフォールバック、静的アセットのキャッシュ更新
+  - A2HSバナー: beforeinstallprompt対応、24時間非表示制御、standaloneモード検知
+  - SW登録コード簡素化（v3の全unregisterロジック削除）
+
 ### TODO
-- [x] Stripe DashboardでWebhookエンドポイント登録 & STRIPE_WEBHOOK_SECRET設定
-- [x] 関心プロファイル設定UI
-- [ ] PWA化・プッシュ通知
+- [ ] Web Push通知（VAPID鍵生成、push-api Worker、朝刊/夕刊配信通知）
 - [ ] 本番運用開始
 
 ---
@@ -233,6 +238,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: PWA強化 — manifest改善（shortcuts, maskable）、オフラインフォールバックページ、SW v4、A2HSバナー
 - 2026-02-12: Phase 3 Step 4 完了 — 関心プロファイル設定（カテゴリ選択、キーワード登録、プロファイルモーダルUI）
 - 2026-02-12: Phase 3 Step 3 完了 — ユーザー認証実装（auth-api Worker、PBKDF2パスワードハッシュ、セッション管理、LP＋紙面のログインUI）
 - 2026-02-12: Phase 3 Step 2 完了 — Stripe Webhook実装（署名検証、購読者KV保存、ステータス確認API、購読成功トースト）
