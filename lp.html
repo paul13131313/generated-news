@@ -922,6 +922,7 @@ body::before {
   // Typewriter
   function typewrite(el, text, speed) {
     return new Promise(resolve => {
+      el.style.opacity = '1';
       el.innerHTML = '';
       const cursor = document.createElement('span');
       cursor.className = 'pv-cursor';
@@ -929,7 +930,9 @@ body::before {
       el.appendChild(cursor);
       let i = 0;
       const timer = setInterval(() => {
-        el.textContent = text.slice(0, ++i);
+        // Use innerHTML to preserve cursor span
+        const escaped = text.slice(0, ++i).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        el.innerHTML = escaped;
         el.appendChild(cursor);
         if (i >= text.length) {
           clearInterval(timer);
@@ -945,6 +948,8 @@ body::before {
     cycle++;
 
     // Phase 1: kicker + headline typewriter
+    headlineEl.style.opacity = '1';
+    headlineEl.innerHTML = '';
     await fade(kickerEl, true, 300);
     await typewrite(headlineEl, headline, 50);
 
