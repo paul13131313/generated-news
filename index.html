@@ -836,9 +836,9 @@ function renderNewspaper(data) {
 
   // Footer
   const stamp = document.getElementById('genTimeStamp');
-  const now = new Date();
-  const jstH = new Date(now.getTime() + 9*60*60*1000).getHours();
-  const jstM = new Date(now.getTime() + 9*60*60*1000).getMinutes();
+  const footerNow = new Date();
+  const jstH = new Date(footerNow.getTime() + 9*60*60*1000).getHours();
+  const jstM = new Date(footerNow.getTime() + 9*60*60*1000).getMinutes();
   stamp.textContent = `GENERATED AT ${String(jstH).padStart(2,'0')}:${String(jstM).padStart(2,'0')} JST`;
 
   // Deliver step text
