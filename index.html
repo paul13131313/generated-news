@@ -1503,12 +1503,15 @@ function updateHeroTheme(data) {
 // ===== Service Worker =====
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(reg => {
+    // 新SWが見つかったら即座にactivate→リロード
     reg.addEventListener('updatefound', () => {
       const newSW = reg.installing;
       newSW.addEventListener('statechange', () => {
         if (newSW.state === 'activated') location.reload();
       });
     });
+    // 既存SWがある場合、明示的に更新チェック
+    if (reg.active) reg.update();
   });
 }
 
