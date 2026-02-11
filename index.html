@@ -161,6 +161,50 @@
   .user-bar-link:hover { color: var(--accent); }
   .user-bar-sep { margin: 0 2px; }
 
+  /* ===== A2HS INSTALL BANNER ===== */
+  .a2hs-banner {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .a2hs-banner.show { display: flex; }
+  .a2hs-banner-text { flex: 1; text-align: center; }
+  .a2hs-banner-btn {
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 6px 16px;
+    background: var(--paper);
+    color: var(--ink);
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.3s;
+  }
+  .a2hs-banner-btn:hover { background: #e9e1d3; }
+  .a2hs-banner-close {
+    background: none;
+    border: none;
+    color: var(--paper);
+    font-size: 18px;
+    cursor: pointer;
+    opacity: 0.6;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .a2hs-banner-close:hover { opacity: 1; }
+  @media (display-mode: standalone) {
+    .a2hs-banner { display: none !important; }
+  }
+
   /* ===== PROFILE MODAL ===== */
   .profile-overlay {
     display: none; position: fixed; inset: 0;
@@ -738,6 +782,13 @@
 
 <!-- USER BAR -->
 <div class="user-bar gen-animate" id="userBar"></div>
+
+<!-- A2HS INSTALL BANNER -->
+<div class="a2hs-banner" id="a2hsBanner">
+  <span class="a2hs-banner-text">ホーム画面に追加して毎日読む</span>
+  <button class="a2hs-banner-btn" id="a2hsInstall">追加する</button>
+  <button class="a2hs-banner-close" id="a2hsClose">&times;</button>
+</div>
 
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
@@ -1460,13 +1511,8 @@ function updateHeroTheme(data) {
 })();
 </script>
 <script>
+// ===== Service Worker =====
 if ('serviceWorker' in navigator) {
-  // 既存のSWを全てunregisterしてキャッシュも削除
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
-  // 新しいSWを登録
   navigator.serviceWorker.register('sw.js').then(reg => {
     reg.addEventListener('updatefound', () => {
       const newSW = reg.installing;
@@ -1476,6 +1522,39 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// ===== A2HS（ホーム画面に追加）=====
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // 24時間以内に閉じた場合は表示しない
+  const dismissed = localStorage.getItem('a2hs_dismissed');
+  if (dismissed && Date.now() - parseInt(dismissed) < 24 * 60 * 60 * 1000) return;
+
+  // standaloneモードならバナー不要
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+  document.getElementById('a2hsBanner').classList.add('show');
+});
+
+document.getElementById('a2hsInstall').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('a2hsBanner').classList.remove('show');
+  if (result.outcome === 'accepted') {
+    localStorage.setItem('a2hs_dismissed', String(Date.now()));
+  }
+});
+
+document.getElementById('a2hsClose').addEventListener('click', () => {
+  document.getElementById('a2hsBanner').classList.remove('show');
+  localStorage.setItem('a2hs_dismissed', String(Date.now()));
+});
 </script>
 </body>
 </html>

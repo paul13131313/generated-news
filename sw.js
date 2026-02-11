@@ -1,8 +1,9 @@
-const CACHE = 'generated-news-v3';
+const CACHE = 'generated-news-v4';
 const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './offline.html',
 ];
 
 self.addEventListener('install', e => {
@@ -19,12 +20,12 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Network First: HTMLは常にネットワークから取得、失敗時のみキャッシュ
+// Network First: HTMLは常にネットワークから取得、失敗時はキャッシュ→オフラインページ
 // 静的アセット（画像等）はキャッシュ優先
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // HTMLリクエスト → Network First
+  // HTMLリクエスト → Network First、オフライン時はフォールバック
   if (e.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
     e.respondWith(
       fetch(e.request)
@@ -33,19 +34,24 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() =>
+          caches.match(e.request).then(r => r || caches.match('./offline.html'))
+        )
     );
     return;
   }
 
-  // APIリクエスト → 常にネットワーク（キャッシュしない）
-  if (url.pathname.startsWith('/api/')) {
-    e.respondWith(fetch(e.request));
+  // 外部APIリクエスト → 常にネットワーク（キャッシュしない）
+  if (url.hostname !== self.location.hostname || url.pathname.startsWith('/api/')) {
     return;
   }
 
-  // その他静的アセット → Cache First
+  // その他静的アセット → Cache First + ネットワーク更新
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+      const clone = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return res;
+    }))
   );
 });
