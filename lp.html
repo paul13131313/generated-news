@@ -157,15 +157,18 @@ body::before {
 .hero-scroll {
   position: absolute;
   bottom: 32px;
-  left: 50%;
-  transform: translateX(calc(-50% - 0.1em));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-family: var(--font-gothic);
   font-size: 10px;
   letter-spacing: 0.2em;
+  padding-left: 0.2em;
   color: var(--caption);
   opacity: 0;
   animation: fadeIn 1s 3s forwards;
-  text-align: center;
 }
 
 .hero-scroll::after {
