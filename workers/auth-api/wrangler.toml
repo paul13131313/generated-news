@@ -1,0 +1,14 @@
+name = "auth-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "f3516f2af8334296a502b691ad355854"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "2c3df91f79f140dc83ea68b4679d7605"

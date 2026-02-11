@@ -183,9 +183,27 @@
   - index.html: `?subscribed=true` パラメータで購読成功トースト表示（8秒自動消去）
   - コード: `workers/payment-api/`
 
+- [x] **Phase 3 Step 3: ユーザー認証**
+  - Cloudflare Worker `auth-api` をデプロイ
+  - URL: https://auth-api.hiroshinagano0113.workers.dev
+  - Cloudflare KV namespace `USERS`（id: f3516f2af8334296a502b691ad355854）
+  - Cloudflare KV namespace `SESSIONS`（id: 2c3df91f79f140dc83ea68b4679d7605）
+  - パスワードハッシュ: PBKDF2 + Web Crypto API（100,000 iterations, SHA-256）
+  - セッション: Bearer Token方式、30日TTL
+  - エンドポイント:
+    - `POST /api/signup` — メール+パスワードで新規登録（バリデーション付き）
+    - `POST /api/login` — ログイン（セッショントークン発行）
+    - `POST /api/logout` — ログアウト（セッション削除）
+    - `GET /api/me` — セッションからユーザー情報取得
+    - `GET /health` — ヘルスチェック
+  - lp.html: ヘッダーにログイン/新規登録ボタン、モーダルUI（サインアップ/ログイン切替）
+  - index.html: mastheadの上にユーザーバー（メール表示、ログアウト）
+  - ログイン状態はlocalStorage（auth_token, auth_email）で管理
+  - ページ読み込み時にGET /api/meでセッション有効性を検証
+  - コード: `workers/auth-api/`
+
 ### TODO
-- [ ] Stripe DashboardでWebhookエンドポイント登録 & STRIPE_WEBHOOK_SECRET設定
-- [ ] ユーザー認証（サインアップ/ログイン）
+- [x] Stripe DashboardでWebhookエンドポイント登録 & STRIPE_WEBHOOK_SECRET設定
 - [ ] 関心プロファイル設定UI
 - [ ] PWA化・プッシュ通知
 - [ ] 本番運用開始
@@ -206,6 +224,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 3 Step 3 完了 — ユーザー認証実装（auth-api Worker、PBKDF2パスワードハッシュ、セッション管理、LP＋紙面のログインUI）
 - 2026-02-12: Phase 3 Step 2 完了 — Stripe Webhook実装（署名検証、購読者KV保存、ステータス確認API、購読成功トースト）
 - 2026-02-12: Phase 3 Step 1 完了 — Stripe Checkout Session実装（payment-api Worker、月額300円サブスク、lp.htmlに購読ボタン追加）
 - 2026-02-12: RSSソース拡充 — 15フィード10カテゴリに拡大（エンタメ/文化/暮らし追加）、記事バランスを硬3+柔2に

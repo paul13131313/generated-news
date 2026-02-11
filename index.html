@@ -139,6 +139,27 @@
   }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* ===== AUTH USER BAR ===== */
+  .user-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    color: var(--caption);
+    letter-spacing: 0.04em;
+  }
+  .user-bar-email { font-weight: 500; color: var(--ink); }
+  .user-bar-link {
+    color: var(--caption);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 10px;
+  }
+  .user-bar-link:hover { color: var(--accent); }
+
   /* ===== MASTHEAD ===== */
   .masthead {
     padding: 16px 16px 0;
@@ -625,6 +646,9 @@
   </ul>
 </div>
 
+<!-- USER BAR -->
+<div class="user-bar gen-animate" id="userBar"></div>
+
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
   <div class="masthead-top">
@@ -729,7 +753,51 @@
 <script>
 // ===== CONFIG =====
 const API_URL = 'https://news-generator.hiroshinagano0113.workers.dev/api/generate';
+const AUTH_API = 'https://auth-api.hiroshinagano0113.workers.dev';
 let currentNewspaper = null;
+
+// ===== AUTH USER BAR =====
+function updateUserBar() {
+  const bar = document.getElementById('userBar');
+  const email = localStorage.getItem('auth_email');
+  if (email) {
+    bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
+      '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
+  } else {
+    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>';
+  }
+}
+
+function handleLogoutIndex() {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    fetch(AUTH_API + '/api/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+    }).catch(() => {});
+  }
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_email');
+  updateUserBar();
+}
+
+// セッション検証
+(function() {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    fetch(AUTH_API + '/api/me', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    }).then(r => r.json()).then(data => {
+      if (!data.authenticated) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_email');
+      }
+      updateUserBar();
+    }).catch(() => updateUserBar());
+  } else {
+    updateUserBar();
+  }
+})();
 
 // ===== FALLBACK DATA =====
 const FALLBACK = {

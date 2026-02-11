@@ -651,6 +651,183 @@ body::before {
   letter-spacing: 0.04em;
 }
 
+/* ===== AUTH NAV ===== */
+.auth-nav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 100;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-nav-btn {
+  font-family: var(--font-gothic);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 8px 20px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.auth-nav-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.auth-nav-btn.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.auth-nav-btn.primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.auth-nav-user {
+  font-family: var(--font-gothic);
+  font-size: 12px;
+  color: var(--caption);
+  letter-spacing: 0.04em;
+}
+
+.auth-nav-user span {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ===== AUTH MODAL ===== */
+.auth-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-overlay.show { display: flex; }
+
+.auth-modal {
+  background: var(--paper);
+  width: 100%;
+  max-width: 400px;
+  margin: 24px;
+  padding: 40px 32px;
+  position: relative;
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--caption);
+  line-height: 1;
+}
+
+.auth-modal-close:hover { color: var(--ink); }
+
+.auth-modal-title {
+  font-family: var(--font-mincho);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.auth-modal-sub {
+  font-size: 13px;
+  color: var(--caption);
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-field {
+  margin-bottom: 16px;
+}
+
+.auth-field label {
+  display: block;
+  font-family: var(--font-gothic);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--caption);
+  margin-bottom: 6px;
+}
+
+.auth-field input {
+  width: 100%;
+  font-family: var(--font-gothic);
+  font-size: 15px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.auth-field input:focus {
+  border-color: var(--accent);
+}
+
+.auth-submit {
+  width: 100%;
+  font-family: var(--font-gothic);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.3s;
+}
+
+.auth-submit:hover { background: var(--accent); }
+.auth-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.auth-msg {
+  font-family: var(--font-gothic);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 1.5em;
+  color: var(--accent);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--caption);
+}
+
+.auth-switch a {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-switch a:hover { color: var(--accent); }
+
 /* ===== COUNTER ANIMATION ===== */
 .count-up {
   display: inline-block;
@@ -658,6 +835,36 @@ body::before {
 </style>
 </head>
 <body>
+
+<!-- ===== AUTH NAV ===== -->
+<nav class="auth-nav" id="authNav">
+  <button class="auth-nav-btn" onclick="showAuthModal('login')">ログイン</button>
+  <button class="auth-nav-btn primary" onclick="showAuthModal('signup')">新規登録</button>
+</nav>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuthModal()">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">&times;</button>
+    <h2 class="auth-modal-title" id="authTitle">アカウント作成</h2>
+    <p class="auth-modal-sub" id="authSub">メールアドレスとパスワードで登録</p>
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <div class="auth-field">
+        <label>メールアドレス</label>
+        <input type="email" id="authEmail" required autocomplete="email" placeholder="example@email.com">
+      </div>
+      <div class="auth-field">
+        <label>パスワード</label>
+        <input type="password" id="authPassword" required autocomplete="current-password" placeholder="8文字以上" minlength="8">
+      </div>
+      <button type="submit" class="auth-submit" id="authSubmit">アカウント作成</button>
+    </form>
+    <p class="auth-msg" id="authMsg"></p>
+    <div class="auth-switch" id="authSwitch">
+      すでにアカウントをお持ちの方は <a onclick="showAuthModal('login')">ログイン</a>
+    </div>
+  </div>
+</div>
 
 <!-- ===== HERO ===== -->
 <section class="hero">
@@ -1042,6 +1249,124 @@ body::before {
     }
   }, { threshold: 0.2 });
   obs.observe(document.getElementById('previewArea'));
+})();
+
+// ===== AUTH =====
+const AUTH_API = 'https://auth-api.hiroshinagano0113.workers.dev';
+let authMode = 'signup'; // 'signup' or 'login'
+
+function showAuthModal(mode) {
+  authMode = mode;
+  const overlay = document.getElementById('authOverlay');
+  const title = document.getElementById('authTitle');
+  const sub = document.getElementById('authSub');
+  const submit = document.getElementById('authSubmit');
+  const switchEl = document.getElementById('authSwitch');
+  const msg = document.getElementById('authMsg');
+
+  msg.textContent = '';
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+
+  if (mode === 'signup') {
+    title.textContent = 'アカウント作成';
+    sub.textContent = 'メールアドレスとパスワードで登録';
+    submit.textContent = 'アカウント作成';
+    switchEl.innerHTML = 'すでにアカウントをお持ちの方は <a onclick="showAuthModal(\'login\')">ログイン</a>';
+  } else {
+    title.textContent = 'ログイン';
+    sub.textContent = '登録済みのアカウントでログイン';
+    submit.textContent = 'ログイン';
+    switchEl.innerHTML = 'アカウントをお持ちでない方は <a onclick="showAuthModal(\'signup\')">新規登録</a>';
+  }
+
+  overlay.classList.add('show');
+}
+
+function closeAuthModal() {
+  document.getElementById('authOverlay').classList.remove('show');
+}
+
+async function handleAuth(e) {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmit');
+  const msg = document.getElementById('authMsg');
+
+  btn.disabled = true;
+  btn.textContent = authMode === 'signup' ? '登録中...' : 'ログイン中...';
+  msg.textContent = '';
+
+  try {
+    const endpoint = authMode === 'signup' ? '/api/signup' : '/api/login';
+    const res = await fetch(AUTH_API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+
+    if (data.success && data.token) {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_email', data.user.email);
+      closeAuthModal();
+      updateAuthNav();
+      msg.textContent = '';
+    } else {
+      msg.textContent = data.error || 'エラーが発生しました';
+      btn.disabled = false;
+      btn.textContent = authMode === 'signup' ? 'アカウント作成' : 'ログイン';
+    }
+  } catch (err) {
+    msg.textContent = '通信エラーが発生しました。時間をおいてお試しください。';
+    btn.disabled = false;
+    btn.textContent = authMode === 'signup' ? 'アカウント作成' : 'ログイン';
+  }
+}
+
+function handleLogout() {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    fetch(AUTH_API + '/api/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+    }).catch(() => {});
+  }
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_email');
+  updateAuthNav();
+}
+
+function updateAuthNav() {
+  const nav = document.getElementById('authNav');
+  const email = localStorage.getItem('auth_email');
+
+  if (email) {
+    nav.innerHTML = '<span class="auth-nav-user"><span>' + email + '</span></span>' +
+      '<button class="auth-nav-btn" onclick="handleLogout()">ログアウト</button>';
+  } else {
+    nav.innerHTML = '<button class="auth-nav-btn" onclick="showAuthModal(\'login\')">ログイン</button>' +
+      '<button class="auth-nav-btn primary" onclick="showAuthModal(\'signup\')">新規登録</button>';
+  }
+}
+
+// 初期化: ログイン状態チェック
+(function() {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    fetch(AUTH_API + '/api/me', {
+      headers: { 'Authorization': 'Bearer ' + token },
+    }).then(r => r.json()).then(data => {
+      if (!data.authenticated) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_email');
+      }
+      updateAuthNav();
+    }).catch(() => updateAuthNav());
+  } else {
+    updateAuthNav();
+  }
 })();
 
 // ===== SUBSCRIBE (Stripe Checkout) =====
