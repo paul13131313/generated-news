@@ -356,8 +356,8 @@
   .media-frame.has-photo canvas {
     position: absolute;
     top: 0; left: 0;
-    opacity: 0.35;
-    mix-blend-mode: screen;
+    opacity: 0.6;
+    mix-blend-mode: overlay;
   }
   .photo-credit {
     position: absolute;
@@ -381,15 +381,6 @@
     padding: 3px 10px;
     letter-spacing: 0.12em;
     z-index: 4;
-  }
-  .media-cap {
-    font-family: var(--font-gothic);
-    font-size: 12px;
-    color: var(--caption);
-    line-height: 1.7;
-    margin-bottom: 14px;
-    padding-left: 10px;
-    border-left: 2px solid var(--accent);
   }
 
   /* ===== BODY TEXT ===== */
@@ -700,8 +691,6 @@
       <div class="media-label">LIVE GENERATIVE</div>
       <div class="photo-credit" id="photoCredit" style="display:none;"></div>
     </div>
-    <p class="media-cap" id="mediaCap">一面記事に連動したニュース写真とジェネラティブエフェクト。カテゴリに応じた色彩のパーティクルが紙面の主題をリアルタイムに可視化。</p>
-
     <div class="body-text" id="headlineBody"></div>
   </article>
 

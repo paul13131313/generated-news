@@ -117,7 +117,7 @@ ${compressed}
     "kicker": "一面",
     "title": "最重要ニュースの見出し（20字以内）",
     "body": "4〜6文の本文（200〜300字）",
-    "imageKeyword": "英語1〜2語の写真検索キーワード（例: semiconductor, diplomacy summit, stock market）"
+    "imageKeyword": "英語2〜4語の写真検索キーワード（地域性を含む。例: japan parliament diet, tokyo stock exchange, semiconductor factory japan, global diplomacy summit）"
   },
   "articles": [
     {
@@ -146,7 +146,7 @@ ${compressed}
 - ticker配列は6件（日経平均, TOPIX, ドル円, NYダウ, S&P500, BTC）
 - tickerの数値はニュース一覧から推測できなければモック値でよい
 - コラムは具体的なニュースに言及しつつ、哲学的・文学的な深みを持たせる
-- headline.imageKeywordは英語で、Unsplash写真検索に適した具体的な単語（1〜2語）
+- headline.imageKeywordは英語2〜4語で、Unsplash写真検索に適した具体的なフレーズ。日本のニュースならjapan/tokyoなど地域キーワードを含める
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 
   return { systemPrompt: SYSTEM_PROMPT, userPrompt };
