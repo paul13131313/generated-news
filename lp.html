@@ -646,11 +646,28 @@ body::before {
   margin-top: 6px;
 }
 
+.lp-footer .f-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+.lp-footer .f-links a {
+  color: var(--caption);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+
+.lp-footer .f-links a:hover { color: var(--accent); }
+
 .lp-footer .f-copy {
   font-family: var(--font-gothic);
   font-size: 11px;
   color: var(--caption);
-  margin-top: 20px;
+  margin-top: 16px;
   letter-spacing: 0.04em;
 }
 
@@ -977,6 +994,10 @@ body::before {
 <footer class="lp-footer">
   <div class="f-logo">生成新聞</div>
   <div class="f-en">GENERATED DAILY NEWS</div>
+  <div class="f-links">
+    <a href="terms.html">利用規約</a>
+    <a href="privacy.html">プライバシーポリシー</a>
+  </div>
   <p class="f-copy">&copy; 2026 生成新聞 All rights reserved.</p>
 </footer>
 

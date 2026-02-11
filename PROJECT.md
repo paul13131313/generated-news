@@ -233,8 +233,13 @@
   - Google Analytics GA4導入（G-N9N0681N4H）
   - .gitignore追加、SEOメタタグ（OGP, Twitter Card）追加
 
+- [x] **利用規約・プライバシーポリシー**
+  - terms.html: 利用規約（12条、サービス概要・料金・AI生成コンテンツ免責・禁止事項・準拠法等）
+  - privacy.html: プライバシーポリシー（14条、収集情報・利用目的・第三者サービス連携・Cookie/localStorage・Web Push・GA4・セキュリティ等）
+  - LP・利用規約・プライバシーポリシー間の相互フッターリンク
+  - LP風デザイン（新聞紙面テクスチャ、明朝体見出し）
+
 ### TODO
-- [ ] 利用規約・プライバシーポリシーページ作成
 - [ ] カスタムドメイン設定（任意）
 
 ---
@@ -253,6 +258,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: 利用規約・プライバシーポリシー — terms.html（12条）、privacy.html（14条）作成、LPフッターリンク追加
 - 2026-02-12: 本番運用準備 — Stripe本番鍵、GA4、.gitignore、SEOメタタグ
 - 2026-02-12: Web Push通知 — push-api Worker、VAPID認証、SW v5、通知ON/OFF UI、news-generator連携
 - 2026-02-12: PWA強化 — manifest改善（shortcuts, maskable）、オフラインフォールバックページ、SW v4、A2HSバナー

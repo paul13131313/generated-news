@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>利用規約 — 生成新聞</title>
+<meta name="description" content="生成新聞（Generated News）の利用規約です。">
+<meta name="theme-color" content="#faf8f4">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700&family=Shippori+Mincho+B1:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #faf8f4;
+  --ink: #1a1a1a;
+  --accent: #c41e3a;
+  --border: #e8e4dc;
+  --caption: #6b6358;
+  --font-mincho: 'Shippori Mincho B1', 'Noto Serif JP', serif;
+  --font-gothic: 'Noto Sans JP', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-gothic);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.8;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.legal-header {
+  text-align: center;
+  padding: 64px 24px 40px;
+  border-bottom: 3px double var(--ink);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.legal-logo {
+  font-family: var(--font-mincho);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  margin-bottom: 8px;
+}
+
+.legal-logo a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.legal-logo a:hover { color: var(--accent); }
+
+.legal-title {
+  font-family: var(--font-mincho);
+  font-size: clamp(24px, 5vw, 32px);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  margin-top: 24px;
+}
+
+.legal-updated {
+  font-size: 12px;
+  color: var(--caption);
+  margin-top: 12px;
+  letter-spacing: 0.04em;
+}
+
+.legal-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.legal-body h2 {
+  font-family: var(--font-mincho);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-body h2:first-child { margin-top: 0; }
+
+.legal-body p {
+  font-size: 14px;
+  line-height: 2;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.legal-body ol, .legal-body ul {
+  font-size: 14px;
+  line-height: 2;
+  margin-bottom: 16px;
+  padding-left: 1.5em;
+  color: #333;
+}
+
+.legal-body li {
+  margin-bottom: 6px;
+}
+
+.legal-footer {
+  padding: 32px 24px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.legal-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.legal-footer-links a {
+  color: var(--caption);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.legal-footer-links a:hover { color: var(--accent); }
+
+.legal-footer-copy {
+  font-size: 11px;
+  color: var(--caption);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+
+<header class="legal-header">
+  <div class="legal-logo"><a href="lp.html">生成新聞</a></div>
+  <h1 class="legal-title">利用規約</h1>
+  <p class="legal-updated">最終更新日: 2026年2月12日</p>
+</header>
+
+<main class="legal-body">
+
+<h2>第1条（適用）</h2>
+<p>本利用規約（以下「本規約」）は、生成新聞（Generated News、以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは、本サービスを利用することにより、本規約に同意したものとみなされます。</p>
+
+<h2>第2条（サービスの概要）</h2>
+<p>本サービスは、AI（人工知能）技術を活用して、公開されたニュースソースから情報を収集・要約・再構成し、ユーザーの関心に合わせたパーソナライズドニュースを新聞形式で配信するサービスです。</p>
+<ol>
+  <li>朝刊（毎日6:00 JST）および夕刊（毎日17:00 JST）の配信</li>
+  <li>ユーザーの関心プロファイルに基づく紙面のカスタマイズ</li>
+  <li>Web Push通知による配信通知</li>
+</ol>
+
+<h2>第3条（アカウント）</h2>
+<ol>
+  <li>本サービスの一部機能を利用するには、メールアドレスとパスワードによるアカウント登録が必要です。</li>
+  <li>ユーザーは、正確かつ最新の情報を登録するものとし、登録情報に変更があった場合は速やかに更新するものとします。</li>
+  <li>アカウントの管理責任はユーザーにあり、第三者による不正利用について、運営者は一切の責任を負いません。</li>
+</ol>
+
+<h2>第4条（料金・決済）</h2>
+<ol>
+  <li>本サービスの有料プランは月額300円（税込）のサブスクリプション方式です。</li>
+  <li>決済はStripe, Inc.の決済プラットフォームを通じて処理されます。</li>
+  <li>サブスクリプションは月単位で自動更新され、ユーザーが解約手続きを行うまで継続します。</li>
+  <li>解約はいつでも可能であり、解約後は当月末までサービスを利用できます。</li>
+  <li>既に支払われた料金の返金は、原則として行いません。</li>
+</ol>
+
+<h2>第5条（AI生成コンテンツについて）</h2>
+<ol>
+  <li>本サービスで配信される記事は、AIによって自動生成されたものであり、人間の記者が執筆したものではありません。</li>
+  <li>AI生成コンテンツには、事実と異なる情報（ハルシネーション）が含まれる可能性があります。運営者は、コンテンツの正確性・完全性・最新性を保証しません。</li>
+  <li>本サービスの記事は、投資判断、医療判断、法的判断その他の重要な意思決定の唯一の根拠としないでください。</li>
+  <li>記事の元となるニュースソースの著作権は、各ソースの権利者に帰属します。</li>
+</ol>
+
+<h2>第6条（禁止事項）</h2>
+<p>ユーザーは、以下の行為を行ってはなりません。</p>
+<ol>
+  <li>本サービスのコンテンツを無断で商業利用すること</li>
+  <li>本サービスのシステムに対する不正アクセスまたは負荷をかける行為</li>
+  <li>虚偽の情報によるアカウント登録</li>
+  <li>本サービスの運営を妨害する行為</li>
+  <li>法令または公序良俗に反する行為</li>
+  <li>その他、運営者が不適切と判断する行為</li>
+</ol>
+
+<h2>第7条（サービスの変更・停止）</h2>
+<ol>
+  <li>運営者は、事前の通知なく、本サービスの内容を変更し、または提供を停止・終了することができます。</li>
+  <li>サービスの変更・停止・終了により生じた損害について、運営者は一切の責任を負いません。</li>
+</ol>
+
+<h2>第8条（免責事項）</h2>
+<ol>
+  <li>本サービスは「現状有姿」で提供され、明示・黙示を問わず、いかなる保証も行いません。</li>
+  <li>本サービスの利用により生じた直接的・間接的な損害について、運営者は一切の責任を負いません。</li>
+  <li>ニュースソースの配信停止、AI APIの障害、サーバー障害等により、サービスの提供が一時的に中断される場合があります。</li>
+</ol>
+
+<h2>第9条（個人情報の取扱い）</h2>
+<p>ユーザーの個人情報の取扱いについては、別途定める<a href="privacy.html">プライバシーポリシー</a>に従います。</p>
+
+<h2>第10条（規約の変更）</h2>
+<ol>
+  <li>運営者は、必要と判断した場合、本規約を変更することができます。</li>
+  <li>変更後の規約は、本サービス上に掲載した時点で効力を生じるものとします。</li>
+  <li>重要な変更については、サービス上での告知またはメール等により通知します。</li>
+</ol>
+
+<h2>第11条（準拠法・管轄）</h2>
+<p>本規約の解釈は日本法に準拠し、本サービスに関する紛争については、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</p>
+
+<h2>第12条（運営者情報）</h2>
+<p>本サービスは個人により運営されています。お問い合わせは本サービス内の連絡手段をご利用ください。</p>
+
+</main>
+
+<footer class="legal-footer">
+  <div class="legal-footer-links">
+    <a href="lp.html">トップ</a>
+    <a href="terms.html">利用規約</a>
+    <a href="privacy.html">プライバシーポリシー</a>
+  </div>
+  <p class="legal-footer-copy">&copy; 2026 生成新聞 All rights reserved.</p>
+</footer>
+
+</body>
+</html>
