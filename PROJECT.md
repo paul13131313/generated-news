@@ -218,9 +218,24 @@
   - A2HSバナー: beforeinstallprompt対応、24時間非表示制御、standaloneモード検知
   - SW登録コード簡素化（v3の全unregisterロジック削除）
 
+- [x] **Web Push通知**
+  - push-api Worker新規作成（`workers/push-api/`）
+  - VAPID鍵生成（ES256）、Cloudflare Secretsに保存
+  - Cloudflare KV namespace `PUSH_SUBSCRIPTIONS`（id: d11cfed6a61546dbaddb8c6fe777ca2a）
+  - Web Crypto APIによるRFC 8291準拠のプッシュ暗号化（ECDH + AES-128-GCM）
+  - エンドポイント: GET /api/vapid-public-key, POST /api/push/subscribe, DELETE /api/push/subscribe, POST /api/push/trigger
+  - sw.js v5: pushイベント + notificationclickイベント追加
+  - index.html: ユーザーバーに通知ON/OFF切替リンク
+  - news-generator → push-api Service Binding連携（生成完了時に自動通知）
+
+- [x] **本番運用準備**
+  - Stripe本番鍵（sk_live_）設定、本番Webhook署名シークレット設定
+  - Google Analytics GA4導入（G-N9N0681N4H）
+  - .gitignore追加、SEOメタタグ（OGP, Twitter Card）追加
+
 ### TODO
-- [ ] Web Push通知（VAPID鍵生成、push-api Worker、朝刊/夕刊配信通知）
-- [ ] 本番運用開始
+- [ ] 利用規約・プライバシーポリシーページ作成
+- [ ] カスタムドメイン設定（任意）
 
 ---
 
@@ -238,6 +253,8 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: 本番運用準備 — Stripe本番鍵、GA4、.gitignore、SEOメタタグ
+- 2026-02-12: Web Push通知 — push-api Worker、VAPID認証、SW v5、通知ON/OFF UI、news-generator連携
 - 2026-02-12: PWA強化 — manifest改善（shortcuts, maskable）、オフラインフォールバックページ、SW v4、A2HSバナー
 - 2026-02-12: Phase 3 Step 4 完了 — 関心プロファイル設定（カテゴリ選択、キーワード登録、プロファイルモーダルUI）
 - 2026-02-12: Phase 3 Step 3 完了 — ユーザー認証実装（auth-api Worker、PBKDF2パスワードハッシュ、セッション管理、LP＋紙面のログインUI）
