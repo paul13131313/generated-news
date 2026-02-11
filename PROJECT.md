@@ -72,13 +72,27 @@
   - ティッカー、天声生成コラム、注目記事セクション
   - ローディングアニメーション
   - 朝刊/夕刊切り替え
+- [x] LP（ランディングページ）制作・公開
+  - URL: https://paul13131313.github.io/generated-news/lp.html
+- [x] **Phase 2 Step 1: ニュースソース収集パイプライン**
+  - Cloudflare Worker `news-collector` をデプロイ
+  - URL: https://news-collector.hiroshinagano0113.workers.dev
+  - 11本のRSSフィードから7カテゴリのニュースを収集
+  - ソース: NHK（総合/社会/政治/経済/国際/科学/スポーツ）、Yahoo!ニュース、ITmedia、はてなブックマーク、Zenn
+  - エンドポイント:
+    - `GET /api/news` — 全ニュース一覧（最新順、デフォルト50件）
+    - `GET /api/news?category={category}` — カテゴリ別
+    - `GET /api/news?limit={n}` — 件数制限（最大200）
+    - `GET /api/sources` — ソース一覧
+    - `GET /api/categories` — カテゴリ一覧
+    - `GET /health` — ヘルスチェック
+  - コード: `workers/news-collector/`
 
 ### 進行中
-- [ ] LP（ランディングページ）制作 ← 今ここ
+- [ ] Phase 2 Step 2: AI要約・紙面構成パイプライン ← 次のステップ
 
 ### TODO
-- [ ] LP完成・公開
-- [ ] バックエンド構築（ニュース取得→AI要約→配信パイプライン）
+- [ ] AI要約・紙面構成（Claude API連携）
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
 - [ ] Stripe決済連携（300円/月）
@@ -101,4 +115,6 @@
 ---
 
 ## 更新履歴
+- 2026-02-11: Phase 2 Step 1 完了 — news-collector Worker デプロイ（11 RSS、7カテゴリ）
+- 2026-02-11: LP制作完了・公開
 - 2026-02-11: PROJECT.md作成、LP制作再開

@@ -1,0 +1,14 @@
+{
+  "name": "news-collector",
+  "version": "1.0.0",
+  "description": "生成新聞 - ニュースソース収集パイプライン",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.64.0"
+  }
+}
