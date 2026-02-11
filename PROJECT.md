@@ -258,6 +258,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: LP改修 — ヒーローCTAをStripe購読ボタンに変更、事前登録セクション削除、ヒーロー〜プレビュー間余白調整
 - 2026-02-12: 利用規約・プライバシーポリシー — terms.html（12条）、privacy.html（14条）作成、LPフッターリンク追加
 - 2026-02-12: 本番運用準備 — Stripe本番鍵、GA4、.gitignore、SEOメタタグ
 - 2026-02-12: Web Push通知 — push-api Worker、VAPID認証、SW v5、通知ON/OFF UI、news-generator連携
