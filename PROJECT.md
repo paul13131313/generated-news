@@ -215,7 +215,7 @@
   - manifest.json: id, scope, categories, shortcuts（朝刊/夕刊）, maskableアイコン追加
   - offline.html: 新聞風デザインのオフラインフォールバックページ
   - sw.js v4: offline.htmlプリキャッシュ、navigate失敗時オフラインフォールバック、静的アセットのキャッシュ更新
-  - A2HSバナー: beforeinstallprompt対応、24時間非表示制御、standaloneモード検知
+  - ~~A2HSバナー: beforeinstallprompt対応~~ → 削除済み（不要と判断）
   - SW登録コード簡素化（v3の全unregisterロジック削除）
 
 - [x] **Web Push通知**
@@ -258,6 +258,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: index.html整理 — A2HSバナー削除、統計セクション（生成記事数/読者数/生成回数カウンター）削除
 - 2026-02-12: LP改修 — ヒーローCTAをStripe購読ボタンに変更、事前登録セクション削除、ヒーロー〜プレビュー間余白調整
 - 2026-02-12: 利用規約・プライバシーポリシー — terms.html（12条）、privacy.html（14条）作成、LPフッターリンク追加
 - 2026-02-12: 本番運用準備 — Stripe本番鍵、GA4、.gitignore、SEOメタタグ

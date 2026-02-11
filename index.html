@@ -175,50 +175,6 @@
   .user-bar-link:hover { color: var(--accent); }
   .user-bar-sep { margin: 0 2px; }
 
-  /* ===== A2HS INSTALL BANNER ===== */
-  .a2hs-banner {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 10px 16px;
-    background: var(--ink);
-    color: var(--paper);
-    font-family: var(--font-gothic);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-  }
-  .a2hs-banner.show { display: flex; }
-  .a2hs-banner-text { flex: 1; text-align: center; }
-  .a2hs-banner-btn {
-    font-family: var(--font-gothic);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 6px 16px;
-    background: var(--paper);
-    color: var(--ink);
-    border: none;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.3s;
-  }
-  .a2hs-banner-btn:hover { background: #e9e1d3; }
-  .a2hs-banner-close {
-    background: none;
-    border: none;
-    color: var(--paper);
-    font-size: 18px;
-    cursor: pointer;
-    opacity: 0.6;
-    line-height: 1;
-    padding: 0 4px;
-  }
-  .a2hs-banner-close:hover { opacity: 1; }
-  @media (display-mode: standalone) {
-    .a2hs-banner { display: none !important; }
-  }
-
   /* ===== PROFILE MODAL ===== */
   .profile-overlay {
     display: none; position: fixed; inset: 0;
@@ -576,30 +532,6 @@
   .art-photo-credit a { color: var(--caption); text-decoration: none; }
   .art-photo-credit a:hover { text-decoration: underline; }
 
-  /* ===== STATS ===== */
-  .stats {
-    display: flex;
-    border-bottom: 2px solid var(--rule);
-    padding: 16px 0;
-  }
-  .stat { flex: 1; text-align: center; }
-  .stat:not(:last-child) { border-right: 1px solid var(--rule-light); }
-  .stat-num {
-    font-family: var(--font-gothic);
-    font-size: 32px; font-weight: 900;
-    letter-spacing: -0.02em; line-height: 1;
-  }
-  .stat-lbl {
-    font-family: var(--font-gothic);
-    font-size: 11px; color: var(--caption); margin-top: 4px;
-  }
-  .stat-chg {
-    font-family: var(--font-gothic);
-    font-size: 11px; font-weight: 700; margin-top: 3px;
-  }
-  .stat-chg.up { color: #2a8a4a; }
-  .stat-chg.dn { color: var(--accent); }
-
   /* ===== GEN ART ===== */
   .gen-art {
     position: relative; width: 100%; height: 160px;
@@ -797,13 +729,6 @@
 <!-- USER BAR -->
 <div class="user-bar gen-animate" id="userBar"></div>
 
-<!-- A2HS INSTALL BANNER -->
-<div class="a2hs-banner" id="a2hsBanner">
-  <span class="a2hs-banner-text">ホーム画面に追加して毎日読む</span>
-  <button class="a2hs-banner-btn" id="a2hsInstall">追加する</button>
-  <button class="a2hs-banner-close" id="a2hsClose">&times;</button>
-</div>
-
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
   <div class="masthead-top">
@@ -873,25 +798,6 @@
   <div class="sec-rule gen-animate"><span>注目の記事</span></div>
 
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
-
-  <!-- STATS -->
-  <div class="stats gen-animate">
-    <div class="stat">
-      <div class="stat-num" data-to="1847" data-suf="">0</div>
-      <div class="stat-lbl">本日の生成記事数</div>
-      <div class="stat-chg up">▲ 12%</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" data-to="342" data-suf="K">0</div>
-      <div class="stat-lbl">読者数</div>
-      <div class="stat-chg up">▲ 8.3%</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" data-to="2" data-suf="回">0</div>
-      <div class="stat-lbl">本日の生成回数</div>
-      <div class="stat-chg up">朝刊・夕刊</div>
-    </div>
-  </div>
 
 </main>
 
@@ -1539,21 +1445,6 @@ function typeSub(body) {
   }, 35);
 }
 
-// ===== COUNTER =====
-const statObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (!e.isIntersecting) return;
-    const el = e.target, to = +el.dataset.to, suf = el.dataset.suf || '';
-    let cur = 0; const inc = to / 50;
-    const t = setInterval(() => {
-      cur += inc; if (cur >= to) { cur = to; clearInterval(t); }
-      el.textContent = Math.floor(cur).toLocaleString() + suf;
-    }, 30);
-    statObs.unobserve(el);
-  });
-}, { threshold: 0.5 });
-document.querySelectorAll('.stat-num').forEach(el => statObs.observe(el));
-
 // ===== HERO PHOTO =====
 function updateHeroTheme(data) {
   if (!data || !data.headline) return;
@@ -1621,38 +1512,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ===== A2HS（ホーム画面に追加）=====
-let deferredPrompt = null;
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-
-  // 24時間以内に閉じた場合は表示しない
-  const dismissed = localStorage.getItem('a2hs_dismissed');
-  if (dismissed && Date.now() - parseInt(dismissed) < 24 * 60 * 60 * 1000) return;
-
-  // standaloneモードならバナー不要
-  if (window.matchMedia('(display-mode: standalone)').matches) return;
-
-  document.getElementById('a2hsBanner').classList.add('show');
-});
-
-document.getElementById('a2hsInstall').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const result = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  document.getElementById('a2hsBanner').classList.remove('show');
-  if (result.outcome === 'accepted') {
-    localStorage.setItem('a2hs_dismissed', String(Date.now()));
-  }
-});
-
-document.getElementById('a2hsClose').addEventListener('click', () => {
-  document.getElementById('a2hsBanner').classList.remove('show');
-  localStorage.setItem('a2hs_dismissed', String(Date.now()));
-});
 </script>
 </body>
 </html>
