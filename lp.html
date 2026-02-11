@@ -244,35 +244,251 @@ body::before {
 
 .preview-frame-link {
   display: block;
-  max-width: 320px;
+  max-width: 300px;
   margin: 0 auto;
   text-decoration: none;
   cursor: pointer;
+  color: inherit;
 }
 
-.preview-frame {
+.preview-mock {
   position: relative;
-  border: 1px solid var(--border);
-  box-shadow: 8px 8px 0 rgba(0,0,0,0.04), 0 2px 20px rgba(0,0,0,0.06);
-  transform: perspective(800px) rotateY(-2deg) rotateX(1deg);
-  transition: transform 0.5s ease;
-  overflow: hidden;
   background: #f3ede2;
-  aspect-ratio: 9/16;
-  max-height: 480px;
+  border: 1px solid #d4cec3;
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.04), 0 2px 20px rgba(0,0,0,0.08);
+  padding: 20px 18px 24px;
+  transform: perspective(800px) rotateY(-2deg) rotateX(1deg);
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  overflow: hidden;
 }
 
-.preview-frame-link:hover .preview-frame {
+.preview-frame-link:hover .preview-mock {
   transform: perspective(800px) rotateY(0deg) rotateX(0deg);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.10);
 }
 
-.preview-frame iframe {
-  width: 100%;
-  height: 200%;
-  border: none;
-  transform: scale(0.5);
-  transform-origin: top left;
+/* Paper texture on mock */
+.preview-mock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
+  z-index: 1;
+}
+
+.mock-header {
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 3px double #222;
+  margin-bottom: 12px;
+}
+
+.mock-date {
+  font-family: var(--font-gothic);
+  font-size: 7px;
+  color: #999;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.mock-logo {
+  font-family: var(--font-mincho);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.25em;
+  margin-right: -0.25em;
+  color: #111;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.mock-en {
+  font-family: var(--font-gothic);
+  font-size: 6px;
+  letter-spacing: 0.4em;
+  color: #999;
+}
+
+.mock-ticker {
+  background: #111;
+  color: #f3ede2;
+  font-family: var(--font-gothic);
+  font-size: 6px;
+  padding: 4px 8px;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mock-kicker {
+  font-family: var(--font-gothic);
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.mock-headline {
+  font-family: var(--font-mincho);
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  color: #111;
+}
+
+.mock-img {
+  width: 100%;
+  height: 80px;
+  background: #111;
+  margin-bottom: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mock-img-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-gothic);
+  font-size: 5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  letter-spacing: 0.1em;
+}
+
+.mock-img-dots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  padding: 16px;
+  opacity: 0.15;
+}
+
+.mock-img-dots span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #f3ede2;
+}
+
+.mock-caption {
+  font-family: var(--font-gothic);
+  font-size: 6px;
+  color: #999;
+  margin-bottom: 10px;
+  padding-left: 6px;
+  border-left: 2px solid var(--accent);
+  line-height: 1.6;
+}
+
+.mock-body {
+  column-count: 2;
+  column-gap: 8px;
+  column-rule: 1px solid #d4cec3;
+  margin-bottom: 12px;
+}
+
+.mock-body-line {
+  height: 4px;
+  background: #ddd;
+  margin-bottom: 4px;
+  border-radius: 1px;
+}
+
+.mock-body-line:nth-child(3n) {
+  width: 85%;
+}
+
+.mock-body-line:nth-child(5n) {
+  width: 70%;
+}
+
+.mock-section-rule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mock-section-rule::before,
+.mock-section-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #222;
+}
+
+.mock-section-rule span {
+  font-family: var(--font-mincho);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #111;
+}
+
+.mock-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mock-duo-item {
+  padding-right: 8px;
+}
+
+.mock-duo-item:first-child {
+  border-right: 1px solid #d4cec3;
+}
+
+.mock-duo-title {
+  font-family: var(--font-mincho);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  color: #111;
+}
+
+.mock-duo-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mock-duo-lines span {
+  height: 3px;
+  background: #ddd;
+  border-radius: 1px;
+}
+
+.mock-duo-lines span:last-child {
+  width: 60%;
+}
+
+.mock-footer {
+  text-align: center;
+  padding-top: 8px;
+  border-top: 2px solid #222;
+}
+
+.mock-footer-logo {
+  font-family: var(--font-mincho);
+  font-weight: 800;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: #111;
 }
 
 .preview-link {
@@ -556,8 +772,44 @@ body::before {
     <div class="sec-divider"><span>紙面プレビュー</span></div>
     <div class="preview-wrap">
       <a href="index.html" class="preview-frame-link">
-        <div class="preview-frame">
-          <iframe src="index.html" title="生成新聞プレビュー" loading="lazy" sandbox></iframe>
+        <div class="preview-mock">
+          <div class="mock-header">
+            <div class="mock-date">令和七年 二月十二日（水曜日）</div>
+            <div class="mock-logo">生成新聞</div>
+            <div class="mock-en">GENERATED DAILY NEWS</div>
+          </div>
+          <div class="mock-ticker">日経平均 38,942 ▲312　ドル円 152.34　NYダウ 44,128 ▲186　BTC $97,420</div>
+          <div class="mock-kicker">一面</div>
+          <div class="mock-headline">生成AIが変える報道の未来<br>——「読む」から「生成される」時代へ</div>
+          <div class="mock-img">
+            <div class="mock-img-label">LIVE GENERATIVE</div>
+            <div class="mock-img-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="mock-caption">情報伝達の歴史的変遷を時系列に可視化。</div>
+          <div class="mock-body">
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+            <div class="mock-body-line"></div>
+          </div>
+          <div class="mock-section-rule"><span>テクノロジー</span></div>
+          <div class="mock-duo">
+            <div class="mock-duo-item">
+              <div class="mock-duo-title">マルチモーダルAI、コード生成精度が人間を凌駕</div>
+              <div class="mock-duo-lines"><span></span><span></span><span></span></div>
+            </div>
+            <div class="mock-duo-item">
+              <div class="mock-duo-title">量子コンピュータ、実用化の臨界点に</div>
+              <div class="mock-duo-lines"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="mock-footer">
+            <div class="mock-footer-logo">生成新聞</div>
+          </div>
         </div>
       </a>
       <a href="index.html" class="preview-link">紙面サンプルを見る</a>
