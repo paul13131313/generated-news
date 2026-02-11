@@ -932,10 +932,19 @@ function renderHighlights(highlights) {
 // ===== FETCH NEWSPAPER =====
 async function fetchNewspaper(edition) {
   const url = edition ? `${API_URL}?edition=${edition}` : API_URL;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`API ${response.status}`);
-  const data = await response.json();
-  return data.newspaper;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API ${response.status}`);
+    const data = await response.json();
+    return data.newspaper;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') throw new Error('API timeout (45s)');
+    throw err;
+  }
 }
 
 // ===== EDITION SWITCH =====
@@ -1006,6 +1015,8 @@ function switchEdition(ed) {
 
   function tryReveal() {
     if (!apiDone || !animDone) return;
+    if (tryReveal._fired) return;
+    tryReveal._fired = true;
     // Render with API data or fallback
     const data = newspaperData || FALLBACK;
     renderNewspaper(data);
@@ -1025,6 +1036,17 @@ function switchEdition(ed) {
   }
 
   setTimeout(nextStep, 600);
+
+  // Safety: force reveal with fallback after 50s to prevent infinite loading
+  setTimeout(() => {
+    if (!tryReveal._fired) {
+      console.warn('Safety timeout: forcing reveal with fallback data');
+      if (!newspaperData) newspaperData = FALLBACK;
+      apiDone = true;
+      animDone = true;
+      tryReveal();
+    }
+  }, 50000);
 })();
 
 // ===== TYPEWRITER =====

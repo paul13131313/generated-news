@@ -16,18 +16,29 @@ import { fetchAndParseFeed } from './parser.js';
  *   CLAUDE_API_KEY (secret) — Anthropic API key
  */
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const ALLOWED_ORIGINS = [
+  'https://paul13131313.github.io',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+];
 
-function jsonResponse(data, status = 200) {
+function getCorsHeaders(request) {
+  const origin = request?.headers?.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  };
+}
+
+function jsonResponse(data, status = 200, request = null) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      ...CORS_HEADERS,
+      ...getCorsHeaders(request),
     },
   });
 }
@@ -113,7 +124,7 @@ async function handleRequest(request, env) {
 
   // CORS preflight
   if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS_HEADERS });
+    return new Response(null, { headers: getCorsHeaders(request) });
   }
 
   // Health check
@@ -123,18 +134,18 @@ async function handleRequest(request, env) {
       service: 'news-generator',
       timestamp: new Date().toISOString(),
       hasApiKey: !!env.CLAUDE_API_KEY,
-    });
+    }, 200, request);
   }
 
   // 紙面生成
   if (path === '/api/generate') {
     if (!env.CLAUDE_API_KEY) {
-      return jsonResponse({ error: 'CLAUDE_API_KEY not configured' }, 500);
+      return jsonResponse({ error: 'CLAUDE_API_KEY not configured' }, 500, request);
     }
 
     const edition = url.searchParams.get('edition') || detectEdition();
     if (edition !== 'morning' && edition !== 'evening') {
-      return jsonResponse({ error: 'Invalid edition. Use "morning" or "evening".' }, 400);
+      return jsonResponse({ error: 'Invalid edition. Use "morning" or "evening".' }, 400, request);
     }
 
     try {
@@ -148,13 +159,13 @@ async function handleRequest(request, env) {
           ...result.meta,
           elapsedMs: elapsed,
         },
-      });
+      }, 200, request);
     } catch (error) {
       console.error('Generation error:', error);
       return jsonResponse({
         error: 'Generation failed',
         message: error.message,
-      }, 500);
+      }, 500, request);
     }
   }
 
@@ -167,7 +178,7 @@ async function handleRequest(request, env) {
       'GET /api/generate?edition=evening',
       'GET /health',
     ],
-  }, 404);
+  }, 404, request);
 }
 
 export default {
@@ -176,7 +187,7 @@ export default {
       return await handleRequest(request, env);
     } catch (error) {
       console.error('Worker error:', error);
-      return jsonResponse({ error: 'Internal Server Error', message: error.message }, 500);
+      return jsonResponse({ error: 'Internal Server Error', message: error.message }, 500, request);
     }
   },
 };
