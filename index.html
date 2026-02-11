@@ -335,40 +335,90 @@
     z-index: 0;
   }
   .hero-gradient {
-    display: none;
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: linear-gradient(
       to bottom,
-      rgba(17,17,17,0.15) 0%,
-      rgba(17,17,17,0.05) 40%,
-      rgba(17,17,17,0.30) 70%,
-      rgba(17,17,17,0.65) 100%
+      rgba(17,17,17,0.0) 0%,
+      rgba(17,17,17,0.0) 35%,
+      rgba(17,17,17,0.55) 60%,
+      rgba(17,17,17,0.88) 100%
     );
     z-index: 1;
   }
-  .media-frame.has-photo .hero-gradient { display: block; }
-  .media-frame canvas {
-    width: 100%; height: 100%; display: block;
-    position: relative; z-index: 2;
-  }
-  .media-frame.has-photo canvas {
+  /* --- Related News Overlay --- */
+  .related-news-overlay {
     position: absolute;
-    top: 0; left: 0;
-    opacity: 0.6;
-    mix-blend-mode: overlay;
+    bottom: 0; left: 0; right: 0;
+    padding: 0 14px 28px 14px;
+    z-index: 2;
+  }
+  .rn-rule {
+    width: 100%;
+    height: 1px;
+    background: var(--accent);
+    margin-bottom: 6px;
+  }
+  .rn-label {
+    font-family: var(--font-gothic);
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .rn-list { position: relative; min-height: 52px; }
+  .rn-set {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .rn-set.rn-active { opacity: 1; pointer-events: auto; }
+  .rn-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 3px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black 50%, transparent 88%);
+    mask-image: linear-gradient(to right, black 0%, black 50%, transparent 88%);
+  }
+  .rn-set.rn-active .rn-item { opacity: 1; transform: translateY(0); }
+  .rn-item .rn-cat {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .rn-item .rn-title {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    line-height: 1.5;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   }
   .photo-credit {
     position: absolute;
     bottom: 6px; right: 8px;
     font-family: var(--font-gothic);
     font-size: 9px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.5);
     z-index: 3;
     text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   }
-  .photo-credit a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .photo-credit a { color: rgba(255,255,255,0.6); text-decoration: none; }
   .photo-credit a:hover { text-decoration: underline; }
   .media-label {
     position: absolute;
@@ -684,10 +734,14 @@
     <h2 class="top-headline" id="topHeadline"></h2>
     <p class="top-sub" id="topSub"></p>
 
-    <div class="media-frame">
+    <div class="media-frame" id="mediaFrame">
       <img id="heroPhoto" class="hero-photo" alt="" style="display:none;">
       <div class="hero-gradient"></div>
-      <canvas id="heroCanvas"></canvas>
+      <div class="related-news-overlay" id="relatedOverlay">
+        <div class="rn-rule"></div>
+        <div class="rn-label">関連ニュース</div>
+        <div class="rn-list" id="relatedList"></div>
+      </div>
       <div class="media-label">LIVE GENERATIVE</div>
       <div class="photo-credit" id="photoCredit" style="display:none;"></div>
     </div>
@@ -787,6 +841,12 @@ const FALLBACK = {
     body: '二〇二五年、ニュースの届き方が再び大きな転換点を迎えている。かつて新聞配達員が毎朝届けた朝刊のように、いまAIが個人の関心に沿った紙面を生成し、毎朝届ける時代が始まった。紙の時代に培われた「紙面を組む」という行為が、アルゴリズムと大規模言語モデルの手に委ねられつつある。',
     imageKeyword: 'artificial intelligence newspaper'
   },
+  relatedNews: [
+    { category: 'テクノロジー', title: '大規模言語モデルの学習コスト、一年で十分の一に急減' },
+    { category: '経済', title: 'AI関連スタートアップへの投資額が過去最高を更新' },
+    { category: '社会', title: '報道機関のAI活用ガイドライン、国際基準の策定が本格化' },
+    { category: '国際', title: '欧州AI規制法の施行開始、日本企業にも影響広がる' }
+  ],
   articles: [
     { category: 'テクノロジー', label: '人工知能', title: 'マルチモーダルAI、コード生成精度が人間を凌駕', body: '最新のベンチマークで大規模言語モデルがソフトウェア工学の複合タスクにおいて人間の成績を初めて上回った。特にデバッグとリファクタリング領域の飛躍が著しく、現場への導入が加速している。' },
     { category: 'テクノロジー', label: '量子計算', title: '量子コンピュータ、実用化の臨界点に到達か', body: '日米欧の研究機関が同時に、エラー耐性を持つ論理量子ビットの安定動作に成功と発表。商用化に向けた最大の障壁が崩れつつあるとの見方が業界に広がっている。' },
@@ -1126,57 +1186,18 @@ const statObs = new IntersectionObserver(entries => {
 }, { threshold: 0.5 });
 document.querySelectorAll('.stat-num').forEach(el => statObs.observe(el));
 
-// ===== HERO CANVAS (Keyword-Connected Generative Art) =====
-// カテゴリ別カラーパレット
-const CATEGORY_COLORS = {
-  '政治': { primary: [184, 32, 16], secondary: [30, 40, 90] },       // 赤と紺
-  '社会': { primary: [184, 32, 16], secondary: [30, 40, 90] },       // 赤と紺
-  '経済': { primary: [34, 120, 60], secondary: [180, 155, 50] },     // 緑とゴールド
-  '株式市場': { primary: [34, 120, 60], secondary: [180, 155, 50] }, // 緑とゴールド
-  'テクノロジー': { primary: [30, 100, 200], secondary: [0, 180, 210] }, // 青とシアン
-  '人工知能': { primary: [30, 100, 200], secondary: [0, 180, 210] },     // 青とシアン
-  '国際': { primary: [140, 80, 170], secondary: [200, 120, 60] },    // 紫とオレンジ
-  '宇宙開発': { primary: [140, 80, 170], secondary: [200, 120, 60] },
-  '文化': { primary: [170, 100, 50], secondary: [200, 170, 100] },   // ブラウンとクリーム
-  'スポーツ': { primary: [200, 80, 30], secondary: [240, 180, 40] }, // オレンジとイエロー
-  '科学': { primary: [30, 100, 200], secondary: [0, 180, 210] },     // 青とシアン
-  'default': { primary: [184, 32, 16], secondary: [243, 237, 226] }   // デフォルト: 赤と紙色
-};
-
-let heroKeywords = [];
-let heroColors = CATEGORY_COLORS['default'];
-let heroHasPhoto = false;
-
+// ===== HERO MEDIA (Photo + Related News Flow) =====
 function updateHeroTheme(data) {
   if (!data || !data.headline) return;
-  // カテゴリから色を決定
-  const category = data.headline.kicker || '';
-  const firstArticleCategory = (data.articles && data.articles[0]) ? data.articles[0].category : '';
-  const label = (data.articles && data.articles[0]) ? (data.articles[0].label || '') : '';
-
-  // カテゴリマッチ
-  for (const key of [label, firstArticleCategory, category]) {
-    if (key && CATEGORY_COLORS[key]) {
-      heroColors = CATEGORY_COLORS[key];
-      break;
-    }
-  }
-
-  // キーワード抽出（見出しから漢字2-6文字の単語を抽出）
-  const title = data.headline.title || '';
-  const matches = title.match(/[\u4e00-\u9fff\u3041-\u3096\u30a1-\u30f6]{2,6}/g) || [];
-  heroKeywords = matches.slice(0, 5);
-  if (heroKeywords.length === 0) heroKeywords = ['生成', '新聞', 'AI'];
 
   // ニュース写真の表示
-  const frame = document.querySelector('.media-frame');
+  const frame = document.getElementById('mediaFrame');
   const photo = document.getElementById('heroPhoto');
   const credit = document.getElementById('photoCredit');
 
   if (data.headline.imageUrl) {
-    heroHasPhoto = true;
     photo.src = data.headline.imageUrl;
-    photo.alt = data.headline.imageKeyword || title;
+    photo.alt = data.headline.imageKeyword || data.headline.title || '';
     photo.style.display = 'block';
     frame.classList.add('has-photo');
 
@@ -1188,161 +1209,50 @@ function updateHeroTheme(data) {
       credit.style.display = 'block';
     }
   } else {
-    heroHasPhoto = false;
     photo.style.display = 'none';
     frame.classList.remove('has-photo');
     credit.style.display = 'none';
   }
+
+  // 関連ニュースフロー
+  renderRelatedNews(data.relatedNews || []);
 }
 
-(function() {
-  const c = document.getElementById('heroCanvas'), ctx = c.getContext('2d');
-  let W, H, particles = [], flowField = [];
-  const COLS = 40, ROWS = 25;
+// ===== RELATED NEWS ROTATION =====
+let rnTimer = null;
+function renderRelatedNews(items) {
+  const list = document.getElementById('relatedList');
+  if (!items || items.length === 0) { list.innerHTML = ''; return; }
 
-  function resize() {
-    const r = c.parentElement.getBoundingClientRect();
-    c.width = r.width * 2; c.height = r.height * 2;
-    W = c.width; H = c.height;
-    initFlowField();
+  // 2件ずつのセットに分割
+  const sets = [];
+  for (let i = 0; i < items.length; i += 2) {
+    sets.push(items.slice(i, i + 2));
   }
 
-  function initFlowField() {
-    flowField = [];
-    for (let i = 0; i < COLS * ROWS; i++) flowField.push(0);
-  }
+  // セットごとにDOMを生成
+  list.innerHTML = sets.map((set, si) => `
+    <div class="rn-set${si === 0 ? ' rn-active' : ''}" data-set="${si}">
+      ${set.map((item, ii) => `
+        <div class="rn-item" style="transition-delay:${ii * 0.5}s">
+          <span class="rn-cat">${item.category}</span>
+          <span class="rn-title">${item.title}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
 
-  function updateFlowField(t) {
-    for (let y = 0; y < ROWS; y++) {
-      for (let x = 0; x < COLS; x++) {
-        const angle = Math.sin(x * 0.08 + t * 0.0006) * Math.cos(y * 0.1 + t * 0.0004) * Math.PI * 2
-                    + Math.sin((x + y) * 0.05 + t * 0.0003) * Math.PI;
-        flowField[y * COLS + x] = angle;
-      }
-    }
-  }
-
-  class Particle {
-    constructor() { this.reset(true); }
-    reset(init) {
-      this.x = Math.random() * W;
-      this.y = init ? Math.random() * H : (Math.random() < 0.5 ? -10 : H + 10);
-      this.vx = 0; this.vy = 0;
-      this.life = 200 + Math.random() * 300;
-      this.maxLife = this.life;
-      this.r = 1 + Math.random() * 2.5;
-      this.usePrimary = Math.random() < 0.6;
-    }
-    update() {
-      const col = Math.floor((this.x / W) * COLS);
-      const row = Math.floor((this.y / H) * ROWS);
-      if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
-        const angle = flowField[row * COLS + col];
-        this.vx += Math.cos(angle) * 0.3;
-        this.vy += Math.sin(angle) * 0.3;
-      }
-      this.vx *= 0.96; this.vy *= 0.96;
-      this.x += this.vx; this.y += this.vy;
-      this.life--;
-      if (this.life <= 0 || this.x < -20 || this.x > W + 20 || this.y < -20 || this.y > H + 20) this.reset(false);
-    }
-    draw() {
-      const baseAlpha = heroHasPhoto ? 0.8 : 0.6;
-      const alpha = Math.min(1, this.life / this.maxLife) * baseAlpha;
-      const clr = this.usePrimary ? heroColors.primary : heroColors.secondary;
-      // 写真モードでは白寄りの明るいパーティクル
-      const r = heroHasPhoto ? Math.min(255, clr[0] + 100) : clr[0];
-      const g = heroHasPhoto ? Math.min(255, clr[1] + 100) : clr[1];
-      const b = heroHasPhoto ? Math.min(255, clr[2] + 100) : clr[2];
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-      ctx.fill();
-    }
-  }
-
-  function drawKeywords(t) {
-    if (!heroKeywords.length || heroHasPhoto) return;
-    ctx.save();
-    heroKeywords.forEach((kw, i) => {
-      const xBase = W * (0.15 + (i / heroKeywords.length) * 0.7);
-      const yBase = H * 0.5 + Math.sin(t * 0.001 + i * 1.2) * H * 0.12;
-      const pulse = Math.sin(t * 0.002 + i) * 0.15 + 0.85;
-      const size = 18 + i * 2;
-
-      // Glow
-      const c = i % 2 === 0 ? heroColors.primary : heroColors.secondary;
-      ctx.font = `700 ${size}px "Noto Sans JP", sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.12 * pulse})`;
-      ctx.fillText(kw, xBase, yBase);
-
-      // Main text
-      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.3 * pulse})`;
-      ctx.fillText(kw, xBase, yBase);
-    });
-    ctx.restore();
-  }
-
-  function drawScanlines() {
-    if (!heroHasPhoto) return;
-    ctx.save();
-    for (let y = 0; y < H; y += 4) {
-      ctx.fillStyle = 'rgba(0,0,0,0.06)';
-      ctx.fillRect(0, y, W, 1);
-    }
-    ctx.restore();
-  }
-
-  function drawConnections(t) {
-    // Draw flowing lines connecting keyword regions
-    const c1 = heroColors.primary, c2 = heroColors.secondary;
-    ctx.lineWidth = 0.8;
-    for (let i = 0; i < 6; i++) {
-      const startX = W * (0.1 + Math.sin(t * 0.0004 + i * 0.8) * 0.4 + 0.4);
-      const startY = H * (0.2 + Math.cos(t * 0.0005 + i * 1.1) * 0.3);
-      const endX = W * (0.1 + Math.cos(t * 0.0003 + i * 0.6) * 0.4 + 0.4);
-      const endY = H * (0.5 + Math.sin(t * 0.0006 + i * 0.9) * 0.3);
-      const cpX = (startX + endX) / 2 + Math.sin(t * 0.001 + i) * 60;
-      const cpY = (startY + endY) / 2 + Math.cos(t * 0.001 + i) * 60;
-
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-      const c = i % 2 === 0 ? c1 : c2;
-      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.08)`;
-      ctx.stroke();
-    }
-  }
-
-  function init() {
-    resize();
-    for (let i = 0; i < 100; i++) particles.push(new Particle());
-  }
-
-  function loop(t) {
-    if (heroHasPhoto) {
-      // 写真モード: 透明クリアしてオーバーレイ描画
-      ctx.clearRect(0, 0, W, H);
-    } else {
-      // 通常モード: 半透明黒で残像効果
-      ctx.fillStyle = 'rgba(17,17,17,0.12)';
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    updateFlowField(t);
-    drawConnections(t);
-    particles.forEach(p => { p.update(); p.draw(); });
-    drawScanlines();
-    drawKeywords(t);
-
-    requestAnimationFrame(loop);
-  }
-
-  init();
-  window.addEventListener('resize', resize);
-  requestAnimationFrame(loop);
-})();
+  // ローテーション
+  if (rnTimer) clearInterval(rnTimer);
+  if (sets.length <= 1) return;
+  let current = 0;
+  rnTimer = setInterval(() => {
+    const allSets = list.querySelectorAll('.rn-set');
+    allSets[current].classList.remove('rn-active');
+    current = (current + 1) % sets.length;
+    allSets[current].classList.add('rn-active');
+  }, 7000);
+}
 
 // ===== BAR CHART WITH INTERACTIVE TOOLTIPS =====
 (function() {
