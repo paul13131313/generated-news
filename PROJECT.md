@@ -168,7 +168,23 @@
   - lp.htmlの料金セクションに「月額300円で購読する」ボタン追加
   - コード: `workers/payment-api/`
 
+- [x] **Phase 3 Step 2: Stripe Webhook＆購読者管理**
+  - payment-api に Webhook エンドポイント追加
+  - Cloudflare KV namespace `SUBSCRIBERS`（id: e41c7b32f3714d668e2bea60c56be914）
+  - Stripe Webhook署名検証（Web Crypto API、HMAC-SHA256）
+  - 対応イベント:
+    - `checkout.session.completed` → 購読者KV保存（email, customerId, subscriptionId, status）
+    - `customer.subscription.updated` → ステータス更新（active, past_due, canceled等）
+    - `customer.subscription.deleted` → ステータスをcanceledに変更
+  - エンドポイント:
+    - `POST /api/webhook` — Stripe Webhook受信（署名検証付き）
+    - `GET /api/subscriber/:email` — 購読ステータス確認
+  - 環境変数: `STRIPE_WEBHOOK_SECRET`（Cloudflare Workers Secrets）
+  - index.html: `?subscribed=true` パラメータで購読成功トースト表示（8秒自動消去）
+  - コード: `workers/payment-api/`
+
 ### TODO
+- [ ] Stripe DashboardでWebhookエンドポイント登録 & STRIPE_WEBHOOK_SECRET設定
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
 - [ ] PWA化・プッシュ通知
@@ -190,6 +206,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: Phase 3 Step 2 完了 — Stripe Webhook実装（署名検証、購読者KV保存、ステータス確認API、購読成功トースト）
 - 2026-02-12: Phase 3 Step 1 完了 — Stripe Checkout Session実装（payment-api Worker、月額300円サブスク、lp.htmlに購読ボタン追加）
 - 2026-02-12: RSSソース拡充 — 15フィード10カテゴリに拡大（エンタメ/文化/暮らし追加）、記事バランスを硬3+柔2に
 - 2026-02-12: 記事写真・レイアウト改善 — articles 5件中2-3件にUnsplash写真追加、写真付き記事は全幅1カラム表示、SWキャッシュ問題修正(v3)

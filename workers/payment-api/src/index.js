@@ -3,10 +3,14 @@
  *
  * Endpoints:
  *   POST /api/checkout  → Stripe Checkout Session作成（月額300円サブスク）
+ *   POST /api/webhook   → Stripe Webhook（支払い完了検知・購読者KV保存）
+ *   GET  /api/subscriber/:email → 購読ステータス確認
  *   GET  /health        → ヘルスチェック
  *
  * Environment:
  *   STRIPE_SECRET_KEY (secret) — Stripe Secret Key
+ *   STRIPE_WEBHOOK_SECRET (secret) — Stripe Webhook Signing Secret
+ *   SUBSCRIBERS (KV) — 購読者データストア
  */
 
 const ALLOWED_ORIGINS = [
@@ -73,6 +77,140 @@ async function createCheckoutSession(stripeSecretKey) {
 }
 
 /**
+ * Stripe Webhook署名検証
+ * Web Crypto APIを使用（Cloudflare Workers互換）
+ */
+async function verifyStripeSignature(payload, sigHeader, webhookSecret) {
+  const parts = sigHeader.split(',');
+  const timestamp = parts.find(p => p.startsWith('t='))?.split('=')[1];
+  const signature = parts.find(p => p.startsWith('v1='))?.split('=')[1];
+
+  if (!timestamp || !signature) {
+    throw new Error('Invalid Stripe signature header');
+  }
+
+  // タイムスタンプ検証（5分以上古い場合は拒否）
+  const now = Math.floor(Date.now() / 1000);
+  if (now - parseInt(timestamp) > 300) {
+    throw new Error('Webhook timestamp too old');
+  }
+
+  // HMAC-SHA256署名検証
+  const signedPayload = `${timestamp}.${payload}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(webhookSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
+  const expectedSig = Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  if (expectedSig !== signature) {
+    throw new Error('Invalid webhook signature');
+  }
+
+  return JSON.parse(payload);
+}
+
+/**
+ * Stripe Checkout Session詳細取得（顧客メール取得用）
+ */
+async function retrieveCheckoutSession(sessionId, stripeSecretKey) {
+  const response = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${sessionId}?expand[]=customer`,
+    {
+      headers: {
+        'Authorization': `Bearer ${stripeSecretKey}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || `Stripe API error: ${response.status}`);
+  }
+  return data;
+}
+
+/**
+ * Webhook イベント処理
+ */
+async function handleWebhookEvent(event, env) {
+  const type = event.type;
+  console.log(`Webhook event: ${type}`);
+
+  switch (type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      // Checkout Sessionから詳細取得
+      const fullSession = await retrieveCheckoutSession(session.id, env.STRIPE_SECRET_KEY);
+      const email = fullSession.customer_details?.email || fullSession.customer?.email || '';
+      const customerId = fullSession.customer?.id || fullSession.customer || '';
+      const subscriptionId = fullSession.subscription || '';
+
+      if (email) {
+        await env.SUBSCRIBERS.put(email, JSON.stringify({
+          email,
+          customerId,
+          subscriptionId,
+          status: 'active',
+          plan: '生成新聞 月額300円',
+          subscribedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+        console.log(`New subscriber: ${email}`);
+      } else {
+        console.warn('checkout.session.completed: no email found', session.id);
+      }
+      break;
+    }
+
+    case 'customer.subscription.updated': {
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+      // customerId から既存の購読者を検索
+      const subscribers = await env.SUBSCRIBERS.list();
+      for (const key of subscribers.keys) {
+        const data = JSON.parse(await env.SUBSCRIBERS.get(key.name));
+        if (data.customerId === customerId) {
+          data.status = subscription.status; // active, past_due, canceled, etc.
+          data.updatedAt = new Date().toISOString();
+          await env.SUBSCRIBERS.put(key.name, JSON.stringify(data));
+          console.log(`Subscription updated: ${key.name} → ${subscription.status}`);
+          break;
+        }
+      }
+      break;
+    }
+
+    case 'customer.subscription.deleted': {
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+      const subscribers = await env.SUBSCRIBERS.list();
+      for (const key of subscribers.keys) {
+        const data = JSON.parse(await env.SUBSCRIBERS.get(key.name));
+        if (data.customerId === customerId) {
+          data.status = 'canceled';
+          data.updatedAt = new Date().toISOString();
+          await env.SUBSCRIBERS.put(key.name, JSON.stringify(data));
+          console.log(`Subscription canceled: ${key.name}`);
+          break;
+        }
+      }
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type: ${type}`);
+  }
+}
+
+/**
  * ルーティング
  */
 async function handleRequest(request, env) {
@@ -91,6 +229,8 @@ async function handleRequest(request, env) {
       service: 'payment-api',
       timestamp: new Date().toISOString(),
       hasStripeKey: !!env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!env.STRIPE_WEBHOOK_SECRET,
+      hasSubscribersKV: !!env.SUBSCRIBERS,
     }, 200, request);
   }
 
@@ -112,11 +252,60 @@ async function handleRequest(request, env) {
     }
   }
 
+  // POST /api/webhook → Stripe Webhook
+  if (path === '/api/webhook' && request.method === 'POST') {
+    if (!env.STRIPE_WEBHOOK_SECRET) {
+      console.error('STRIPE_WEBHOOK_SECRET not configured');
+      return new Response('Webhook secret not configured', { status: 500 });
+    }
+
+    const sigHeader = request.headers.get('stripe-signature');
+    if (!sigHeader) {
+      return new Response('Missing stripe-signature header', { status: 400 });
+    }
+
+    const payload = await request.text();
+
+    try {
+      const event = await verifyStripeSignature(payload, sigHeader, env.STRIPE_WEBHOOK_SECRET);
+      await handleWebhookEvent(event, env);
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Webhook error:', error);
+      return new Response(`Webhook error: ${error.message}`, { status: 400 });
+    }
+  }
+
+  // GET /api/subscriber/:email → 購読ステータス確認
+  if (path.startsWith('/api/subscriber/') && request.method === 'GET') {
+    const email = decodeURIComponent(path.replace('/api/subscriber/', ''));
+    if (!email || !email.includes('@')) {
+      return jsonResponse({ error: 'Invalid email' }, 400, request);
+    }
+
+    const data = await env.SUBSCRIBERS.get(email);
+    if (!data) {
+      return jsonResponse({ subscribed: false }, 200, request);
+    }
+
+    const subscriber = JSON.parse(data);
+    return jsonResponse({
+      subscribed: subscriber.status === 'active',
+      status: subscriber.status,
+      subscribedAt: subscriber.subscribedAt,
+    }, 200, request);
+  }
+
   // 404
   return jsonResponse({
     error: 'Not Found',
     endpoints: [
       'POST /api/checkout',
+      'POST /api/webhook',
+      'GET /api/subscriber/:email',
       'GET /health',
     ],
   }, 404, request);
