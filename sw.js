@@ -1,4 +1,4 @@
-const CACHE = 'generated-news-v4';
+const CACHE = 'generated-news-v5';
 const ASSETS = [
   './manifest.json',
   './icon-192.png',
@@ -53,5 +53,39 @@ self.addEventListener('fetch', e => {
       caches.open(CACHE).then(c => c.put(e.request, clone));
       return res;
     }))
+  );
+});
+
+// ===== Web Push 通知 =====
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data?.json() || {}; } catch { data = {}; }
+
+  const title = data.title || '生成新聞';
+  const options = {
+    body: data.body || '新しい紙面が届きました。',
+    icon: data.icon || './icon-192.png',
+    badge: data.badge || './icon-192.png',
+    tag: data.tag || 'newspaper',
+    data: { url: data.url || './index.html' },
+    renotify: true,
+  };
+
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const targetUrl = e.notification.data?.url || './index.html';
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('/generated-news/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return clients.openWindow(targetUrl);
+    })
   );
 });

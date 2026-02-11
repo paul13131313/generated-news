@@ -912,13 +912,30 @@ const AUTH_API = 'https://auth-api.hiroshinagano0113.workers.dev';
 let currentNewspaper = null;
 
 // ===== AUTH USER BAR =====
+const PUSH_API = 'https://push-api.hiroshinagano0113.workers.dev';
+
+function getPushStatusLabel() {
+  if (!('Notification' in window) || !('PushManager' in window)) return '';
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    return '<span class="user-bar-link" onclick="togglePushSubscription()" id="pushLabel">通知ON</span>';
+  }
+  if (perm === 'denied') {
+    return '<span class="user-bar-link" style="opacity:0.4;cursor:default">通知ブロック中</span>';
+  }
+  return '<span class="user-bar-link" onclick="togglePushSubscription()" id="pushLabel">通知OFF</span>';
+}
+
 function updateUserBar() {
   const bar = document.getElementById('userBar');
   const email = localStorage.getItem('auth_email');
   if (email) {
+    const pushLink = getPushStatusLabel();
+    const pushPart = pushLink ? '<span class="user-bar-sep">|</span>' + pushLink : '';
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
+      pushPart +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
   } else {
@@ -937,6 +954,73 @@ function handleLogoutIndex() {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('auth_email');
   updateUserBar();
+}
+
+// ===== WEB PUSH 通知 =====
+async function togglePushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('このブラウザはプッシュ通知に対応していません。');
+    return;
+  }
+
+  const reg = await navigator.serviceWorker.ready;
+  const existingSub = await reg.pushManager.getSubscription();
+
+  if (existingSub) {
+    // 購読解除
+    try {
+      await fetch(PUSH_API + '/api/push/subscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: existingSub.endpoint }),
+      });
+      await existingSub.unsubscribe();
+    } catch (e) {
+      console.error('Unsubscribe error:', e);
+    }
+    updateUserBar();
+    return;
+  }
+
+  // 新規購読
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      updateUserBar();
+      return;
+    }
+
+    // VAPID公開鍵を取得
+    const vapidRes = await fetch(PUSH_API + '/api/vapid-public-key');
+    const { publicKey } = await vapidRes.json();
+
+    // Base64URL → Uint8Array
+    const padding = '='.repeat((4 - publicKey.length % 4) % 4);
+    const base64 = (publicKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const applicationServerKey = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++) applicationServerKey[i] = rawData.charCodeAt(i);
+
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
+    });
+
+    // サーバーに登録
+    await fetch(PUSH_API + '/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: subscription.toJSON(),
+        email: localStorage.getItem('auth_email') || 'anonymous',
+      }),
+    });
+
+    updateUserBar();
+  } catch (e) {
+    console.error('Push subscribe error:', e);
+    alert('通知の登録に失敗しました。');
+  }
 }
 
 // ===== PROFILE MODAL =====

@@ -1,0 +1,10 @@
+name = "push-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "PUSH_SUBSCRIPTIONS"
+id = "d11cfed6a61546dbaddb8c6fe777ca2a"

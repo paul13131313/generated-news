@@ -343,6 +343,21 @@ export default {
     try {
       const result = await generateAndCache(env, edition);
       console.log(`Cron: ${edition} generated and cached (${result.meta.elapsedMs}ms)`);
+
+      // Push通知を送信
+      if (env.PUSH_API) {
+        try {
+          const pushRes = await env.PUSH_API.fetch('https://push-api/api/push/trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ edition }),
+          });
+          const pushResult = await pushRes.json();
+          console.log(`Push: sent=${pushResult.sent}, failed=${pushResult.failed}, expired=${pushResult.expired}`);
+        } catch (pushError) {
+          console.error('Push notification failed:', pushError);
+        }
+      }
     } catch (error) {
       console.error(`Cron: ${edition} generation failed:`, error);
     }
