@@ -77,8 +77,9 @@
 - [x] **Phase 2 Step 1: ニュースソース収集パイプライン**
   - Cloudflare Worker `news-collector` をデプロイ
   - URL: https://news-collector.hiroshinagano0113.workers.dev
-  - 11本のRSSフィードから7カテゴリのニュースを収集
-  - ソース: NHK（総合/社会/政治/経済/国際/科学/スポーツ）、Yahoo!ニュース、ITmedia、はてなブックマーク、Zenn
+  - 15本のRSSフィードから10カテゴリのニュースを収集
+  - ソース: NHK（総合/社会/政治/経済/国際/科学/スポーツ/エンタメ/文化/生活）、Yahoo!ニュース、ITmedia、はてなブックマーク、Zenn、ナタリー
+  - カテゴリ: 総合, テクノロジー, 国際, 経済, 社会, 政治, スポーツ, エンタメ, 文化, 暮らし
   - エンドポイント:
     - `GET /api/news` — 全ニュース一覧（最新順、デフォルト50件）
     - `GET /api/news?category={category}` — カテゴリ別
@@ -94,6 +95,7 @@
   - RSSフィードから直接ニュース取得 → Claude Haiku 4.5で紙面JSON生成
   - 生成内容: 一面記事、カテゴリ別記事5本、天声生成コラム、ティッカー6銘柄、注目記事5本
   - 出力JSON構造: date, edition, issueNumber, headline, articles, column, ticker, highlights
+  - 記事バランス: 硬いニュース（政治/経済/国際/総合）3件 + 柔らかいニュース（文化/エンタメ/暮らし/スポーツ/テクノロジー）2件
   - 文体: 格式ある新聞調、漢語・熟語多用、漢数字表記
   - コスト: 1回あたり約1.8円（目標5円以内をクリア）
   - エンドポイント:
@@ -112,9 +114,11 @@
   - 動的レンダリング対象: 日付、号数、ティッカー、一面記事、カテゴリ記事5本、天声生成コラム、注目記事5本
 
 - [x] **ニュース写真（Unsplash API）**
-  - Claude生成プロンプトに `imageKeyword`（英語2-4語）フィールドを追加
-  - news-generator WorkerでUnsplash Search API呼び出し（headline.imageKeyword → 写真URL取得）
-  - 写真表示: Unsplashニュース写真（全幅、object-fit: cover）+ クレジット表示
+  - headline + articles にUnsplash写真を並列取得（Promise.all）
+  - headline: 一面記事に必ず写真付与
+  - articles: 5件中2〜3件にimageKeyword付与、残りはnull（視覚的にイメージしやすい記事を優先）
+  - 写真付き記事: 全幅1カラム表示（写真を大きく見せる）
+  - 写真なし記事同士: 2カラム並び表示
   - 写真なし時: 写真エリア自体を非表示
   - Unsplash利用規約準拠クレジット表示
   - 環境変数: `UNSPLASH_ACCESS_KEY`（Cloudflare Workers Secrets）
@@ -149,10 +153,15 @@
   - CORS: GitHub Pagesドメイン許可
   - コード: `workers/waitlist-api/`
 
+### Phase 3: Stripe決済 ← 次のステップ
+- Stripeアカウント作成済（Test Mode）
+- [ ] Phase 3 Step 1: Stripe APIキー取得 → payment-api Worker作成 → Checkout Session実装
+- [ ] Phase 3 Step 2: 月額300円サブスクリプション商品設定
+- [ ] Phase 3 Step 3: lp.html / index.htmlに決済導線を追加
+
 ### TODO
 - [ ] ユーザー認証（サインアップ/ログイン）
 - [ ] 関心プロファイル設定UI
-- [ ] Stripe決済連携（300円/月）
 - [ ] PWA化・プッシュ通知
 - [ ] 本番運用開始
 
@@ -172,6 +181,8 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: RSSソース拡充 — 15フィード10カテゴリに拡大（エンタメ/文化/暮らし追加）、記事バランスを硬3+柔2に
+- 2026-02-12: 記事写真・レイアウト改善 — articles 5件中2-3件にUnsplash写真追加、写真付き記事は全幅1カラム表示、SWキャッシュ問題修正(v3)
 - 2026-02-12: Phase 2 Step 5 完了 — ウェイトリスト登録フォーム実装（waitlist-api Worker + KV、lp.html API連携）
 - 2026-02-12: Phase 2 Step 4 完了 — KVキャッシュ＆Cron Triggers実装（朝刊06:00/夕刊17:00自動生成、12時間TTL、force再生成対応）
 - 2026-02-12: 関連ニュースフロー — LIVE GENERATIVEをニュース写真+関連ニュースオーバーレイに変更、Canvas廃止、relatedNews 4件ローテーション表示
