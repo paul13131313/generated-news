@@ -615,7 +615,7 @@
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
   <div class="masthead-top">
-    <span>令和七年 二月十二日（水曜日）</span>
+    <span id="mastheadDate">令和七年 二月十二日（水曜日）</span>
     <div class="edition-toggle">
       <button class="edition-btn active" id="btnMorning" onclick="switchEdition('morning')">朝刊</button>
       <button class="edition-btn" id="btnEvening" onclick="switchEdition('evening')">夕刊</button>
@@ -626,7 +626,7 @@
     <div class="masthead-en">GENERATED DAILY NEWS</div>
   </div>
   <div class="masthead-rule">
-    <span class="issue-badge">第〇〇七号</span>
+    <span class="issue-badge" id="issueNumber">第〇〇七号</span>
   </div>
   <nav class="masthead-nav">
     <span class="active">総合</span>
@@ -639,33 +639,14 @@
 
 <!-- TICKER -->
 <div class="ticker gen-animate">
-  <div class="ticker-track" id="ticker">
-    <span>日経平均 38,942.18 <span class="up">▲312.40 (+0.81%)</span></span>
-    <span>TOPIX 2,748.52 <span class="up">▲18.90</span></span>
-    <span>ドル円 152.34 <span class="dn">▼0.42</span></span>
-    <span>ユーロ円 164.12 <span class="up">▲0.18</span></span>
-    <span>NYダウ 44,128.56 <span class="up">▲186.22</span></span>
-    <span>S&P500 6,012.44 <span class="up">▲22.40</span></span>
-    <span>NASDAQ 19,478.20 <span class="dn">▼31.88</span></span>
-    <span>BTC $97,420 <span class="up">▲2.8%</span></span>
-    <span>金 $2,890 <span class="up">▲0.1%</span></span>
-    <span>日経平均 38,942.18 <span class="up">▲312.40 (+0.81%)</span></span>
-    <span>TOPIX 2,748.52 <span class="up">▲18.90</span></span>
-    <span>ドル円 152.34 <span class="dn">▼0.42</span></span>
-    <span>ユーロ円 164.12 <span class="up">▲0.18</span></span>
-    <span>NYダウ 44,128.56 <span class="up">▲186.22</span></span>
-    <span>S&P500 6,012.44 <span class="up">▲22.40</span></span>
-    <span>NASDAQ 19,478.20 <span class="dn">▼31.88</span></span>
-    <span>BTC $97,420 <span class="up">▲2.8%</span></span>
-    <span>金 $2,890 <span class="up">▲0.1%</span></span>
-  </div>
+  <div class="ticker-track" id="tickerTrack"></div>
 </div>
 
 <main class="content">
 
   <!-- TOP ARTICLE -->
   <article class="top-article gen-animate">
-    <div class="kicker">一面</div>
+    <div class="kicker" id="headlineKicker">一面</div>
     <h2 class="top-headline" id="topHeadline"></h2>
     <p class="top-sub" id="topSub"></p>
 
@@ -675,11 +656,7 @@
     </div>
     <p class="media-cap">情報伝達の歴史的変遷を時系列に可視化。活版印刷からAI生成へ——各時代の速度とパーソナライゼーション度合いをリアルタイム描画。</p>
 
-    <div class="body-text">
-      <p class="dropcap">二〇二五年、ニュースの届き方が再び大きな転換点を迎えている。かつて新聞配達員が毎朝届けた朝刊のように、いまAIが個人の関心に沿った紙面を生成し、毎朝届ける時代が始まった。紙の時代に培われた「紙面を組む」という行為が、アルゴリズムと大規模言語モデルの手に委ねられつつある。</p>
-      <p>従来のアルゴリズム推薦とは根本的に異なる点がある。記事そのものが読者のために再構成されるのだ。同じ出来事でも、技術者にはアーキテクチャの詳細が、経営者には市場へのインパクトが、学生には歴史的文脈が語られる。ニュースが「選ばれる」のではなく「生まれる」。</p>
-      <p>一方で、生成されたニュースのみに依存することへの懸念も根強い。フィルターバブルの深化、事実検証の困難さ、情報の均質化。生成新聞はこの問題に対し「偶然の出会い」という概念を紙面設計の中核に据えた。関心の外にあるニュースとの邂逅を、意図的に設計する試みである。</p>
-    </div>
+    <div class="body-text" id="headlineBody"></div>
   </article>
 
   <!-- STATS -->
@@ -701,21 +678,8 @@
     </div>
   </div>
 
-  <!-- TECH -->
-  <div class="sec-rule gen-animate"><span>テクノロジー</span></div>
-
-  <div class="duo gen-animate">
-    <div class="duo-item">
-      <div class="duo-tag">人工知能</div>
-      <h3>マルチモーダルAI、コード生成精度が人間を凌駕</h3>
-      <p>最新のベンチマークで大規模言語モデルがソフトウェア工学の複合タスクにおいて人間の成績を初めて上回った。特にデバッグとリファクタリング領域の飛躍が著しく、現場への導入が加速している。</p>
-    </div>
-    <div class="duo-item">
-      <div class="duo-tag">量子計算</div>
-      <h3>量子コンピュータ、実用化の臨界点に到達か</h3>
-      <p>日米欧の研究機関が同時に、エラー耐性を持つ論理量子ビットの安定動作に成功と発表。商用化に向けた最大の障壁が崩れつつあるとの見方が業界に広がっている。</p>
-    </div>
-  </div>
+  <!-- ARTICLES (generated dynamically) -->
+  <div id="articlesContainer"></div>
 
   <!-- CHART -->
   <div class="data-block gen-animate">
@@ -748,58 +712,17 @@
   <div class="column-block gen-animate">
     <div class="column-head">
       <div>
-        <div class="column-stamp">天声生成</div>
-        <div class="column-stamp-sub">TENSEI GENERATED — AI朝刊コラム</div>
+        <div class="column-stamp" id="columnTitle">天声生成</div>
+        <div class="column-stamp-sub" id="columnSub">TENSEI GENERATED — AI朝刊コラム</div>
       </div>
     </div>
-    <div class="column-body">
-      <p>朝、目が覚めて最初にすることが「画面を見る」になったのは、いつからだろう。かつてそれは新聞を広げることだった。インクの匂い、紙の擦れる音。あの所作には、一日を始める儀式としての重みがあった。</p>
-      <p>新聞が衰退したのは、情報が遅いからではない。私たちが「待つ」ことをやめたからだ。ニュースは流れてくるものになり、見出しをスワイプで消費するものになった。記事を読むのではなく、見出しを読む。理解するのではなく、知った気になる。</p>
-      <p>生成新聞という矛盾した名前のメディアが目指すのは、おそらくその逆である。最新の技術を使って、最も古い体験を取り戻す。あなたのために組まれた紙面を、朝、一枚ずつめくるように読む。急がなくていい。この紙面は、あなたが読み終わるまで、どこにも行かない。</p>
-      <p>テクノロジーの最良の使い方は、失われた時間を取り戻すことかもしれない。少なくとも今朝、この紙面を開いたあなたは、ほんの少しだけ、新聞を広げていた頃の朝に近い場所にいる。</p>
-    </div>
+    <div class="column-body" id="columnBody"></div>
   </div>
 
   <!-- TOPICS -->
   <div class="sec-rule gen-animate"><span>注目の記事</span></div>
 
-  <div class="stories-list gen-animate">
-    <div class="s-item">
-      <div class="s-num">01</div>
-      <div>
-        <h4>東京都、来年度予算にAIリテラシー教育を大幅拡充へ</h4>
-        <p>全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。</p>
-      </div>
-    </div>
-    <div class="s-item">
-      <div class="s-num">02</div>
-      <div>
-        <h4>SpaceX、民間初の火星往還ミッション日程を正式発表</h4>
-        <p>二〇二七年打ち上げ予定。乗組員六名の選考が来月より開始される。</p>
-      </div>
-    </div>
-    <div class="s-item">
-      <div class="s-num">03</div>
-      <div>
-        <h4>日経平均、四万円台を視野——半導体関連銘柄が牽引</h4>
-        <p>国内メーカーの設備投資拡大が市場の楽観ムードを後押し。</p>
-      </div>
-    </div>
-    <div class="s-item">
-      <div class="s-num">04</div>
-      <div>
-        <h4>新たな音楽生成AIが作曲家との「共創モデル」を提示</h4>
-        <p>人間の創造性を補完するAI活用の新しい標準形として注目を集める。</p>
-      </div>
-    </div>
-    <div class="s-item">
-      <div class="s-num">05</div>
-      <div>
-        <h4>世界の平均気温、観測史上最高を三年連続で更新</h4>
-        <p>COP30を控え、各国が排出削減目標の上方修正を迫られる状況に。</p>
-      </div>
-    </div>
-  </div>
+  <div class="stories-list gen-animate" id="highlightsContainer"></div>
 
 </main>
 
@@ -814,37 +737,246 @@
 </footer>
 
 <script>
+// ===== CONFIG =====
+const API_URL = 'https://news-generator.hiroshinagano0113.workers.dev/api/generate';
+let currentNewspaper = null;
+
+// ===== FALLBACK DATA =====
+const FALLBACK = {
+  date: '令和七年 二月十二日（水曜日）',
+  edition: '朝刊',
+  issueNumber: '第〇〇七号',
+  headline: {
+    kicker: '一面',
+    title: '生成AIが変える報道の未来——「読む」から「生成される」時代へ',
+    body: '二〇二五年、ニュースの届き方が再び大きな転換点を迎えている。かつて新聞配達員が毎朝届けた朝刊のように、いまAIが個人の関心に沿った紙面を生成し、毎朝届ける時代が始まった。紙の時代に培われた「紙面を組む」という行為が、アルゴリズムと大規模言語モデルの手に委ねられつつある。'
+  },
+  articles: [
+    { category: 'テクノロジー', label: '人工知能', title: 'マルチモーダルAI、コード生成精度が人間を凌駕', body: '最新のベンチマークで大規模言語モデルがソフトウェア工学の複合タスクにおいて人間の成績を初めて上回った。特にデバッグとリファクタリング領域の飛躍が著しく、現場への導入が加速している。' },
+    { category: 'テクノロジー', label: '量子計算', title: '量子コンピュータ、実用化の臨界点に到達か', body: '日米欧の研究機関が同時に、エラー耐性を持つ論理量子ビットの安定動作に成功と発表。商用化に向けた最大の障壁が崩れつつあるとの見方が業界に広がっている。' },
+    { category: '国際', label: '宇宙開発', title: 'SpaceX、民間初の火星往還ミッション日程を正式発表', body: '二〇二七年打ち上げ予定。乗組員六名の選考が来月より開始される。月面基地構想との連携も視野に入れた野心的計画である。' },
+    { category: '経済', label: '株式市場', title: '日経平均、四万円台を視野——半導体関連銘柄が牽引', body: '国内メーカーの設備投資拡大が市場の楽観ムードを後押し。AI関連需要の拡大が追い風となっている。' },
+    { category: '社会', label: '教育改革', title: '東京都、来年度予算にAIリテラシー教育を大幅拡充へ', body: '全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。デジタル人材育成の基盤構築を急ぐ。' }
+  ],
+  column: {
+    title: '天声生成',
+    body: '朝、目が覚めて最初にすることが「画面を見る」になったのは、いつからだろう。かつてそれは新聞を広げることだった。インクの匂い、紙の擦れる音。あの所作には、一日を始める儀式としての重みがあった。\n\n新聞が衰退したのは、情報が遅いからではない。私たちが「待つ」ことをやめたからだ。ニュースは流れてくるものになり、見出しをスワイプで消費するものになった。記事を読むのではなく、見出しを読む。理解するのではなく、知った気になる。\n\n生成新聞という矛盾した名前のメディアが目指すのは、おそらくその逆である。最新の技術を使って、最も古い体験を取り戻す。あなたのために組まれた紙面を、朝、一枚ずつめくるように読む。急がなくていい。この紙面は、あなたが読み終わるまで、どこにも行かない。'
+  },
+  ticker: [
+    { name: '日経平均', value: '38,942', change: '+312' },
+    { name: 'TOPIX', value: '2,748', change: '+18' },
+    { name: 'ドル円', value: '152.34', change: '-0.42' },
+    { name: 'NYダウ', value: '44,128', change: '+186' },
+    { name: 'S&P500', value: '6,012', change: '+22' },
+    { name: 'BTC', value: '$97,420', change: '+2.8%' }
+  ],
+  highlights: [
+    { title: '東京都、来年度予算にAIリテラシー教育を大幅拡充へ', summary: '全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。' },
+    { title: 'SpaceX、民間初の火星往還ミッション日程を正式発表', summary: '二〇二七年打ち上げ予定。乗組員六名の選考が来月より開始される。' },
+    { title: '日経平均、四万円台を視野——半導体関連銘柄が牽引', summary: '国内メーカーの設備投資拡大が市場の楽観ムードを後押し。' },
+    { title: '新たな音楽生成AIが作曲家との「共創モデル」を提示', summary: '人間の創造性を補完するAI活用の新しい標準形として注目を集める。' },
+    { title: '世界の平均気温、観測史上最高を三年連続で更新', summary: 'COP30を控え、各国が排出削減目標の上方修正を迫られる状況に。' }
+  ]
+};
+
+// ===== RENDER NEWSPAPER =====
+function renderNewspaper(data) {
+  currentNewspaper = data;
+
+  // Title
+  document.title = `生成新聞 — ${data.issueNumber}`;
+
+  // Masthead
+  document.getElementById('mastheadDate').textContent = data.date;
+  document.getElementById('issueNumber').textContent = data.issueNumber;
+
+  // Edition buttons
+  const mBtn = document.getElementById('btnMorning');
+  const eBtn = document.getElementById('btnEvening');
+  if (data.edition === '夕刊') {
+    eBtn.classList.add('active'); mBtn.classList.remove('active');
+  } else {
+    mBtn.classList.add('active'); eBtn.classList.remove('active');
+  }
+
+  // Column sub
+  const colSub = document.getElementById('columnSub');
+  colSub.textContent = data.edition === '夕刊'
+    ? 'TENSEI GENERATED — AI夕刊コラム'
+    : 'TENSEI GENERATED — AI朝刊コラム';
+
+  // Ticker
+  renderTicker(data.ticker || []);
+
+  // Headline body
+  renderHeadlineBody(data.headline.body);
+
+  // Articles
+  renderArticles(data.articles || []);
+
+  // Column
+  renderColumn(data.column);
+
+  // Highlights
+  renderHighlights(data.highlights || []);
+
+  // Footer
+  const stamp = document.getElementById('genTimeStamp');
+  const now = new Date();
+  const jstH = new Date(now.getTime() + 9*60*60*1000).getHours();
+  const jstM = new Date(now.getTime() + 9*60*60*1000).getMinutes();
+  stamp.textContent = `GENERATED AT ${String(jstH).padStart(2,'0')}:${String(jstM).padStart(2,'0')} JST`;
+
+  // Deliver step text
+  const deliverStep = document.getElementById('genDeliverStep');
+  if (deliverStep) {
+    deliverStep.textContent = data.edition === '夕刊' ? '夕刊を配達中…' : '朝刊を配達中…';
+  }
+}
+
+function renderTicker(tickers) {
+  const track = document.getElementById('tickerTrack');
+  if (!tickers.length) return;
+  const html = tickers.map(t => {
+    const num = parseFloat(String(t.change).replace(/[^0-9.\-]/g, ''));
+    const cls = num < 0 ? 'dn' : 'up';
+    const arrow = num < 0 ? '▼' : '▲';
+    return `<span>${t.name} ${t.value} <span class="${cls}">${arrow}${t.change.replace(/^[+\-]/, '')}</span></span>`;
+  }).join('');
+  // Duplicate for seamless scroll
+  track.innerHTML = html + html;
+}
+
+function renderHeadlineBody(body) {
+  const el = document.getElementById('headlineBody');
+  if (!body) return;
+  const paragraphs = body.split(/\n\n|\n/).filter(p => p.trim());
+  el.innerHTML = paragraphs.map((p, i) =>
+    i === 0 ? `<p class="dropcap">${p}</p>` : `<p>${p}</p>`
+  ).join('');
+}
+
+function renderArticles(articles) {
+  const container = document.getElementById('articlesContainer');
+  if (!articles.length) return;
+
+  // Group articles into pairs for duo layout, by category sections
+  let html = '';
+  const categories = [...new Set(articles.map(a => a.category))];
+
+  // First pair: use duo layout
+  if (articles.length >= 2) {
+    const cat = articles[0].category || categories[0] || 'ニュース';
+    html += `<div class="sec-rule gen-animate"><span>${cat}</span></div>`;
+    html += '<div class="duo gen-animate">';
+    html += articles.slice(0, 2).map(a => `
+      <div class="duo-item">
+        <div class="duo-tag">${a.label || a.category}</div>
+        <h3>${a.title}</h3>
+        <p>${a.body}</p>
+      </div>
+    `).join('');
+    html += '</div>';
+  }
+
+  // Remaining articles as individual items
+  articles.slice(2).forEach(a => {
+    html += `<div class="sec-rule gen-animate"><span>${a.category}</span></div>`;
+    html += `<div class="duo gen-animate"><div class="duo-item" style="grid-column:1/-1;padding:0;">
+      <div class="duo-tag">${a.label || a.category}</div>
+      <h3>${a.title}</h3>
+      <p>${a.body}</p>
+    </div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderColumn(column) {
+  if (!column) return;
+  const titleEl = document.getElementById('columnTitle');
+  const bodyEl = document.getElementById('columnBody');
+  titleEl.textContent = column.title || '天声生成';
+  const paragraphs = column.body.split(/\n\n|\n/).filter(p => p.trim());
+  bodyEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
+}
+
+function renderHighlights(highlights) {
+  const container = document.getElementById('highlightsContainer');
+  if (!highlights.length) return;
+  container.innerHTML = highlights.map((h, i) => `
+    <div class="s-item">
+      <div class="s-num">${String(i + 1).padStart(2, '0')}</div>
+      <div>
+        <h4>${h.title}</h4>
+        <p>${h.summary}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== FETCH NEWSPAPER =====
+async function fetchNewspaper(edition) {
+  const url = edition ? `${API_URL}?edition=${edition}` : API_URL;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`API ${response.status}`);
+  const data = await response.json();
+  return data.newspaper;
+}
+
 // ===== EDITION SWITCH =====
 function switchEdition(ed) {
   const mBtn = document.getElementById('btnMorning');
   const eBtn = document.getElementById('btnEvening');
-  const stamp = document.getElementById('genTimeStamp');
 
   if (ed === 'morning') {
     mBtn.classList.add('active'); eBtn.classList.remove('active');
-    stamp.textContent = 'GENERATED AT 06:00 JST';
   } else {
     eBtn.classList.add('active'); mBtn.classList.remove('active');
-    stamp.textContent = 'GENERATED AT 17:00 JST';
   }
 
-  // Mini re-generation flash
-  document.querySelectorAll('.gen-animate').forEach(el => {
-    el.classList.remove('gen-visible');
+  // Hide content
+  document.querySelectorAll('.gen-animate').forEach(el => el.classList.remove('gen-visible'));
+
+  // Fetch new edition
+  fetchNewspaper(ed).then(data => {
+    renderNewspaper(data);
+    // Re-observe new gen-animate elements
+    setTimeout(() => {
+      document.querySelectorAll('.gen-animate').forEach((el, i) => {
+        setTimeout(() => el.classList.add('gen-visible'), i * 80);
+      });
+      typeHeadline(data.headline.title);
+    }, 150);
+  }).catch(() => {
+    // On error, just re-show
+    setTimeout(() => {
+      document.querySelectorAll('.gen-animate').forEach((el, i) => {
+        setTimeout(() => el.classList.add('gen-visible'), i * 80);
+      });
+    }, 150);
   });
-  setTimeout(() => {
-    document.querySelectorAll('.gen-animate').forEach((el, i) => {
-      setTimeout(() => el.classList.add('gen-visible'), i * 80);
-    });
-  }, 150);
 }
 
-// ===== GENERATION SEQUENCE =====
+// ===== GENERATION SEQUENCE + API FETCH =====
 (function() {
   const overlay = document.getElementById('genOverlay');
   const steps = document.querySelectorAll('#genSteps li');
-  const animEls = document.querySelectorAll('.gen-animate');
   let step = 0;
+  let newspaperData = null;
+  let apiDone = false;
+  let animDone = false;
+
+  // Start API fetch immediately
+  fetchNewspaper().then(data => {
+    newspaperData = data;
+  }).catch(err => {
+    console.warn('API fetch failed, using fallback:', err);
+    newspaperData = FALLBACK;
+  }).finally(() => {
+    apiDone = true;
+    tryReveal();
+  });
 
   function nextStep() {
     if (step > 0) { steps[step-1].classList.remove('active'); steps[step-1].classList.add('done-step'); }
@@ -853,40 +985,57 @@ function switchEdition(ed) {
       step++;
       setTimeout(nextStep, 500 + Math.random() * 400);
     } else {
-      setTimeout(() => { overlay.classList.add('done'); revealContent(); }, 600);
+      animDone = true;
+      tryReveal();
     }
   }
 
-  function revealContent() {
+  function tryReveal() {
+    if (!apiDone || !animDone) return;
+    // Render with API data or fallback
+    const data = newspaperData || FALLBACK;
+    renderNewspaper(data);
+
+    setTimeout(() => {
+      overlay.classList.add('done');
+      revealContent(data);
+    }, 600);
+  }
+
+  function revealContent(data) {
+    const animEls = document.querySelectorAll('.gen-animate');
     let d = 0;
     animEls.forEach(el => { setTimeout(() => el.classList.add('gen-visible'), d); d += 180; });
-    setTimeout(typeHeadline, 400);
-    setTimeout(typeSub, 2200);
+    setTimeout(() => typeHeadline(data.headline.title), 400);
+    setTimeout(() => typeSub(data.headline.body), 2200);
   }
 
   setTimeout(nextStep, 600);
 })();
 
 // ===== TYPEWRITER =====
-const headlineText = '生成AIが変える報道の未来——「読む」から「生成される」時代へ';
-const subText = 'パーソナライズされたニュース体験が、情報との向き合い方を根本から問い直す';
-
-function typeHeadline() {
+function typeHeadline(text) {
   const el = document.getElementById('topHeadline');
+  if (!text) return;
+  el.textContent = '';
   el.classList.add('typing-cursor');
   let i = 0;
   const t = setInterval(() => {
-    el.textContent = headlineText.slice(0, ++i);
-    if (i >= headlineText.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
+    el.textContent = text.slice(0, ++i);
+    if (i >= text.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
   }, 45);
 }
-function typeSub() {
+function typeSub(body) {
   const el = document.getElementById('topSub');
+  if (!body) return;
+  // Use first sentence as sub-headline
+  const firstSentence = body.split(/。/)[0] + '。';
+  el.textContent = '';
   el.classList.add('typing-cursor');
   let i = 0;
   const t = setInterval(() => {
-    el.textContent = subText.slice(0, ++i);
-    if (i >= subText.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
+    el.textContent = firstSentence.slice(0, ++i);
+    if (i >= firstSentence.length) { clearInterval(t); el.classList.remove('typing-cursor'); }
   }, 35);
 }
 
