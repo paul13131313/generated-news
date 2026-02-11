@@ -160,16 +160,45 @@ async function generateNewspaper(apiKey, edition, unsplashKey) {
   // 4. JSONパース
   const newspaper = parseGeneratedJson(rawText);
 
-  // 5. Unsplash写真取得（imageKeywordがあれば）
-  const imageKeyword = newspaper.headline?.imageKeyword;
-  if (imageKeyword && unsplashKey) {
-    const photo = await fetchUnsplashImage(unsplashKey, imageKeyword);
-    if (photo) {
-      newspaper.headline.imageUrl = photo.imageUrl;
-      newspaper.headline.imageCredit = photo.imageCredit;
-      newspaper.headline.imageCreditLink = photo.imageCreditLink;
-      newspaper.headline.unsplashLink = photo.unsplashLink;
+  // 5. Unsplash写真取得（headline + articles）
+  if (unsplashKey) {
+    const photoPromises = [];
+
+    // headline写真
+    const headlineKeyword = newspaper.headline?.imageKeyword;
+    if (headlineKeyword) {
+      photoPromises.push(
+        fetchUnsplashImage(unsplashKey, headlineKeyword).then(photo => {
+          if (photo) {
+            newspaper.headline.imageUrl = photo.imageUrl;
+            newspaper.headline.imageCredit = photo.imageCredit;
+            newspaper.headline.imageCreditLink = photo.imageCreditLink;
+            newspaper.headline.unsplashLink = photo.unsplashLink;
+          }
+        })
+      );
     }
+
+    // articles写真（imageKeywordがある記事のみ）
+    if (newspaper.articles) {
+      newspaper.articles.forEach((article, i) => {
+        if (article.imageKeyword) {
+          photoPromises.push(
+            fetchUnsplashImage(unsplashKey, article.imageKeyword).then(photo => {
+              if (photo) {
+                newspaper.articles[i].imageUrl = photo.imageUrl;
+                newspaper.articles[i].imageCredit = photo.imageCredit;
+                newspaper.articles[i].imageCreditLink = photo.imageCreditLink;
+                newspaper.articles[i].unsplashLink = photo.unsplashLink;
+              }
+            })
+          );
+        }
+      });
+    }
+
+    // 並列で写真取得
+    await Promise.all(photoPromises);
   }
 
   return {
