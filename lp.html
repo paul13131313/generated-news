@@ -1324,7 +1324,7 @@ async function handleSubscribe() {
       msg.textContent = data.message || '決済ページの作成に失敗しました。時間をおいてお試しください。';
     }
   } catch (err) {
-    btn.textContent = '月額300円で購読する';
+    btn.textContent = '初月無料で始める';
     btn.disabled = false;
     msg.textContent = '決済ページの作成に失敗しました。時間をおいてお試しください。';
   }
