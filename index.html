@@ -591,23 +591,24 @@
   }
   .column-body p { text-indent: 1em; margin-bottom: 0.4em; }
 
-  /* ===== SMALL STORIES (控えめ表示) ===== */
+  /* ===== NUMBERS (数字で読む) ===== */
   .stories-list { padding: 8px 0 4px; }
   .s-item {
-    padding: 8px 0;
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 10px 0;
     border-bottom: 1px solid var(--rule-light);
   }
   .s-item:last-child { border-bottom: none; }
-  .s-num { display: none; }
-  .s-item h4 {
-    font-family: var(--font-gothic);
-    font-weight: 500; font-size: 12px;
-    line-height: 1.5; letter-spacing: 0; margin-bottom: 0;
-    color: var(--ink);
+  .s-num {
+    font-family: var(--font-mincho); font-weight: 800;
+    font-size: 22px; line-height: 1; color: var(--ink);
+    white-space: nowrap; min-width: 0; flex-shrink: 0;
+    letter-spacing: 0.02em;
   }
-  .s-item p {
-    font-size: 11px; color: var(--caption); line-height: 1.5;
-    font-family: var(--font-gothic); margin-top: 2px;
+  .s-label {
+    font-family: var(--font-gothic); font-size: 11px;
+    font-weight: 400; color: var(--caption); line-height: 1.5;
+    letter-spacing: 0.02em;
   }
 
   /* ===== FOOTER ===== */
@@ -745,6 +746,60 @@
   }
   .cancel-msg.success { color: #2d5016; }
   .cancel-msg.error { color: var(--accent); }
+
+  /* ===== INVITE MODAL ===== */
+  .invite-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 10001;
+    align-items: center; justify-content: center;
+  }
+  .invite-overlay.show { display: flex; }
+  .invite-modal {
+    background: var(--paper); width: 100%; max-width: 400px;
+    margin: 24px; padding: 32px 28px; position: relative;
+    border: 1px solid var(--rule); text-align: center;
+  }
+  .invite-modal-close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; font-size: 22px;
+    cursor: pointer; color: var(--caption); line-height: 1;
+  }
+  .invite-modal-close:hover { color: var(--ink); }
+  .invite-title {
+    font-family: var(--font-mincho); font-size: 20px;
+    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 10px;
+  }
+  .invite-sub {
+    font-family: var(--font-gothic); font-size: 12px;
+    color: var(--caption); line-height: 1.8; margin-bottom: 20px;
+  }
+  .invite-field { margin-bottom: 14px; text-align: left; }
+  .invite-field label {
+    display: block; font-family: var(--font-gothic);
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    color: var(--caption); margin-bottom: 6px;
+  }
+  .invite-field input {
+    width: 100%; font-family: var(--font-gothic); font-size: 15px;
+    padding: 12px 16px; border: 1px solid var(--rule-light);
+    background: #fff; color: var(--ink); outline: none;
+    transition: border-color 0.3s; box-sizing: border-box;
+  }
+  .invite-field input:focus { border-color: var(--accent); }
+  .invite-submit {
+    width: 100%; font-family: var(--font-gothic); font-size: 14px;
+    font-weight: 700; letter-spacing: 0.1em; padding: 14px;
+    background: var(--ink); color: var(--paper); border: none;
+    cursor: pointer; transition: all 0.3s; margin-top: 8px;
+  }
+  .invite-submit:hover { background: var(--accent); }
+  .invite-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+  .invite-msg {
+    font-family: var(--font-gothic); font-size: 12px;
+    text-align: center; margin-top: 10px; min-height: 1.5em;
+  }
+  .invite-msg.success { color: #2d5016; }
+  .invite-msg.error { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -804,6 +859,25 @@
       <button class="cancel-btn-confirm" id="cancelConfirmBtn" onclick="confirmCancel()">解約する</button>
     </div>
     <div class="cancel-msg" id="cancelMsg"></div>
+  </div>
+</div>
+
+<!-- INVITE MODAL -->
+<div class="invite-overlay" id="inviteOverlay" onclick="if(event.target===this)closeInviteModal()">
+  <div class="invite-modal">
+    <button class="invite-modal-close" onclick="closeInviteModal()">&times;</button>
+    <div class="invite-title">体験パス</div>
+    <div class="invite-sub">招待コードをお持ちの方は、メールアドレスとコードを入力してください。<br>7日間無料で新聞をお読みいただけます。</div>
+    <div class="invite-field">
+      <label>メールアドレス</label>
+      <input type="email" id="inviteEmail" placeholder="example@email.com">
+    </div>
+    <div class="invite-field">
+      <label>招待コード</label>
+      <input type="text" id="inviteCode" placeholder="例: PAUL" style="text-transform:uppercase;">
+    </div>
+    <button class="invite-submit" id="inviteSubmit" onclick="submitInvite()">体験パスを有効にする</button>
+    <div class="invite-msg" id="inviteMsg"></div>
   </div>
 </div>
 
@@ -867,7 +941,7 @@
   </div>
 
   <!-- TOPICS -->
-  <div class="sec-rule gen-animate"><span>本日の見出し</span></div>
+  <div class="sec-rule gen-animate"><span>数字で読む</span></div>
 
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
 
@@ -916,7 +990,22 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 function updateUserBar() {
   const bar = document.getElementById('userBar');
   const email = localStorage.getItem('auth_email');
-  if (email) {
+  const isInvite = localStorage.getItem('invite_user') === 'true';
+
+  if (email && isInvite) {
+    // 招待ユーザー
+    const expires = localStorage.getItem('invite_expires');
+    const expiresDate = expires ? new Date(expires).toLocaleDateString('ja-JP') : '';
+    const expiresText = expiresDate ? '（' + expiresDate + 'まで）' : '';
+    bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
+      '<span class="user-bar-sep">|</span>' +
+      '<span style="font-size:10px;color:var(--caption);">体験パス' + expiresText + '</span>' +
+      '<span class="user-bar-sep">|</span>' +
+      '<a class="user-bar-link" href="lp.html">正式購読する</a>' +
+      '<span class="user-bar-sep">|</span>' +
+      '<span class="user-bar-link" onclick="handleInviteLogout()">ログアウト</span>';
+  } else if (email) {
+    // 認証ユーザー
     const pushToggle = getPushToggleHtml();
     const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
@@ -928,7 +1017,10 @@ function updateUserBar() {
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
   } else {
-    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>';
+    // 未認証
+    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>' +
+      '<span class="user-bar-sep">|</span>' +
+      '<span class="user-bar-link" onclick="openInviteModal()">招待コードをお持ちの方</span>';
   }
 }
 
@@ -942,6 +1034,13 @@ function handleLogoutIndex() {
   }
   localStorage.removeItem('auth_token');
   localStorage.removeItem('auth_email');
+  updateUserBar();
+}
+
+function handleInviteLogout() {
+  localStorage.removeItem('auth_email');
+  localStorage.removeItem('invite_user');
+  localStorage.removeItem('invite_expires');
   updateUserBar();
 }
 
@@ -1180,10 +1279,84 @@ async function confirmCancel() {
   btn.textContent = '解約する';
 }
 
+// ===== INVITE PASS =====
+function openInviteModal() {
+  document.getElementById('inviteEmail').value = '';
+  document.getElementById('inviteCode').value = '';
+  document.getElementById('inviteSubmit').disabled = false;
+  document.getElementById('inviteSubmit').textContent = '体験パスを有効にする';
+  const msg = document.getElementById('inviteMsg');
+  msg.textContent = '';
+  msg.className = 'invite-msg';
+  document.getElementById('inviteOverlay').classList.add('show');
+}
+
+function closeInviteModal() {
+  document.getElementById('inviteOverlay').classList.remove('show');
+}
+
+async function submitInvite() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const inviteCode = document.getElementById('inviteCode').value.trim();
+  const btn = document.getElementById('inviteSubmit');
+  const msg = document.getElementById('inviteMsg');
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'メールアドレスを正しく入力してください';
+    msg.className = 'invite-msg error';
+    return;
+  }
+  if (!inviteCode) {
+    msg.textContent = '招待コードを入力してください';
+    msg.className = 'invite-msg error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+  msg.textContent = '';
+  msg.className = 'invite-msg';
+
+  try {
+    const res = await fetch(PAYMENT_API + '/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, inviteCode }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      localStorage.setItem('auth_email', data.email);
+      localStorage.setItem('invite_user', 'true');
+      localStorage.setItem('invite_expires', data.expiresAt);
+
+      msg.textContent = data.message;
+      msg.className = 'invite-msg success';
+      setTimeout(() => {
+        closeInviteModal();
+        updateUserBar();
+      }, 1500);
+    } else {
+      msg.textContent = data.error || '体験パスの登録に失敗しました';
+      msg.className = 'invite-msg error';
+      btn.disabled = false;
+      btn.textContent = '体験パスを有効にする';
+    }
+  } catch {
+    msg.textContent = '通信エラーが発生しました';
+    msg.className = 'invite-msg error';
+    btn.disabled = false;
+    btn.textContent = '体験パスを有効にする';
+  }
+}
+
 // セッション検証
 (function() {
   const token = localStorage.getItem('auth_token');
+  const isInvite = localStorage.getItem('invite_user') === 'true';
+
   if (token) {
+    // 認証ユーザー
     fetch(AUTH_API + '/api/me', {
       headers: { 'Authorization': 'Bearer ' + token },
     }).then(r => r.json()).then(data => {
@@ -1193,6 +1366,30 @@ async function confirmCancel() {
       }
       updateUserBar();
     }).catch(() => updateUserBar());
+  } else if (isInvite) {
+    // 招待ユーザー: 期限チェック
+    const email = localStorage.getItem('auth_email');
+    if (email) {
+      fetch(PAYMENT_API + '/api/subscriber/' + encodeURIComponent(email))
+        .then(r => r.json())
+        .then(data => {
+          if (!data.subscribed || data.status === 'invite_expired') {
+            localStorage.removeItem('invite_user');
+            localStorage.removeItem('invite_expires');
+            localStorage.removeItem('auth_email');
+            // 期限切れ通知（subscribeToast流用）
+            const toast = document.getElementById('subscribeToast');
+            toast.querySelector('.toast-title').textContent = '体験パスの期限が終了しました';
+            toast.querySelector('.toast-body').textContent = '引き続きご利用いただくには、正式にご購読ください。';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 10000);
+          }
+          updateUserBar();
+        })
+        .catch(() => updateUserBar());
+    } else {
+      updateUserBar();
+    }
   } else {
     updateUserBar();
   }
@@ -1228,12 +1425,12 @@ const FALLBACK = {
     { name: 'S&P500', value: '6,012', change: '+22' },
     { name: 'BTC', value: '$97,420', change: '+2.8%' }
   ],
-  highlights: [
-    { title: '東京都、来年度予算にAIリテラシー教育を大幅拡充へ', summary: '全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。' },
-    { title: 'SpaceX、民間初の火星往還ミッション日程を正式発表', summary: '二〇二七年打ち上げ予定。乗組員六名の選考が来月より開始される。' },
-    { title: '日経平均、四万円台を視野——半導体関連銘柄が牽引', summary: '国内メーカーの設備投資拡大が市場の楽観ムードを後押し。' },
-    { title: '新たな音楽生成AIが作曲家との「共創モデル」を提示', summary: '人間の創造性を補完するAI活用の新しい標準形として注目を集める。' },
-    { title: '世界の平均気温、観測史上最高を三年連続で更新', summary: 'COP30を控え、各国が排出削減目標の上方修正を迫られる状況に。' }
+  numbers: [
+    { number: '38,942', label: '日経平均株価（円）' },
+    { number: '13万人', label: '米1月非農業部門雇用者増加数' },
+    { number: '1.5℃', label: '産業革命前比の世界平均気温上昇幅' },
+    { number: '3.2兆円', label: '国内AI関連投資額（年間推計）' },
+    { number: '72km', label: '海洋生物の十年間平均移動距離' }
   ]
 };
 
@@ -1290,7 +1487,7 @@ function renderNewspaper(data) {
   renderColumn(data.column);
 
   // Highlights
-  renderHighlights(data.highlights || []);
+  renderNumbers(data.numbers || data.highlights || []);
 
   // Footer
   const stamp = document.getElementById('genTimeStamp');
@@ -1397,15 +1594,13 @@ function renderColumn(column) {
   bodyEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
 }
 
-function renderHighlights(highlights) {
+function renderNumbers(numbers) {
   const container = document.getElementById('highlightsContainer');
-  if (!highlights.length) return;
-  container.innerHTML = highlights.map(h => `
+  if (!numbers || !numbers.length) return;
+  container.innerHTML = numbers.map(n => `
     <div class="s-item">
-      <div>
-        <h4>${h.title}</h4>
-        <p>${h.summary}</p>
-      </div>
+      <span class="s-num">${n.number}</span>
+      <span class="s-label">${n.label}</span>
     </div>
   `).join('');
 }

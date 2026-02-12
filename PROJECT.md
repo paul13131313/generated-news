@@ -258,6 +258,21 @@
   - index.html: 解約モーダルに「無料トライアル期間中に解約すれば料金は発生しません」追記
   - terms.html: 第4条（料金・決済）に無料トライアル・自動移行・トライアル中解約に関する条項追加
 
+- [x] **体験パス（Invite Pass）**
+  - payment-api: `POST /api/invite` エンドポイント追加（招待コード検証 → SUBSCRIBERS KVに status: "invite", expiresAt: 7日後 で登録）
+  - 招待コード管理: SUBSCRIBERS KVの `INVITE_CODES` キーにJSON配列で保存（初期値: `["PAUL"]`、複数回使用可）
+  - `GET /api/subscriber/:email` 修正: invite ユーザーの期限チェック、期限切れ時は `status: "invite_expired"` を返す
+  - index.html: フッターに「招待コードをお持ちの方」リンク、招待モーダルUI（メール+コード入力）
+  - ユーザーバー3状態対応: 認証ユーザー / 招待ユーザー（体験パス期限+正式購読リンク）/ 未認証
+  - ページ読込時にsubscriber APIで招待期限を検証、期限切れ時はトーストで通知
+  - Stripe不要 — 招待コードだけで7日間新聞を閲覧可能
+
+- [x] **「数字で読む」セクション**
+  - news-generator prompt.js: `highlights` → `numbers` フィールドに変更
+  - 出力形式: `{ number: "13万人", label: "米1月雇用者増加数" }` × 5件
+  - index.html: 「本日の見出し」→「数字で読む」に改名、数字を明朝体太字大きめ+ラベルをゴシック体小さめの横並びレイアウト
+  - renderHighlights → renderNumbers に関数名変更、フォールバックデータ更新
+
 ### TODO
 - [ ] カスタムドメイン設定（任意）
 
@@ -277,6 +292,8 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: 「数字で読む」セクション — highlights→numbers変更、記事から象徴的数字を抽出表示、明朝体太字+ゴシック体ラベルの横並びレイアウト
+- 2026-02-12: 体験パス（Invite Pass）— POST /api/invite追加、招待コード"PAUL"で7日間無料体験、index.html招待モーダルUI・ユーザーバー3状態対応
 - 2026-02-12: mastheadデザイン微調整 — 日付行下に細い罫線追加、号数バッジに枠線追加、ロゴ余白を適正化（48px→28px）
 - 2026-02-12: 初月無料トライアル導入 — payment-apiにtrial_period_days:30追加、LP・index.html・terms.htmlのコピー更新
 - 2026-02-12: ヘッダーデザイン洗練 — masthead罫線削除・ロゴ余白拡大、ユーザーバーをフッターに移動、通知トグルスイッチUI導入

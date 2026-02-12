@@ -6,6 +6,7 @@
  *   POST /api/webhook   → Stripe Webhook（支払い完了検知・購読者KV保存）
  *   GET  /api/subscriber/:email → 購読ステータス確認
  *   POST /api/cancel     → サブスクリプション解約（期間終了時キャンセル）
+ *   POST /api/invite     → 招待コード体験パス（7日間無料体験）
  *   GET  /health        → ヘルスチェック
  *
  * Environment:
@@ -353,6 +354,67 @@ async function handleRequest(request, env) {
     }
   }
 
+  // POST /api/invite → 招待コード体験パス
+  if (path === '/api/invite' && request.method === 'POST') {
+    try {
+      const { email, inviteCode } = await request.json();
+
+      if (!email || !email.includes('@')) {
+        return jsonResponse({ error: 'メールアドレスが正しくありません' }, 400, request);
+      }
+      if (!inviteCode || typeof inviteCode !== 'string') {
+        return jsonResponse({ error: '招待コードを入力してください' }, 400, request);
+      }
+
+      // KVから有効な招待コードリストを取得
+      const codesData = await env.SUBSCRIBERS.get('INVITE_CODES');
+      if (!codesData) {
+        return jsonResponse({ error: '招待コードが無効です' }, 400, request);
+      }
+      const validCodes = JSON.parse(codesData);
+      if (!validCodes.includes(inviteCode.toUpperCase().trim())) {
+        return jsonResponse({ error: '招待コードが無効です' }, 400, request);
+      }
+
+      // 既存購読者チェック
+      const normalizedEmail = email.toLowerCase().trim();
+      const existing = await env.SUBSCRIBERS.get(normalizedEmail);
+      if (existing) {
+        const existingData = JSON.parse(existing);
+        if (existingData.status === 'active') {
+          return jsonResponse({ error: 'すでに購読中です' }, 400, request);
+        }
+        if (existingData.status === 'invite' && new Date(existingData.expiresAt) > new Date()) {
+          return jsonResponse({ error: 'すでに体験パスをご利用中です', expiresAt: existingData.expiresAt }, 400, request);
+        }
+      }
+
+      // 体験パス登録（7日間）
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      await env.SUBSCRIBERS.put(normalizedEmail, JSON.stringify({
+        email: normalizedEmail,
+        status: 'invite',
+        plan: '体験パス（7日間）',
+        inviteCode: inviteCode.toUpperCase().trim(),
+        subscribedAt: now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        updatedAt: now.toISOString(),
+      }));
+
+      return jsonResponse({
+        success: true,
+        message: '体験パスが有効になりました。7日間お楽しみください。',
+        email: normalizedEmail,
+        expiresAt: expiresAt.toISOString(),
+      }, 200, request);
+    } catch (error) {
+      console.error('Invite error:', error);
+      return jsonResponse({ error: '体験パスの登録に失敗しました', message: error.message }, 500, request);
+    }
+  }
+
   // GET /api/subscriber/:email → 購読ステータス確認
   if (path.startsWith('/api/subscriber/') && request.method === 'GET') {
     const email = decodeURIComponent(path.replace('/api/subscriber/', ''));
@@ -366,6 +428,20 @@ async function handleRequest(request, env) {
     }
 
     const subscriber = JSON.parse(data);
+
+    // 招待ユーザーの期限チェック
+    if (subscriber.status === 'invite') {
+      const isValid = new Date(subscriber.expiresAt) > new Date();
+      return jsonResponse({
+        subscribed: isValid,
+        status: isValid ? 'invite' : 'invite_expired',
+        subscribedAt: subscriber.subscribedAt,
+        expiresAt: subscriber.expiresAt,
+        cancelAtPeriodEnd: false,
+        currentPeriodEnd: null,
+      }, 200, request);
+    }
+
     return jsonResponse({
       subscribed: subscriber.status === 'active',
       status: subscriber.status,
@@ -382,6 +458,7 @@ async function handleRequest(request, env) {
       'POST /api/checkout',
       'POST /api/webhook',
       'POST /api/cancel',
+      'POST /api/invite',
       'GET /api/subscriber/:email',
       'GET /health',
     ],
