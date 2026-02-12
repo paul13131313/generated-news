@@ -338,29 +338,6 @@
     border: 1px solid var(--rule);
   }
 
-  .masthead-nav {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    padding: 10px 0;
-    font-family: var(--font-mincho);
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    color: var(--caption);
-  }
-  .masthead-nav span.active {
-    color: var(--ink);
-    font-weight: 700;
-    position: relative;
-  }
-  .masthead-nav span.active::after {
-    content: '';
-    position: absolute;
-    bottom: -4px; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent);
-  }
 
   /* ===== TICKER ===== */
   .ticker {
@@ -576,26 +553,23 @@
   }
   .column-body p { text-indent: 1em; margin-bottom: 0.4em; }
 
-  /* ===== SMALL STORIES ===== */
-  .stories-list { padding: 12px 0 8px; }
+  /* ===== SMALL STORIES (控えめ表示) ===== */
+  .stories-list { padding: 8px 0 4px; }
   .s-item {
-    display: flex; gap: 12px; padding: 14px 0;
-    border-bottom: 1px solid var(--rule-light); align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule-light);
   }
   .s-item:last-child { border-bottom: none; }
-  .s-num {
-    font-family: var(--font-gothic);
-    font-size: 30px; font-weight: 900;
-    color: var(--rule-light); line-height: 1; min-width: 36px;
-  }
+  .s-num { display: none; }
   .s-item h4 {
-    font-family: var(--font-mincho);
-    font-weight: 700; font-size: 16px;
-    line-height: 1.45; letter-spacing: -0.02em; margin-bottom: 4px;
+    font-family: var(--font-gothic);
+    font-weight: 500; font-size: 12px;
+    line-height: 1.5; letter-spacing: 0; margin-bottom: 0;
+    color: var(--ink);
   }
   .s-item p {
-    font-size: 13px; color: var(--caption); line-height: 1.6;
-    font-family: var(--font-gothic);
+    font-size: 11px; color: var(--caption); line-height: 1.5;
+    font-family: var(--font-gothic); margin-top: 2px;
   }
 
   /* ===== FOOTER ===== */
@@ -682,6 +656,57 @@
     line-height: 1;
   }
   .subscribe-toast .toast-close:hover { opacity: 1; }
+
+  /* ===== CANCEL MODAL ===== */
+  .cancel-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 10001;
+    align-items: center; justify-content: center;
+  }
+  .cancel-overlay.show { display: flex; }
+  .cancel-modal {
+    background: var(--paper); width: 100%; max-width: 400px;
+    margin: 24px; padding: 32px 28px; position: relative;
+    border: 1px solid var(--rule); text-align: center;
+  }
+  .cancel-modal-close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; font-size: 22px;
+    cursor: pointer; color: var(--caption); line-height: 1;
+  }
+  .cancel-modal-close:hover { color: var(--ink); }
+  .cancel-title {
+    font-family: var(--font-mincho); font-size: 20px;
+    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 16px;
+  }
+  .cancel-body {
+    font-family: var(--font-gothic); font-size: 13px;
+    color: var(--caption); line-height: 1.8; margin-bottom: 24px;
+  }
+  .cancel-btns {
+    display: flex; gap: 12px; justify-content: center;
+  }
+  .cancel-btn-back {
+    font-family: var(--font-gothic); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.06em; padding: 12px 28px;
+    background: var(--ink); color: var(--paper); border: none;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .cancel-btn-back:hover { background: #333; }
+  .cancel-btn-confirm {
+    font-family: var(--font-gothic); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.06em; padding: 12px 28px;
+    background: none; color: var(--accent); border: 1px solid var(--accent);
+    cursor: pointer; transition: all 0.3s;
+  }
+  .cancel-btn-confirm:hover { background: var(--accent); color: var(--paper); }
+  .cancel-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cancel-msg {
+    font-family: var(--font-gothic); font-size: 12px;
+    text-align: center; margin-top: 12px; min-height: 1.5em;
+  }
+  .cancel-msg.success { color: #2d5016; }
+  .cancel-msg.error { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -726,6 +751,23 @@
   </div>
 </div>
 
+<!-- CANCEL MODAL -->
+<div class="cancel-overlay" id="cancelOverlay" onclick="if(event.target===this)closeCancelModal()">
+  <div class="cancel-modal">
+    <button class="cancel-modal-close" onclick="closeCancelModal()">&times;</button>
+    <div class="cancel-title">購読を解約</div>
+    <div class="cancel-body">
+      解約すると、現在の請求期間の終了後に<br>新聞の配信が停止されます。<br>
+      期間終了まではこれまで通りお読みいただけます。
+    </div>
+    <div class="cancel-btns">
+      <button class="cancel-btn-back" onclick="closeCancelModal()">戻る</button>
+      <button class="cancel-btn-confirm" id="cancelConfirmBtn" onclick="confirmCancel()">解約する</button>
+    </div>
+    <div class="cancel-msg" id="cancelMsg"></div>
+  </div>
+</div>
+
 <!-- USER BAR -->
 <div class="user-bar gen-animate" id="userBar"></div>
 
@@ -745,13 +787,6 @@
   <div class="masthead-rule">
     <span class="issue-badge" id="issueNumber">第〇〇七号</span>
   </div>
-  <nav class="masthead-nav">
-    <span class="active">総合</span>
-    <span>テクノロジー</span>
-    <span>国際</span>
-    <span>経済</span>
-    <span>文化</span>
-  </nav>
 </header>
 
 <!-- TICKER -->
@@ -795,7 +830,7 @@
   </div>
 
   <!-- TOPICS -->
-  <div class="sec-rule gen-animate"><span>注目の記事</span></div>
+  <div class="sec-rule gen-animate"><span>本日の見出し</span></div>
 
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
 
@@ -842,6 +877,8 @@ function updateUserBar() {
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
       pushPart +
+      '<span class="user-bar-sep">|</span>' +
+      '<span class="user-bar-link" onclick="openCancelModal()">購読管理</span>' +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
   } else {
@@ -1037,6 +1074,62 @@ async function saveProfile() {
   }
   btn.disabled = false;
   btn.textContent = '保存する';
+}
+
+// ===== CANCEL SUBSCRIPTION =====
+const PAYMENT_API = 'https://payment-api.hiroshinagano0113.workers.dev';
+
+function openCancelModal() {
+  const msg = document.getElementById('cancelMsg');
+  msg.textContent = '';
+  msg.className = 'cancel-msg';
+  document.getElementById('cancelConfirmBtn').disabled = false;
+  document.getElementById('cancelOverlay').classList.add('show');
+}
+
+function closeCancelModal() {
+  document.getElementById('cancelOverlay').classList.remove('show');
+}
+
+async function confirmCancel() {
+  const email = localStorage.getItem('auth_email');
+  if (!email) return;
+
+  const btn = document.getElementById('cancelConfirmBtn');
+  const msg = document.getElementById('cancelMsg');
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+  msg.textContent = '';
+  msg.className = 'cancel-msg';
+
+  try {
+    const res = await fetch(PAYMENT_API + '/api/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const endDate = data.currentPeriodEnd
+        ? new Date(data.currentPeriodEnd).toLocaleDateString('ja-JP')
+        : '';
+      msg.textContent = endDate
+        ? `解約を受け付けました。${endDate}まで閲覧可能です。`
+        : '解約を受け付けました。期間終了まで閲覧可能です。';
+      msg.className = 'cancel-msg success';
+      setTimeout(() => closeCancelModal(), 3000);
+    } else {
+      msg.textContent = data.error || '解約に失敗しました';
+      msg.className = 'cancel-msg error';
+    }
+  } catch {
+    msg.textContent = '通信エラーが発生しました';
+    msg.className = 'cancel-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '解約する';
 }
 
 // セッション検証
@@ -1259,9 +1352,8 @@ function renderColumn(column) {
 function renderHighlights(highlights) {
   const container = document.getElementById('highlightsContainer');
   if (!highlights.length) return;
-  container.innerHTML = highlights.map((h, i) => `
+  container.innerHTML = highlights.map(h => `
     <div class="s-item">
-      <div class="s-num">${String(i + 1).padStart(2, '0')}</div>
       <div>
         <h4>${h.title}</h4>
         <p>${h.summary}</p>

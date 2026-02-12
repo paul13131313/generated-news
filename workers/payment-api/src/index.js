@@ -5,6 +5,7 @@
  *   POST /api/checkout  → Stripe Checkout Session作成（月額300円サブスク）
  *   POST /api/webhook   → Stripe Webhook（支払い完了検知・購読者KV保存）
  *   GET  /api/subscriber/:email → 購読ステータス確認
+ *   POST /api/cancel     → サブスクリプション解約（期間終了時キャンセル）
  *   GET  /health        → ヘルスチェック
  *
  * Environment:
@@ -211,6 +212,32 @@ async function handleWebhookEvent(event, env) {
 }
 
 /**
+ * Stripeサブスクリプションを期間終了時にキャンセル（cancel_at_period_end）
+ */
+async function cancelSubscription(subscriptionId, stripeSecretKey) {
+  const params = new URLSearchParams();
+  params.append('cancel_at_period_end', 'true');
+
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${subscriptionId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeSecretKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || `Stripe API error: ${response.status}`);
+  }
+  return data;
+}
+
+/**
  * ルーティング
  */
 async function handleRequest(request, env) {
@@ -279,6 +306,52 @@ async function handleRequest(request, env) {
     }
   }
 
+  // POST /api/cancel → サブスクリプション解約（期間終了時キャンセル）
+  if (path === '/api/cancel' && request.method === 'POST') {
+    if (!env.STRIPE_SECRET_KEY) {
+      return jsonResponse({ error: 'STRIPE_SECRET_KEY not configured' }, 500, request);
+    }
+
+    try {
+      const { email } = await request.json();
+      if (!email || !email.includes('@')) {
+        return jsonResponse({ error: 'Invalid email' }, 400, request);
+      }
+
+      const data = await env.SUBSCRIBERS.get(email);
+      if (!data) {
+        return jsonResponse({ error: 'Subscriber not found' }, 404, request);
+      }
+
+      const subscriber = JSON.parse(data);
+      if (!subscriber.subscriptionId) {
+        return jsonResponse({ error: 'No subscription ID found' }, 400, request);
+      }
+
+      const updated = await cancelSubscription(subscriber.subscriptionId, env.STRIPE_SECRET_KEY);
+
+      // KVのステータスを更新
+      subscriber.cancelAtPeriodEnd = true;
+      subscriber.currentPeriodEnd = updated.current_period_end
+        ? new Date(updated.current_period_end * 1000).toISOString()
+        : null;
+      subscriber.updatedAt = new Date().toISOString();
+      await env.SUBSCRIBERS.put(email, JSON.stringify(subscriber));
+
+      return jsonResponse({
+        success: true,
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: subscriber.currentPeriodEnd,
+      }, 200, request);
+    } catch (error) {
+      console.error('Cancel error:', error);
+      return jsonResponse({
+        error: 'Subscription cancellation failed',
+        message: error.message,
+      }, 500, request);
+    }
+  }
+
   // GET /api/subscriber/:email → 購読ステータス確認
   if (path.startsWith('/api/subscriber/') && request.method === 'GET') {
     const email = decodeURIComponent(path.replace('/api/subscriber/', ''));
@@ -296,6 +369,8 @@ async function handleRequest(request, env) {
       subscribed: subscriber.status === 'active',
       status: subscriber.status,
       subscribedAt: subscriber.subscribedAt,
+      cancelAtPeriodEnd: subscriber.cancelAtPeriodEnd || false,
+      currentPeriodEnd: subscriber.currentPeriodEnd || null,
     }, 200, request);
   }
 
@@ -305,6 +380,7 @@ async function handleRequest(request, env) {
     endpoints: [
       'POST /api/checkout',
       'POST /api/webhook',
+      'POST /api/cancel',
       'GET /api/subscriber/:email',
       'GET /health',
     ],
