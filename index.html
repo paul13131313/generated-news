@@ -941,7 +941,7 @@
   </div>
 
   <!-- TOPICS -->
-  <div class="sec-rule gen-animate"><span>数字で読む</span></div>
+  <div class="sec-rule gen-animate" id="numbersHeader"><span>数字で読む</span></div>
 
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
 
@@ -1486,8 +1486,8 @@ function renderNewspaper(data) {
   // Column
   renderColumn(data.column);
 
-  // Highlights
-  renderNumbers(data.numbers || data.highlights || []);
+  // Highlights / Numbers
+  renderNumbers(data);
 
   // Footer
   const stamp = document.getElementById('genTimeStamp');
@@ -1594,15 +1594,25 @@ function renderColumn(column) {
   bodyEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
 }
 
-function renderNumbers(numbers) {
+function renderNumbers(data) {
   const container = document.getElementById('highlightsContainer');
-  if (!numbers || !numbers.length) return;
-  container.innerHTML = numbers.map(n => `
-    <div class="s-item">
-      <span class="s-num">${n.number}</span>
-      <span class="s-label">${n.label}</span>
-    </div>
-  `).join('');
+  const header = document.getElementById('numbersHeader');
+  // Resolve source: prefer numbers, fall back to highlights (legacy)
+  const items = data.numbers || data.highlights || [];
+  if (!items.length) {
+    if (header) header.style.display = 'none';
+    container.style.display = 'none';
+    return;
+  }
+  const isLegacy = !data.numbers && !!data.highlights;
+  container.innerHTML = items.map(n => {
+    const num   = isLegacy ? n.title   : n.number;
+    const label = isLegacy ? n.summary : n.label;
+    return `<div class="s-item">
+      <span class="s-num">${num || ''}</span>
+      <span class="s-label">${label || ''}</span>
+    </div>`;
+  }).join('');
 }
 
 // ===== DETECT EDITION (JST) =====

@@ -272,6 +272,7 @@
   - 出力形式: `{ number: "13万人", label: "米1月雇用者増加数" }` × 5件
   - index.html: 「本日の見出し」→「数字で読む」に改名、数字を明朝体太字大きめ+ラベルをゴシック体小さめの横並びレイアウト
   - renderHighlights → renderNumbers に関数名変更、フォールバックデータ更新
+  - **旧フォーマット互換**: renderNumbers()にフォールバック追加 — `data.numbers`（新）優先、なければ`data.highlights`（旧: title/summary→number/labelマッピング）、どちらもなければセクション非表示
 
 ### TODO
 - [ ] カスタムドメイン設定（任意）
@@ -292,6 +293,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: 「数字で読む」旧データ互換 — renderNumbers()にhighlights(旧)→numbers(新)フォールバック追加、KV旧データでもundefinedにならず正常表示
 - 2026-02-12: 「数字で読む」セクション — highlights→numbers変更、記事から象徴的数字を抽出表示、明朝体太字+ゴシック体ラベルの横並びレイアウト
 - 2026-02-12: 体験パス（Invite Pass）— POST /api/invite追加、招待コード"PAUL"で7日間無料体験、index.html招待モーダルUI・ユーザーバー3状態対応
 - 2026-02-12: mastheadデザイン微調整 — 日付行下に細い罫線追加、号数バッジに枠線追加、ロゴ余白を適正化（48px→28px）
