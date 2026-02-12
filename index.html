@@ -1748,6 +1748,20 @@ function switchEdition(ed) {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, '', cleanUrl);
     }
+
+    // ?invite=XXXX で招待モーダル自動表示
+    const inviteParam = params.get('invite');
+    if (inviteParam) {
+      const isLoggedIn = !!localStorage.getItem('auth_email');
+      const isInviteUser = localStorage.getItem('invite_user') === 'true';
+      if (!isLoggedIn && !isInviteUser) {
+        setTimeout(() => {
+          openInviteModal();
+          document.getElementById('inviteCode').value = inviteParam.toUpperCase();
+        }, 2200);
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }
 
   setTimeout(nextStep, 600);
