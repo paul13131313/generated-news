@@ -2,7 +2,7 @@
  * 生成新聞 - Stripe決済API Worker
  *
  * Endpoints:
- *   POST /api/checkout  → Stripe Checkout Session作成（月額300円サブスク）
+ *   POST /api/checkout  → Stripe Checkout Session作成（初月無料 + 月額300円サブスク）
  *   POST /api/webhook   → Stripe Webhook（支払い完了検知・購読者KV保存）
  *   GET  /api/subscriber/:email → 購読ステータス確認
  *   POST /api/cancel     → サブスクリプション解約（期間終了時キャンセル）
@@ -56,6 +56,7 @@ async function createCheckoutSession(stripeSecretKey) {
   params.append('line_items[0][price_data][unit_amount]', '300');
   params.append('line_items[0][price_data][recurring][interval]', 'month');
   params.append('line_items[0][quantity]', '1');
+  params.append('subscription_data[trial_period_days]', '30');
   params.append('success_url', SUCCESS_URL);
   params.append('cancel_url', CANCEL_URL);
 

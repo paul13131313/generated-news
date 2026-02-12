@@ -26,7 +26,8 @@
 ## ビジネスモデル
 
 ### 料金
-- **月額300円（税込）** のサブスクリプション
+- **初月無料（30日間トライアル）** → 翌月から **月額300円（税込）** のサブスクリプション
+- 無料トライアル期間中に解約すれば料金は発生しない
 - 広告的プロダクトとして運営（利益は後回し）
 
 ### コスト構造
@@ -156,7 +157,7 @@
   - Cloudflare Worker `payment-api` をデプロイ
   - URL: https://payment-api.hiroshinagano0113.workers.dev
   - Stripe Checkout Session方式（サーバーサイドでSession作成 → クライアントをCheckoutページにリダイレクト）
-  - 商品: 生成新聞 月額300円（JPY）サブスクリプション（price_dataでインライン定義）
+  - 商品: 生成新聞 初月無料+月額300円（JPY）サブスクリプション（price_data + trial_period_days: 30）
   - エンドポイント:
     - `POST /api/checkout` — Stripe Checkout Session作成、{ url } を返す
     - `GET /health` — ヘルスチェック
@@ -164,7 +165,7 @@
   - cancel_url: lp.html
   - CORS: GitHub Pagesドメイン許可
   - 環境変数: `STRIPE_SECRET_KEY`（Cloudflare Workers Secrets、Test Mode）
-  - lp.htmlの料金セクションに「月額300円で購読する」ボタン追加
+  - lp.htmlの料金セクションに「初月無料で始める」ボタン追加
   - コード: `workers/payment-api/`
 
 - [x] **Phase 3 Step 2: Stripe Webhook＆購読者管理**
@@ -251,6 +252,12 @@
   - ユーザーバー: ヘッダー上部→フッター内に移動（紙面ヘッダーをクリーンに）
   - 通知ON/OFF: テキストリンク→スライド式トグルスイッチに変更（ON:緑/OFF:グレー、実際のPush購読状態を反映）
 
+- [x] **初月無料トライアル（30日間）**
+  - payment-api: Stripe Checkout Sessionに `subscription_data.trial_period_days: 30` 追加
+  - lp.html: ヒーローCTA「初月無料で始める」、料金セクション「初月無料、翌月から月額300円」表記、購読ボタン変更
+  - index.html: 解約モーダルに「無料トライアル期間中に解約すれば料金は発生しません」追記
+  - terms.html: 第4条（料金・決済）に無料トライアル・自動移行・トライアル中解約に関する条項追加
+
 ### TODO
 - [ ] カスタムドメイン設定（任意）
 
@@ -270,6 +277,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-12: 初月無料トライアル導入 — payment-apiにtrial_period_days:30追加、LP・index.html・terms.htmlのコピー更新
 - 2026-02-12: ヘッダーデザイン洗練 — masthead罫線削除・ロゴ余白拡大、ユーザーバーをフッターに移動、通知トグルスイッチUI導入
 - 2026-02-12: UI整理 — カテゴリタブ（総合/テクノロジー/国際/経済/文化）削除、「注目の記事」→「本日の見出し」に改名・控えめデザインに変更
 - 2026-02-12: 解約フロー実装 — payment-apiに/cancelエンドポイント追加（cancel_at_period_end）、index.htmlに解約確認モーダル・購読管理リンク追加

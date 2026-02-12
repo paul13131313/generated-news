@@ -824,7 +824,7 @@ body::before {
     まったく新しいニュース体験。
   </p>
 
-  <button class="cta-btn" onclick="handleSubscribe()">今すぐ購読する</button>
+  <button class="cta-btn" onclick="handleSubscribe()">初月無料で始める</button>
 
   <div class="hero-scroll">SCROLL</div>
 </section>
@@ -887,9 +887,9 @@ body::before {
       <div class="pricing-price">
         <span class="pricing-yen">¥</span><span class="pricing-num count-up" data-to="300">0</span><span class="pricing-tax">（税込）/ 月</span>
       </div>
-      <p class="pricing-tagline">新聞一部より安く、<br>あなた専用の紙面を。</p>
-      <p class="pricing-daily">1日あたり約10円</p>
-      <button class="subscribe-btn" id="subscribeBtn" onclick="handleSubscribe()">月額300円で購読する</button>
+      <p class="pricing-tagline">初月無料、翌月から月額300円。<br>新聞一部より安く、あなた専用の紙面を。</p>
+      <p class="pricing-daily">無料トライアル中はいつでも解約可能</p>
+      <button class="subscribe-btn" id="subscribeBtn" onclick="handleSubscribe()">初月無料で始める</button>
       <p class="subscribe-note" id="subscribeMsg"></p>
     </div>
   </div>
@@ -1319,7 +1319,7 @@ async function handleSubscribe() {
     if (data.url) {
       window.location.href = data.url;
     } else {
-      btn.textContent = '月額300円で購読する';
+      btn.textContent = '初月無料で始める';
       btn.disabled = false;
       msg.textContent = data.message || '決済ページの作成に失敗しました。時間をおいてお試しください。';
     }
