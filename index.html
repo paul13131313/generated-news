@@ -1438,6 +1438,10 @@ const FALLBACK = {
 function renderNewspaper(data) {
   currentNewspaper = data;
 
+  // 前号のリード文が残らないようリセット
+  document.getElementById('topHeadline').textContent = '';
+  document.getElementById('topSub').textContent = '';
+
   // 号数を日付ベースで自動採番（2026年1月1日=第〇〇一号）
   const now = new Date();
   const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
@@ -1663,6 +1667,7 @@ function switchEdition(ed) {
         setTimeout(() => el.classList.add('gen-visible'), i * 80);
       });
       typeHeadline(data.headline.title);
+      typeSub(data.headline.body);
     }, 150);
   }).catch(() => {
     // On error, just re-show

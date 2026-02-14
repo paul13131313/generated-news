@@ -295,6 +295,7 @@
 ---
 
 ## 更新履歴
+- 2026-02-14: 一面リード文バグ修正 — switchEdition()でtypeSub()が呼ばれず前号のリード文が残る問題を修正。renderNewspaper()でtopHeadline/topSubをリセットするよう追加
 - 2026-02-12: 招待URLパラメータ修正 — revealContent内の処理を独立IIFEに分離、ローディング完了をポーリング検知してモーダル表示、URLパラメータ即座クリーン
 - 2026-02-12: 招待URLパラメータ — ?invite=XXXXで招待モーダル自動表示＋コードプリセット、ログイン済み/招待済みユーザーはスキップ
 - 2026-02-12: 「数字で読む」旧データ互換 — renderNumbers()にhighlights(旧)→numbers(新)フォールバック追加、KV旧データでもundefinedにならず正常表示
