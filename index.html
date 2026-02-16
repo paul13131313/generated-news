@@ -1442,16 +1442,20 @@ function renderNewspaper(data) {
   document.getElementById('topHeadline').textContent = '';
   document.getElementById('topSub').textContent = '';
 
-  // 号数を日付ベースで自動採番（2026年1月1日=第〇〇一号）
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const base = new Date('2026-01-01T00:00:00+09:00');
-  const diffDays = Math.floor((jst - base) / (1000 * 60 * 60 * 24)) + 1;
-  const issueNum = Math.max(1, diffDays);
-  const padded = String(issueNum).padStart(3, '0');
-  const kanjiMap = {'0':'〇','1':'一','2':'二','3':'三','4':'四','5':'五','6':'六','7':'七','8':'八','9':'九'};
-  const kanjiIssue = '第' + padded.split('').map(c => kanjiMap[c]).join('') + '号';
-  data.issueNumber = kanjiIssue;
+  // 号数はAPIから返される値を使用（朝刊=奇数, 夕刊=偶数）
+  // APIが号数を返さない場合のフォールバック
+  if (!data.issueNumber) {
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const base = new Date('2026-01-01T00:00:00+09:00');
+    const diffDays = Math.floor((jst - base) / (1000 * 60 * 60 * 24)) + 1;
+    const days = Math.max(1, diffDays);
+    const isMorning = data.edition !== '夕刊';
+    const issueNum = isMorning ? (days * 2) - 1 : days * 2;
+    const padded = String(issueNum).padStart(3, '0');
+    const kanjiMap = {'0':'〇','1':'一','2':'二','3':'三','4':'四','5':'五','6':'六','7':'七','8':'八','9':'九'};
+    data.issueNumber = '第' + padded.split('').map(c => kanjiMap[c]).join('') + '号';
+  }
 
   // Title
   document.title = `生成新聞 — ${data.issueNumber}`;
@@ -1626,6 +1630,7 @@ function detectEdition() {
 }
 
 // ===== FETCH NEWSPAPER =====
+// フォールバック付き: 該当版がまだ生成されていなければ反対の版を取得
 async function fetchNewspaper(edition) {
   if (!edition) edition = detectEdition();
   const url = `${API_URL}?edition=${edition}`;
@@ -1636,7 +1641,7 @@ async function fetchNewspaper(edition) {
     clearTimeout(timeoutId);
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data = await response.json();
-    return data.newspaper;
+    return { newspaper: data.newspaper, actualEdition: edition };
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') throw new Error('API timeout (45s)');
@@ -1659,15 +1664,15 @@ function switchEdition(ed) {
   document.querySelectorAll('.gen-animate').forEach(el => el.classList.remove('gen-visible'));
 
   // Fetch new edition
-  fetchNewspaper(ed).then(data => {
-    renderNewspaper(data);
+  fetchNewspaper(ed).then(result => {
+    renderNewspaper(result.newspaper);
     // Re-observe new gen-animate elements
     setTimeout(() => {
       document.querySelectorAll('.gen-animate').forEach((el, i) => {
         setTimeout(() => el.classList.add('gen-visible'), i * 80);
       });
-      typeHeadline(data.headline.title);
-      typeSub(data.headline.body);
+      typeHeadline(result.newspaper.headline.title);
+      typeSub(result.newspaper.headline.body);
     }, 150);
   }).catch(() => {
     // On error, just re-show
@@ -1696,10 +1701,25 @@ function switchEdition(ed) {
   }
 
   // Start API fetch immediately with detected edition
-  fetchNewspaper(initialEdition).then(data => {
-    newspaperData = data;
+  // フォールバック: 該当版がまだ未生成なら反対の版を試す
+  fetchNewspaper(initialEdition).then(result => {
+    newspaperData = result.newspaper;
   }).catch(err => {
-    console.warn('API fetch failed, using fallback:', err);
+    console.warn('Primary edition fetch failed, trying fallback edition:', err);
+    const fallbackEdition = initialEdition === 'morning' ? 'evening' : 'morning';
+    return fetchNewspaper(fallbackEdition).then(result => {
+      newspaperData = result.newspaper;
+      // フォールバック版のボタン状態を更新
+      if (fallbackEdition === 'morning') {
+        document.getElementById('btnMorning').classList.add('active');
+        document.getElementById('btnEvening').classList.remove('active');
+      } else {
+        document.getElementById('btnEvening').classList.add('active');
+        document.getElementById('btnMorning').classList.remove('active');
+      }
+    });
+  }).catch(err => {
+    console.warn('All editions failed, using fallback:', err);
     newspaperData = FALLBACK;
   }).finally(() => {
     apiDone = true;
