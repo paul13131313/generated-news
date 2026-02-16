@@ -1651,9 +1651,24 @@ async function fetchNewspaper(edition) {
 }
 
 // ===== EDITION SWITCH =====
+function showEditionToast(title, body) {
+  const toast = document.getElementById('subscribeToast');
+  toast.querySelector('.toast-title').textContent = title;
+  toast.querySelector('.toast-body').textContent = body;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
 function switchEdition(ed) {
   const mBtn = document.getElementById('btnMorning');
   const eBtn = document.getElementById('btnEvening');
+  const currentEdition = detectEdition();
+
+  // 朝の時間帯に夕刊を選んだ場合 → まだ未配達
+  if (ed === 'evening' && currentEdition === 'morning') {
+    showEditionToast('夕刊は未配達です', '本日の夕刊は17時ごろに配達予定です。');
+    return;
+  }
 
   if (ed === 'morning') {
     mBtn.classList.add('active'); eBtn.classList.remove('active');
@@ -1702,25 +1717,11 @@ function switchEdition(ed) {
   }
 
   // Start API fetch immediately with detected edition
-  // フォールバック: 該当版がまだ未生成なら反対の版を試す
+  // API側にフォールバックロジックがあるため、フロントはシンプルにリクエスト
   fetchNewspaper(initialEdition).then(result => {
     newspaperData = result.newspaper;
   }).catch(err => {
-    console.warn('Primary edition fetch failed, trying fallback edition:', err);
-    const fallbackEdition = initialEdition === 'morning' ? 'evening' : 'morning';
-    return fetchNewspaper(fallbackEdition).then(result => {
-      newspaperData = result.newspaper;
-      // フォールバック版のボタン状態を更新
-      if (fallbackEdition === 'morning') {
-        document.getElementById('btnMorning').classList.add('active');
-        document.getElementById('btnEvening').classList.remove('active');
-      } else {
-        document.getElementById('btnEvening').classList.add('active');
-        document.getElementById('btnMorning').classList.remove('active');
-      }
-    });
-  }).catch(err => {
-    console.warn('All editions failed, using fallback:', err);
+    console.warn('API fetch failed, using fallback:', err);
     newspaperData = FALLBACK;
   }).finally(() => {
     apiDone = true;
