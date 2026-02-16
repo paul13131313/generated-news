@@ -1445,10 +1445,10 @@ function renderNewspaper(data) {
   // 号数はAPIから返される値を使用（朝刊=奇数, 夕刊=偶数）
   // APIが号数を返さない場合のフォールバック
   if (!data.issueNumber) {
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    const base = new Date('2026-01-01T00:00:00+09:00');
-    const diffDays = Math.floor((jst - base) / (1000 * 60 * 60 * 24)) + 1;
+    const nowUtc = Date.now();
+    const jstMs = nowUtc + 9 * 60 * 60 * 1000;
+    const baseMs = Date.UTC(2026, 0, 1, 0, 0, 0); // 2026-01-01 00:00 UTC = 09:00 JST
+    const diffDays = Math.floor((jstMs - (baseMs + 9 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24)) + 1;
     const days = Math.max(1, diffDays);
     const isMorning = data.edition !== '夕刊';
     const issueNum = isMorning ? (days * 2) - 1 : days * 2;
@@ -1625,7 +1625,8 @@ function renderNumbers(data) {
 
 // ===== DETECT EDITION (JST) =====
 function detectEdition() {
-  const jstHour = new Date(Date.now() + 9 * 60 * 60 * 1000).getHours();
+  // getUTCHours()を使い、手動でJST(+9)に変換（ブラウザのタイムゾーンに依存しない）
+  const jstHour = (new Date().getUTCHours() + 9) % 24;
   return (jstHour >= 6 && jstHour < 17) ? 'morning' : 'evening';
 }
 
