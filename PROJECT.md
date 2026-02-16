@@ -45,22 +45,30 @@
 - HTML/CSS/JS（バニラ or 軽量フレームワーク）
 - アニメーション：Canvas / CSS Animation / WebGL
 
-### バックエンド（要構築）
-- ニュースソース: News API / Google News RSS / 各社RSS
-- AI要約・再構成: Claude API (Haiku推奨 = コスト抑制)
-- スケジューラ: Cloudflare Workers / Vercel Cron / GitHub Actions
-- データ保存: Supabase / Cloudflare KV
-- 認証: Supabase Auth
-- 決済: Stripe（300円/月サブスク）
+### バックエンド（Cloudflare Workers）
+- **Workers（7つ）**:
+  - `news-collector` — RSSフィード収集・正規化
+  - `news-generator` — Claude Haiku 4.5で紙面JSON生成、Cron Trigger（朝刊06:00/夕刊17:00 JST）
+  - `payment-api` — Stripe決済、購読者管理、招待コード、メール通知設定
+  - `auth-api` — ユーザー認証（PBKDF2、セッション管理）
+  - `waitlist-api` — ウェイトリスト登録
+  - `push-api` — Web Push通知（VAPID認証、RFC 8291暗号化）
+  - `email-notifier` — メール配信（Resend API）
+- **KV Namespaces（6つ）**: NEWSPAPER_CACHE, SUBSCRIBERS, USERS, SESSIONS, PUSH_SUBSCRIPTIONS, WAITLIST
+- **Service Bindings**: news-generator → push-api, email-notifier
+- ニュースソース: NHK、Yahoo!ニュース、ITmedia、はてなブックマーク、Zenn、J-CAST、モデルプレス
+- AI: Claude API（Haiku 4.5）、約1.8円/回
+- 決済: Stripe（月額300円、初月無料トライアル30日）
+- メール: Resend（無料枠100通/月）
 
 ### 配信フロー
-1. 朝5:30 / 夕16:30 にCronジョブ起動
-2. ニュースソースからRSS/API取得
-3. ユーザーの関心プロファイルに基づきフィルタリング
-4. Claude API で記事要約＋紙面構成（見出し・本文・コラム）
-5. 静的HTML生成 or JSON API として配信
-6. フロントエンドで紙面レンダリング
-7. プッシュ通知（PWA / Web Push）
+1. 朝6:00 / 夕17:00（JST）にCron Trigger起動
+2. RSSフィードからニュース取得（15フィード10カテゴリ）
+3. Claude Haiku 4.5で紙面JSON生成（見出し・記事5本・コラム・ティッカー・数字で読む）
+4. KVにキャッシュ保存（12時間TTL）
+5. Web Push通知送信（push-api Service Binding）
+6. メール配信（email-notifier Service Binding）
+7. フロントエンドで紙面レンダリング（Unsplash写真付き）
 
 ---
 
@@ -276,8 +284,39 @@
   - renderHighlights → renderNumbers に関数名変更、フォールバックデータ更新
   - **旧フォーマット互換**: renderNumbers()にフォールバック追加 — `data.numbers`（新）優先、なければ`data.highlights`（旧: title/summary→number/labelマッピング）、どちらもなければセクション非表示
 
+- [x] **メール配信機能**
+  - Cloudflare Worker `email-notifier` をデプロイ
+  - URL: https://email-notifier.hiroshinagano0113.workers.dev
+  - Resend API（https://resend.com）でトランザクショナルメール配信（無料枠: 月100通）
+  - news-generator → email-notifier Service Binding連携（Cron生成完了時に自動配信）
+  - 配信タイミング: 朝刊06:00 / 夕刊17:00（news-generatorのCron Triggerに連動）
+  - 配信対象: SUBSCRIBERS KVで status="active" or "invite"（期限内）かつ email_notify ≠ false のユーザー
+  - メール内容: 新聞風マストヘッド、一面見出し＋リード120文字、「紙面を読む」ボタン、配信設定リンク
+  - テキスト版フォールバック対応（プレーンテキストメール）
+  - 日付表記: 和暦＋漢数字（例: 令和八年二月十七日）
+  - 送信元: `生成新聞 <onboarding@resend.dev>`（テストモード、カスタムドメイン後に変更可）
+  - エンドポイント:
+    - `POST /api/email/send` — メール一括配信（body: { edition: "morning" | "evening" }）
+    - `GET /health` — ヘルスチェック
+  - payment-api追加:
+    - `POST /api/email-notify` — メール通知ON/OFF切替（body: { email, enabled }）
+    - `GET /api/subscriber/:email` — レスポンスに email_notify フィールド追加
+  - index.html: フッターユーザーバーにメール通知トグルスイッチ追加（Push通知トグルと同デザイン）
+  - 環境変数: `RESEND_API_KEY`（Cloudflare Workers Secrets）
+  - コード: `workers/email-notifier/`
+
+- [x] **RSSフィード修正（エンタメ・文化・暮らし）**
+  - NHK 2桁カテゴリURL（cat02, cat06, cat09）が301エラー → 存在しないURLだった
+  - natalie.mu/rss/all が404エラー → RSS廃止
+  - 代替フィード:
+    - エンタメ: Yahoo!ニュース（エンタメ）、モデルプレス（エンタメ）
+    - 文化: J-CASTトレンド
+    - 暮らし: Yahoo!ニュース（ライフ）、モデルプレス（ライフ）
+  - 修正後、エンタメ・暮らしカテゴリの記事が正常に生成されることを確認済み
+
 ### TODO
 - [ ] カスタムドメイン設定（任意）
+- [ ] Resend APIキー設定後のメール配信テスト
 
 ---
 
@@ -295,6 +334,8 @@
 ---
 
 ## 更新履歴
+- 2026-02-17: メール配信機能 — email-notifier Worker新規作成（Resend API連携）、news-generator Service Binding追加、payment-apiにメール通知トグルAPI追加、index.htmlにメール通知ON/OFFトグルUI追加
+- 2026-02-17: RSSフィード修正 — エンタメ・文化・暮らしの壊れたフィード（NHK 2桁cat、natalie.mu）をYahoo!ニュース・モデルプレス・J-CASTに置換
 - 2026-02-16: 最新号表示ロジック — detectEdition()で時間帯判定、該当版が未生成の場合は反対の版をフォールバック表示（前日夕刊→当日朝刊のケースも対応）
 - 2026-02-16: 号数ロジック化 — 起算日2026-01-01から朝刊=奇数（(日数×2)-1）、夕刊=偶数（日数×2）の明確な採番。フロントエンドはAPI返却値を優先使用
 - 2026-02-16: 朝刊/夕刊ニュース重複排除 — 夕刊生成時に同日朝刊の記事タイトルをKVから取得しプロンプトに含める。朝刊生成時も前日夕刊をチェック。続報は別角度ならOK
