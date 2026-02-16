@@ -34,15 +34,17 @@ function getJapaneseDate(date = new Date()) {
 }
 
 /**
- * 号数を生成（日付ベース: 2026-01-01を第〇〇一号として日ごとに加算）
+ * 号数を生成（朝刊=奇数, 夕刊=偶数）
+ * 起算日: 2026-01-01
+ * 朝刊 = (日数 × 2) - 1, 夕刊 = 日数 × 2
  */
-function getIssueNumber(date = new Date()) {
+function getIssueNumber(date = new Date(), edition = 'morning') {
   const jst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
   const base = new Date('2026-01-01T00:00:00+09:00');
   const diffDays = Math.floor((jst - base) / (1000 * 60 * 60 * 24)) + 1;
-  const num = Math.max(1, diffDays);
+  const days = Math.max(1, diffDays);
+  const num = edition === 'evening' ? days * 2 : (days * 2) - 1;
   const padded = String(num).padStart(3, '0');
-  // 漢数字ゼロ埋め
   const kanjiMap = { '0': '〇', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '七', '8': '八', '9': '九' };
   const kanjiNum = padded.split('').map(c => kanjiMap[c]).join('');
   return `第${kanjiNum}号`;
@@ -92,18 +94,25 @@ const SYSTEM_PROMPT = `あなたは「生成新聞」の紙面編集AIです。
 /**
  * ユーザープロンプトを組み立て
  */
-export function buildPrompt(articles, edition = 'morning') {
+export function buildPrompt(articles, edition = 'morning', previousTitles = []) {
   const now = new Date();
   const dateStr = getJapaneseDate(now);
-  const issueNum = getIssueNumber(now);
+  const issueNum = getIssueNumber(now, edition);
   const editionStr = edition === 'evening' ? '夕刊' : '朝刊';
   const compressed = compressArticles(articles);
+
+  // 重複排除指示を構築
+  let dedupeInstruction = '';
+  if (previousTitles.length > 0) {
+    const prevEditionLabel = edition === 'evening' ? '本日の朝刊' : '前日の夕刊';
+    dedupeInstruction = `\n\n【重複排除】以下の記事は${prevEditionLabel}で掲載済みです。これらとは異なるニュースを選んでください（同じトピックでも新しい展開があれば「続報」として別角度から取り上げるのはOK）:\n${previousTitles.map(t => `- ${t}`).join('\n')}`;
+  }
 
   const userPrompt = `以下のニュース一覧から${editionStr}の紙面JSONを生成してください。
 
 日付: ${dateStr}
 版: ${editionStr}
-号数: ${issueNum}
+号数: ${issueNum}${dedupeInstruction}
 
 ニュース一覧:
 ${compressed}
@@ -117,7 +126,7 @@ ${compressed}
     "kicker": "一面",
     "title": "最重要ニュースの見出し（20字以内）",
     "body": "4〜6文の本文（200〜300字）",
-    "imageKeyword": "英語2〜4語の写真検索キーワード（地域性を含む。例: japan parliament diet, tokyo stock exchange, semiconductor factory japan, global diplomacy summit）"
+    "imageKeyword": "記事の主要な被写体を写した写真を検索するための英語2〜4語（建物・場所・物体・動作など具体的に。抽象概念NG。例: japan parliament building, tokyo stock exchange trading floor, semiconductor wafer factory, world leaders handshake summit）"
   },
   "articles": [
     {
@@ -143,12 +152,12 @@ ${compressed}
 
 制約:
 - articles配列は5件ちょうど。硬いニュース（政治/経済/国際/総合）3件 + 柔らかいニュース（文化/エンタメ/暮らし/スポーツ/テクノロジー）2件のバランスにする
-- articles: 5件中2〜3件にimageKeywordを付与し、残りはnullにする。視覚的にイメージしやすい記事（スポーツ、災害、テクノロジー製品、建造物等）を優先。imageKeywordは英語2〜4語で、日本のニュースならjapan/tokyo等の地域キーワードを含める
+- articles: 5件中2〜3件にimageKeywordを付与し、残りはnullにする。視覚的にイメージしやすい記事（スポーツ、災害、テクノロジー製品、建造物等）を優先。imageKeywordは記事に登場する具体的な被写体（建物、場所、機器、人物の動作など）を英語2〜4語で表す。「AI」「economy」などの抽象語だけのキーワードは避け、写真に写りうる物理的対象を指定する。日本のニュースならjapan/tokyo等の地域キーワードを含める
 - numbers配列は5件。各記事やニュースから象徴的な数字を1つ抽出し、numberは数字+単位の簡潔な表記（例: "13万人", "3.2%", "1兆2000億円"）、labelは20字以内の説明
 - ticker配列は6件（日経平均, TOPIX, ドル円, NYダウ, S&P500, BTC）
 - tickerの数値はニュース一覧から推測できなければモック値でよい
 - コラムは具体的なニュースに言及しつつ、哲学的・文学的な深みを持たせる
-- headline.imageKeywordは英語2〜4語で、Unsplash写真検索に適した具体的なフレーズ。日本のニュースならjapan/tokyoなど地域キーワードを含める
+- headline.imageKeywordは記事の場面を撮影した報道写真のような画像を検索するためのキーワード。英語2〜4語で、写真に写る物理的対象を具体的に指定する（例: speed skating rink athlete, electric vehicle assembly line）。日本のニュースならjapan/tokyoなど地域キーワードを含める
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 
   return { systemPrompt: SYSTEM_PROMPT, userPrompt };

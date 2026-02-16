@@ -415,6 +415,35 @@ async function handleRequest(request, env) {
     }
   }
 
+  // POST /api/email-notify → メール通知設定トグル
+  if (path === '/api/email-notify' && request.method === 'POST') {
+    try {
+      const { email, enabled } = await request.json();
+      if (!email || !email.includes('@')) {
+        return jsonResponse({ error: 'Invalid email' }, 400, request);
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const data = await env.SUBSCRIBERS.get(normalizedEmail);
+      if (!data) {
+        return jsonResponse({ error: 'Subscriber not found' }, 404, request);
+      }
+
+      const subscriber = JSON.parse(data);
+      subscriber.email_notify = enabled !== false; // デフォルトtrue
+      subscriber.updatedAt = new Date().toISOString();
+      await env.SUBSCRIBERS.put(normalizedEmail, JSON.stringify(subscriber));
+
+      return jsonResponse({
+        success: true,
+        email_notify: subscriber.email_notify,
+      }, 200, request);
+    } catch (error) {
+      console.error('Email notify toggle error:', error);
+      return jsonResponse({ error: error.message }, 500, request);
+    }
+  }
+
   // GET /api/subscriber/:email → 購読ステータス確認
   if (path.startsWith('/api/subscriber/') && request.method === 'GET') {
     const email = decodeURIComponent(path.replace('/api/subscriber/', ''));
@@ -439,6 +468,7 @@ async function handleRequest(request, env) {
         expiresAt: subscriber.expiresAt,
         cancelAtPeriodEnd: false,
         currentPeriodEnd: null,
+        email_notify: subscriber.email_notify !== false,
       }, 200, request);
     }
 
@@ -448,6 +478,7 @@ async function handleRequest(request, env) {
       subscribedAt: subscriber.subscribedAt,
       cancelAtPeriodEnd: subscriber.cancelAtPeriodEnd || false,
       currentPeriodEnd: subscriber.currentPeriodEnd || null,
+      email_notify: subscriber.email_notify !== false,
     }, 200, request);
   }
 

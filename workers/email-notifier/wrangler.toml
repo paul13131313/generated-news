@@ -1,0 +1,16 @@
+name = "email-notifier"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+# SUBSCRIBERS KV（payment-apiと同じnamespace）
+[[kv_namespaces]]
+binding = "SUBSCRIBERS"
+id = "e41c7b32f3714d668e2bea60c56be914"
+
+# NEWSPAPER_CACHE KV（一面見出し取得用）
+[[kv_namespaces]]
+binding = "NEWSPAPER_CACHE"
+id = "49aa8a52de304cd5b4c3a3625b7f3899"

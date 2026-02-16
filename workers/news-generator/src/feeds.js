@@ -85,30 +85,36 @@ export const FEED_SOURCES = [
 
   // --- エンタメ ---
   {
-    name: 'NHKニュース（エンタメ）',
-    url: 'https://www.nhk.or.jp/rss/news/cat06.xml',
+    name: 'Yahoo!ニュース（エンタメ）',
+    url: 'https://news.yahoo.co.jp/rss/categories/entertainment.xml',
     category: 'エンタメ',
     format: 'rss2',
   },
   {
-    name: 'ナタリー',
-    url: 'https://natalie.mu/rss/all',
+    name: 'モデルプレス（エンタメ）',
+    url: 'https://feed.mdpr.jp/rss/export/mdpr-entertainment.xml',
     category: 'エンタメ',
     format: 'rss2',
   },
 
   // --- 文化 ---
   {
-    name: 'NHKニュース（文化）',
-    url: 'https://www.nhk.or.jp/rss/news/cat02.xml',
+    name: 'J-CASTトレンド',
+    url: 'https://www.j-cast.com/trend/index.xml',
     category: '文化',
     format: 'rss2',
   },
 
   // --- 暮らし ---
   {
-    name: 'NHKニュース（生活）',
-    url: 'https://www.nhk.or.jp/rss/news/cat09.xml',
+    name: 'Yahoo!ニュース（ライフ）',
+    url: 'https://news.yahoo.co.jp/rss/categories/life.xml',
+    category: '暮らし',
+    format: 'rss2',
+  },
+  {
+    name: 'モデルプレス（ライフ）',
+    url: 'https://feed.mdpr.jp/rss/export/mdpr-life.xml',
     category: '暮らし',
     format: 'rss2',
   },

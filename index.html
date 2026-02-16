@@ -963,6 +963,8 @@ let currentNewspaper = null;
 const PUSH_API = 'https://push-api.hiroshinagano0113.workers.dev';
 
 let _pushSubActive = false;
+let _emailNotifyActive = true; // デフォルトtrue
+
 function getPushToggleHtml() {
   if (!('Notification' in window) || !('PushManager' in window)) return '';
   const perm = Notification.permission;
@@ -971,6 +973,31 @@ function getPushToggleHtml() {
   }
   const onClass = _pushSubActive ? ' on' : '';
   return '<span class="push-toggle-wrap" onclick="togglePushSubscription()" id="pushToggle"><span class="push-toggle-label">通知</span><span class="push-toggle-track' + onClass + '"><span class="push-toggle-thumb"></span></span></span>';
+}
+
+function getEmailToggleHtml() {
+  const onClass = _emailNotifyActive ? ' on' : '';
+  return '<span class="push-toggle-wrap" onclick="toggleEmailNotify()" id="emailToggle"><span class="push-toggle-label">メール</span><span class="push-toggle-track' + onClass + '"><span class="push-toggle-thumb"></span></span></span>';
+}
+
+async function toggleEmailNotify() {
+  const email = localStorage.getItem('auth_email');
+  if (!email) return;
+
+  const newState = !_emailNotifyActive;
+  try {
+    const res = await fetch(PAYMENT_API + '/api/email-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, enabled: newState }),
+    });
+    if (res.ok) {
+      _emailNotifyActive = newState;
+      updateUserBar();
+    }
+  } catch (e) {
+    console.error('Email notify toggle failed:', e);
+  }
 }
 // Check actual push subscription state on load
 if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -992,9 +1019,12 @@ function updateUserBar() {
     const expires = localStorage.getItem('invite_expires');
     const expiresDate = expires ? new Date(expires).toLocaleDateString('ja-JP') : '';
     const expiresText = expiresDate ? '（' + expiresDate + 'まで）' : '';
+    const inviteEmailToggle = getEmailToggleHtml();
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
       '<span class="user-bar-sep">|</span>' +
       '<span style="font-size:10px;color:var(--caption);">体験パス' + expiresText + '</span>' +
+      '<span class="user-bar-sep">|</span>' +
+      inviteEmailToggle +
       '<span class="user-bar-sep">|</span>' +
       '<a class="user-bar-link" href="lp.html">正式購読する</a>' +
       '<span class="user-bar-sep">|</span>' +
@@ -1003,10 +1033,13 @@ function updateUserBar() {
     // 認証ユーザー
     const pushToggle = getPushToggleHtml();
     const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
+    const emailToggle = getEmailToggleHtml();
+    const emailPart = '<span class="user-bar-sep">|</span>' + emailToggle;
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
       pushPart +
+      emailPart +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="openCancelModal()">購読管理</span>' +
       '<span class="user-bar-sep">|</span>' +
@@ -1358,6 +1391,20 @@ async function submitInvite() {
       if (!data.authenticated) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_email');
+      } else {
+        // メール通知設定を読み込み
+        const authEmail = localStorage.getItem('auth_email');
+        if (authEmail) {
+          fetch(PAYMENT_API + '/api/subscriber/' + encodeURIComponent(authEmail))
+            .then(r => r.json())
+            .then(subData => {
+              if (subData.email_notify !== undefined) {
+                _emailNotifyActive = subData.email_notify;
+              }
+              updateUserBar();
+            }).catch(() => updateUserBar());
+          return;
+        }
       }
       updateUserBar();
     }).catch(() => updateUserBar());
@@ -1378,6 +1425,10 @@ async function submitInvite() {
             toast.querySelector('.toast-body').textContent = '引き続きご利用いただくには、正式にご購読ください。';
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 10000);
+          }
+          // メール通知設定を読み込み
+          if (data.email_notify !== undefined) {
+            _emailNotifyActive = data.email_notify;
           }
           updateUserBar();
         })

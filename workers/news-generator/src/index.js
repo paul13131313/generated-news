@@ -114,27 +114,50 @@ async function fetchNews(limit = 50) {
  * Unsplash APIで写真を検索
  * @returns {{ imageUrl: string, imageCredit: string } | null}
  */
+async function searchUnsplash(accessKey, query) {
+  const encoded = encodeURIComponent(query);
+  const res = await fetch(
+    `https://api.unsplash.com/search/photos?query=${encoded}&orientation=landscape&per_page=3`,
+    { headers: { Authorization: `Client-ID ${accessKey}` } }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.results || data.results.length === 0) return null;
+  const photo = data.results[0];
+  return {
+    imageUrl: photo.urls.regular,
+    imageCredit: photo.user.name,
+    imageCreditLink: photo.user.links.html,
+    unsplashLink: photo.links.html,
+  };
+}
+
 async function fetchUnsplashImage(accessKey, keyword) {
   if (!accessKey || !keyword) return null;
   try {
-    const query = encodeURIComponent(keyword);
-    const res = await fetch(
-      `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&per_page=1`,
-      { headers: { Authorization: `Client-ID ${accessKey}` } }
-    );
-    if (!res.ok) {
-      console.error(`Unsplash API error: ${res.status}`);
-      return null;
+    // 1. そのまま検索
+    let result = await searchUnsplash(accessKey, keyword);
+    if (result) return result;
+
+    // 2. キーワードを短縮してリトライ（末尾の単語を1つずつ削る）
+    const words = keyword.split(/\s+/);
+    for (let len = words.length - 1; len >= 2; len--) {
+      const shorter = words.slice(0, len).join(' ');
+      console.log(`Unsplash retry: "${shorter}"`);
+      result = await searchUnsplash(accessKey, shorter);
+      if (result) return result;
     }
-    const data = await res.json();
-    if (!data.results || data.results.length === 0) return null;
-    const photo = data.results[0];
-    return {
-      imageUrl: photo.urls.regular,
-      imageCredit: photo.user.name,
-      imageCreditLink: photo.user.links.html,
-      unsplashLink: photo.links.html,
-    };
+
+    // 3. 最初の2語だけで試す
+    if (words.length > 2) {
+      const twoWords = words.slice(0, 2).join(' ');
+      console.log(`Unsplash retry (2 words): "${twoWords}"`);
+      result = await searchUnsplash(accessKey, twoWords);
+      if (result) return result;
+    }
+
+    console.warn(`Unsplash: no results for "${keyword}" after retries`);
+    return null;
   } catch (err) {
     console.error('Unsplash fetch error:', err);
     return null;
@@ -142,17 +165,69 @@ async function fetchUnsplashImage(accessKey, keyword) {
 }
 
 /**
+ * 前の版の記事タイトル一覧をKVから取得（重複排除用）
+ */
+async function getPreviousEditionTitles(kvCache, edition) {
+  if (!kvCache) return [];
+
+  const dateStr = getJstDateString();
+
+  if (edition === 'evening') {
+    // 夕刊生成時 → 同日朝刊の記事タイトルを取得
+    const morningKey = `morning-${dateStr}`;
+    const morningData = await kvCache.get(morningKey);
+    if (morningData) {
+      try {
+        const parsed = JSON.parse(morningData);
+        const titles = [];
+        if (parsed.newspaper?.headline?.title) titles.push(parsed.newspaper.headline.title);
+        if (parsed.newspaper?.articles) {
+          for (const a of parsed.newspaper.articles) {
+            if (a.title) titles.push(a.title);
+          }
+        }
+        return titles;
+      } catch (e) { /* ignore parse error */ }
+    }
+  } else {
+    // 朝刊生成時 → 前日夕刊の記事タイトルを取得
+    const yesterday = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const eveningKey = `evening-${yesterdayStr}`;
+    const eveningData = await kvCache.get(eveningKey);
+    if (eveningData) {
+      try {
+        const parsed = JSON.parse(eveningData);
+        const titles = [];
+        if (parsed.newspaper?.headline?.title) titles.push(parsed.newspaper.headline.title);
+        if (parsed.newspaper?.articles) {
+          for (const a of parsed.newspaper.articles) {
+            if (a.title) titles.push(a.title);
+          }
+        }
+        return titles;
+      } catch (e) { /* ignore parse error */ }
+    }
+  }
+
+  return [];
+}
+
+/**
  * 紙面を生成
  */
-async function generateNewspaper(apiKey, edition, unsplashKey) {
+async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
   // 1. ニュース取得
   const articles = await fetchNews(50);
   if (articles.length === 0) {
     throw new Error('No news articles available');
   }
 
-  // 2. プロンプト構築
-  const { systemPrompt, userPrompt } = buildPrompt(articles, edition);
+  // 2. 前の版の記事タイトルを取得（重複排除用）
+  const previousTitles = await getPreviousEditionTitles(kvCache, edition);
+
+  // 3. プロンプト構築
+  const { systemPrompt, userPrompt } = buildPrompt(articles, edition, previousTitles);
 
   // 3. Claude API呼び出し
   const rawText = await callClaude(apiKey, systemPrompt, userPrompt);
@@ -216,7 +291,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey) {
  */
 async function generateAndCache(env, edition) {
   const startTime = Date.now();
-  const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY);
+  const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY, env.NEWSPAPER_CACHE);
   const elapsed = Date.now() - startTime;
 
   const cached = {
@@ -288,6 +363,27 @@ async function handleRequest(request, env) {
         return jsonResponse(parsed, 200, request);
       }
       console.log(`Cache miss: ${cacheKey}`);
+
+      // フォールバック: 該当版がなければ反対の版を返す（生成はしない）
+      const fallbackEdition = edition === 'morning' ? 'evening' : 'morning';
+      const fallbackKey = getCacheKey(fallbackEdition);
+      const fallbackData = await env.NEWSPAPER_CACHE.get(fallbackKey);
+      if (fallbackData) {
+        console.log(`Fallback cache hit: ${fallbackKey}`);
+        const parsed = JSON.parse(fallbackData);
+        return jsonResponse(parsed, 200, request);
+      }
+
+      // 前日の反対版も試す（日付をまたいだ直後のケース）
+      const yesterday = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      const yesterdayKey = `${fallbackEdition}-${yesterdayStr}`;
+      const yesterdayData = await env.NEWSPAPER_CACHE.get(yesterdayKey);
+      if (yesterdayData) {
+        console.log(`Yesterday fallback cache hit: ${yesterdayKey}`);
+        const parsed = JSON.parse(yesterdayData);
+        return jsonResponse(parsed, 200, request);
+      }
     }
 
     // キャッシュなし or force → 生成してキャッシュ
@@ -356,6 +452,21 @@ export default {
           console.log(`Push: sent=${pushResult.sent}, failed=${pushResult.failed}, expired=${pushResult.expired}`);
         } catch (pushError) {
           console.error('Push notification failed:', pushError);
+        }
+      }
+
+      // メール配信を送信
+      if (env.EMAIL_API) {
+        try {
+          const emailRes = await env.EMAIL_API.fetch('https://email-notifier/api/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ edition }),
+          });
+          const emailResult = await emailRes.json();
+          console.log(`Email: sent=${emailResult.sent}, failed=${emailResult.failed}`);
+        } catch (emailError) {
+          console.error('Email notification failed:', emailError);
         }
       }
     } catch (error) {
