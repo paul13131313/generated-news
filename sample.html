@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生成新聞 — サンプル紙面</title>
+<meta name="description" content="生成新聞のサンプル紙面。AIがあなただけの朝刊・夕刊を毎日届けます。">
+<meta property="og:title" content="生成新聞 — サンプル紙面">
+<meta property="og:description" content="AIがあなただけの朝刊・夕刊を毎日届ける、生成AIによるパーソナライズド新聞。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://paul13131313.github.io/generated-news/ogp.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;600;700;800&family=Shippori+Mincho+B1:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111;
+    --paper: #f3ede2;
+    --paper-mid: #e9e1d3;
+    --accent: #b82010;
+    --rule: #222;
+    --rule-light: #c4b9a8;
+    --caption: #6b6358;
+    --font-mincho: 'Shippori Mincho B1', 'Shippori Mincho', 'Noto Serif JP', serif;
+    --font-gothic: 'Noto Sans JP', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-mincho);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* SAMPLE BANNER */
+  .sample-banner {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 12px 16px;
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+  }
+  .sample-banner a {
+    color: var(--paper);
+    text-decoration: underline;
+    font-weight: 700;
+  }
+  .sample-banner a:hover { color: #ddd; }
+
+  /* MASTHEAD */
+  .masthead { padding: 0 16px; }
+  .masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 10px 0 4px;
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--caption);
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .edition-toggle {
+    display: flex;
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .edition-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--rule-light);
+    background: none;
+    color: var(--caption);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    line-height: 1;
+  }
+  .edition-btn:first-child { border-right: none; }
+  .edition-btn:last-child { border-left: none; }
+  .edition-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .masthead-center {
+    text-align: center;
+    padding: 28px 0 24px;
+  }
+  .masthead-center h1 {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 46px;
+    letter-spacing: 0.35em;
+    margin-right: -0.35em;
+    line-height: 1;
+  }
+  .masthead-en {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.5em;
+    color: var(--caption);
+    margin-top: 10px;
+    opacity: 0.7;
+  }
+  .masthead-issue {
+    text-align: center;
+    padding-bottom: 14px;
+  }
+  .issue-badge {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: var(--caption);
+    border: 1px solid var(--rule-light);
+    padding: 2px 10px;
+  }
+
+  /* TICKER */
+  .ticker {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 0 11px;
+    overflow: hidden;
+  }
+  .ticker-track {
+    display: flex;
+    white-space: nowrap;
+    font-family: var(--font-gothic);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    animation: tickerScroll 30s linear infinite;
+  }
+  .ticker-track .ticker-item { padding: 0 24px; }
+  .ticker-track .up { color: #5cc779; }
+  .ticker-track .dn { color: #e05040; }
+  @keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* CONTENT */
+  .content { padding: 0 16px; }
+
+  /* TOP ARTICLE */
+  .top-article {
+    padding: 20px 0 18px;
+    border-bottom: 2px solid var(--rule);
+  }
+  .kicker {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+  .top-headline {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .top-sub {
+    font-family: var(--font-mincho);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #3a3a3a;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+  .media-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .hero-photo {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(100%) contrast(1.1);
+  }
+  .photo-credit {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    color: var(--caption);
+    text-align: right;
+    margin-top: 2px;
+    margin-bottom: 48px;
+  }
+  .photo-credit a { color: var(--caption); text-decoration: none; }
+  .body-text {
+    column-count: 2;
+    column-gap: 14px;
+    column-rule: 1px solid var(--rule-light);
+    font-size: 15px;
+    line-height: 1.9;
+    letter-spacing: -0.01em;
+    text-align: justify;
+  }
+  .body-text p { margin-bottom: 0.6em; text-indent: 1em; }
+  .body-text p:first-child { text-indent: 0; }
+  .body-text .dropcap::first-letter {
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.8;
+    margin: 4px 6px 0 0;
+    font-weight: 800;
+  }
+
+  /* SECTION RULE */
+  .sec-rule {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 0 14px;
+  }
+  .sec-rule::before, .sec-rule::after {
+    content: ''; flex: 1; height: 1px; background: var(--rule);
+  }
+  .sec-rule span {
+    font-family: var(--font-mincho);
+    font-size: 14px; font-weight: 700; letter-spacing: 0.2em;
+  }
+
+  /* DUO STORIES */
+  .duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 16px;
+  }
+  .duo-item { padding: 0 12px; }
+  .duo-item:first-child { padding-left: 0; }
+  .duo-item:first-child:not(:last-child) { border-right: 1px solid var(--rule-light); }
+  .duo-item:last-child { padding-right: 0; }
+  .duo-tag {
+    font-family: var(--font-gothic);
+    font-size: 10px; font-weight: 700;
+    color: var(--accent); letter-spacing: 0.1em; margin-bottom: 5px;
+  }
+  .duo-item h3 {
+    font-family: var(--font-mincho);
+    font-weight: 700; font-size: 18px;
+    line-height: 1.4; letter-spacing: -0.02em; margin-bottom: 8px;
+  }
+  .duo-item p {
+    font-size: 13px; line-height: 1.8; color: #3a3a3a; letter-spacing: -0.01em;
+  }
+
+  /* ARTICLE PHOTO */
+  .art-photo-wrap {
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .art-photo {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .art-photo-credit {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    color: var(--caption);
+    text-align: right;
+    margin-top: 2px;
+    margin-bottom: 8px;
+  }
+
+  /* COLUMN */
+  .column-block {
+    padding: 20px 0;
+    border-bottom: 2px solid var(--rule);
+  }
+  .column-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .column-stamp {
+    font-family: var(--font-mincho);
+    font-weight: 800; font-size: 20px; letter-spacing: 0.08em;
+  }
+  .column-stamp-sub {
+    font-family: var(--font-gothic);
+    font-size: 10px; color: var(--caption); letter-spacing: 0.06em;
+  }
+  .column-body {
+    font-family: var(--font-mincho);
+    font-size: 15px; line-height: 2;
+    letter-spacing: -0.01em; text-align: justify;
+    position: relative;
+    padding-left: 20px;
+  }
+  .column-body::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--accent);
+  }
+  .column-body p { text-indent: 1em; margin-bottom: 0.4em; }
+
+  /* NUMBERS */
+  .stories-list { padding: 8px 0 4px; }
+  .s-item {
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .s-item:last-child { border-bottom: none; }
+  .s-num {
+    font-family: var(--font-mincho); font-weight: 800;
+    font-size: 22px; line-height: 1; color: var(--ink);
+    white-space: nowrap; flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .s-label {
+    font-family: var(--font-gothic); font-size: 11px;
+    font-weight: 400; color: var(--caption); line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 24px 16px;
+    text-align: center;
+    border-top: 3px solid var(--rule);
+    margin-top: 16px;
+  }
+  footer .f-logo {
+    font-family: var(--font-mincho);
+    font-weight: 800; font-size: 18px;
+    letter-spacing: 0.3em; margin-right: -0.3em;
+  }
+  footer .f-tagline {
+    font-family: var(--font-mincho);
+    font-size: 14px; color: var(--caption);
+    margin-top: 6px; letter-spacing: 0.06em;
+  }
+  footer .f-edition-info {
+    font-family: var(--font-gothic);
+    font-size: 11px; color: var(--caption);
+    margin-top: 10px; letter-spacing: 0.04em;
+    line-height: 1.8;
+  }
+  footer .f-stamp {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 14px; padding: 5px 14px;
+    border: 1px solid var(--rule-light);
+    font-family: var(--font-gothic);
+    font-size: 10px; color: var(--caption); letter-spacing: 0.12em;
+  }
+  footer .f-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+  footer .f-cta {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 32px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    font-family: var(--font-gothic);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    transition: background 0.3s;
+  }
+  footer .f-cta:hover { background: var(--accent); }
+
+  /* SAMPLE STAMP */
+  .sample-stamp {
+    position: fixed;
+    top: 140px;
+    right: 24px;
+    transform: rotate(-5deg);
+    color: #8b1510;
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 0.3em;
+    padding: 14px 28px;
+    z-index: 100;
+    pointer-events: none;
+    border: 3px solid #8b1510;
+    border-radius: 2px;
+    opacity: 0;
+    animation: stampIn 0.4s 1.5s ease forwards;
+    /* かすれ表現 */
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1 1 1 1 1 0 1 1 1 0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1 1 1 1 1 0 1 1 1 0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .sample-stamp::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid #8b1510;
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  @keyframes stampIn {
+    0% { opacity: 0; transform: rotate(-5deg) scale(1.3); }
+    60% { opacity: 0.75; transform: rotate(-5deg) scale(0.98); }
+    100% { opacity: 0.7; transform: rotate(-5deg) scale(1); }
+  }
+
+  @media (max-width: 480px) {
+    .body-text { column-count: 1; }
+    .masthead-center h1 { font-size: 32px; }
+    .top-headline { font-size: 24px; }
+    .sample-stamp {
+      font-size: 16px;
+      top: 110px;
+      right: 16px;
+      padding: 10px 20px;
+      letter-spacing: 0.2em;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- SAMPLE STAMP -->
+<div class="sample-stamp">サンプル版</div>
+
+<!-- SAMPLE BANNER -->
+<div class="sample-banner">
+  これはサンプル紙面です。実際の紙面はAIがあなたの関心に合わせて毎日生成します。 ─ <a href="lp.html">生成新聞について詳しく</a>
+</div>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-top">
+    <span>令和八年 二月十九日（木曜日）</span>
+    <div class="edition-toggle">
+      <button class="edition-btn active">朝刊</button>
+      <button class="edition-btn">夕刊</button>
+    </div>
+  </div>
+  <div class="masthead-center">
+    <h1>生成新聞</h1>
+    <div class="masthead-en">GENERATED DAILY NEWS</div>
+  </div>
+  <div class="masthead-issue">
+    <span class="issue-badge">サンプル号</span>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item">日経平均 <span class="up">39,142 (+1.2%)</span></span>
+    <span class="ticker-item">TOPIX <span class="up">2,784 (+0.9%)</span></span>
+    <span class="ticker-item">USD/JPY <span class="dn">149.32 (-0.3%)</span></span>
+    <span class="ticker-item">S&P500 <span class="up">6,128 (+0.5%)</span></span>
+    <span class="ticker-item">BTC <span class="up">$102,450 (+2.1%)</span></span>
+    <span class="ticker-item">原油 WTI <span class="dn">$71.20 (-0.8%)</span></span>
+    <span class="ticker-item">金 <span class="up">$2,945 (+0.4%)</span></span>
+    <!-- duplicate for seamless scroll -->
+    <span class="ticker-item">日経平均 <span class="up">39,142 (+1.2%)</span></span>
+    <span class="ticker-item">TOPIX <span class="up">2,784 (+0.9%)</span></span>
+    <span class="ticker-item">USD/JPY <span class="dn">149.32 (-0.3%)</span></span>
+    <span class="ticker-item">S&P500 <span class="up">6,128 (+0.5%)</span></span>
+    <span class="ticker-item">BTC <span class="up">$102,450 (+2.1%)</span></span>
+    <span class="ticker-item">原油 WTI <span class="dn">$71.20 (-0.8%)</span></span>
+    <span class="ticker-item">金 <span class="up">$2,945 (+0.4%)</span></span>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TOP ARTICLE -->
+  <article class="top-article">
+    <div class="kicker">テクノロジー</div>
+    <h2 class="top-headline">生成AIが変える情報との向き合い方──パーソナライズド・ジャーナリズムの可能性</h2>
+    <p class="top-sub">一人ひとりの関心に応じてニュースを再構成するAI技術が、メディアの未来を問い直している。</p>
+
+    <div class="media-frame">
+      <img class="hero-photo" src="https://images.unsplash.com/photo-1666526320369-a1e3fcd69253?w=800&q=80" alt="新聞とコーヒー">
+    </div>
+    <div class="photo-credit">Photo by Unsplash</div>
+
+    <div class="body-text">
+      <p class="dropcap">大規模言語モデルの急速な進化により、ニュースの生成と配信のあり方が根本から問い直されている。従来のマスメディアが「一つの紙面を万人に届ける」モデルであったのに対し、生成AIは読者一人ひとりの関心領域を学習し、最適化された紙面を自動的に構成する。</p>
+      <p>この技術の背景にあるのは、単なる情報のフィルタリングではない。読者のプロファイルに基づき、多角的な視点を織り込みながら記事を再構成することで、バランスの取れた情報接触を促進する。エコーチェンバーの問題を技術的に解決しうる可能性がある。</p>
+      <p>一方で、AIが生成する記事の正確性や、人間のジャーナリストとの役割分担をどう設計するかという課題も浮上している。技術の進化と倫理的な議論の両輪が求められる。</p>
+    </div>
+  </article>
+
+  <!-- SECTION: 経済 -->
+  <div class="sec-rule"><span>経済</span></div>
+  <div class="duo">
+    <div class="duo-item">
+      <div class="duo-tag">マーケット</div>
+      <h3>日経平均、年初来高値を更新──半導体関連がけん引</h3>
+      <p>東京株式市場は続伸。半導体関連銘柄を中心に買いが広がり、日経平均株価は三万九千円台を回復した。米国のAI投資拡大への期待が背景にある。</p>
+    </div>
+    <div class="duo-item">
+      <div class="duo-tag">国際</div>
+      <h3>EU、デジタル通貨の試験運用を年内に開始へ</h3>
+      <p>欧州中央銀行はデジタルユーロの試験運用を二〇二六年後半に開始すると発表した。決済手数料の低減と金融包摂の両立を目指す。</p>
+    </div>
+  </div>
+
+  <!-- SECTION: サイエンス -->
+  <div class="sec-rule"><span>サイエンス</span></div>
+  <div class="duo">
+    <div class="duo-item" style="grid-column:1/-1;">
+      <div class="art-photo-wrap">
+        <img class="art-photo" src="https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?w=800&q=80" alt="月面から見た地球">
+      </div>
+      <div class="art-photo-credit">Photo by Unsplash</div>
+      <div class="duo-tag">宇宙開発</div>
+      <h3>民間月面探査、日本チームが着陸候補地を絞り込み──二〇二七年打ち上げへ</h3>
+      <p>日本の民間宇宙企業が進める月面探査計画で、着陸候補地が南極付近の三か所に絞り込まれた。永久影領域の水資源探査を主目的とし、国際パートナーとの共同ミッションとして進められる。技術実証を経て二〇二七年の打ち上げを目標としている。</p>
+    </div>
+  </div>
+
+  <!-- COLUMN: 天声生成 -->
+  <div class="column-block">
+    <div class="column-head">
+      <div>
+        <div class="column-stamp">天声生成</div>
+        <div class="column-stamp-sub">TENSEI GENERATED</div>
+      </div>
+    </div>
+    <div class="column-body">
+      <p>朝、コーヒーを淹れながら新聞を広げる。その何気ない所作に、情報との距離感が宿っている。スマートフォンの通知は私たちを追いかけてくるが、新聞はそこに置かれたまま、静かに待っている。</p>
+      <p>AIがつくる新聞とは何か。それは速報を競うものでも、煽りの見出しで注意を引くものでもない。あなたの関心を鏡のように映し出し、知らなかった世界へそっと窓を開ける。そんな存在でありたいと思う。</p>
+      <p>一杯のコーヒーが冷めるまでのあいだ、今日もこの紙面を広げてくれるなら。</p>
+    </div>
+  </div>
+
+  <!-- NUMBERS -->
+  <div class="sec-rule"><span>数字で読む</span></div>
+  <div class="stories-list">
+    <div class="s-item">
+      <span class="s-num">39,142</span>
+      <span class="s-label">日経平均株価（円）</span>
+    </div>
+    <div class="s-item">
+      <span class="s-num">149.32</span>
+      <span class="s-label">ドル円為替レート</span>
+    </div>
+    <div class="s-item">
+      <span class="s-num">1,200万</span>
+      <span class="s-label">ChatGPTの週間アクティブユーザー数（日本国内）</span>
+    </div>
+    <div class="s-item">
+      <span class="s-num">72.4%</span>
+      <span class="s-label">日本企業のAI導入率（従業員300人以上）</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-logo">生成新聞</div>
+  <div class="f-tagline">あなたの関心から、生まれる新聞。</div>
+  <div class="f-edition-info">朝刊 06:00 ／ 夕刊 17:00</div>
+  <div class="f-stamp">
+    <span class="f-dot"></span>
+    <span>SAMPLE EDITION</span>
+  </div>
+  <br>
+  <a href="lp.html" class="f-cta">生成新聞について詳しく →</a>
+</footer>
+
+</body>
+</html>
