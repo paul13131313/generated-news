@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>生成新聞 — 管理画面</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   body { font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif; }
   .nav-item { transition: background 0.15s; }
@@ -77,6 +78,15 @@
         class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
         <span>📋</span> 配信ログ
       </button>
+      <div class="border-t border-gray-800 my-2"></div>
+      <button onclick="showSection('content')" id="nav-content"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>📰</span> コンテンツ確認
+      </button>
+      <button onclick="showSection('announce')" id="nav-announce"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>📣</span> お知らせ配信
+      </button>
     </nav>
     <div class="px-4 py-4 border-t border-gray-800">
       <button onclick="logout()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
@@ -125,6 +135,14 @@
           </button>
         </div>
         <div id="regen-result" class="hidden mt-3 text-sm text-green-400"></div>
+      </div>
+
+      <!-- 購読者推移グラフ（7日間） -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">購読者推移（直近7日）</h2>
+        <div style="height: 200px;">
+          <canvas id="chart-subscribers"></canvas>
+        </div>
       </div>
 
       <!-- 見本紙発行数 -->
@@ -274,6 +292,92 @@
       </div>
     </section>
 
+    <!-- ===== コンテンツ確認 ===== -->
+    <section id="section-content" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">コンテンツ確認</h1>
+
+      <!-- フィルタ -->
+      <div class="flex gap-3 mb-6 flex-wrap items-end">
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">日付</label>
+          <input id="content-date" type="date"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-gray-500 [color-scheme:dark]">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">版</label>
+          <select id="content-edition"
+            class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-gray-500">
+            <option value="morning">朝刊</option>
+            <option value="evening">夕刊</option>
+          </select>
+        </div>
+        <button onclick="loadContent()"
+          class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg transition-colors">
+          表示
+        </button>
+      </div>
+
+      <!-- コンテンツ表示 -->
+      <div id="content-body">
+        <div class="text-sm text-gray-500">日付と版を選んで「表示」を押してください</div>
+      </div>
+    </section>
+
+    <!-- ===== お知らせ配信 ===== -->
+    <section id="section-announce" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">お知らせ配信</h1>
+
+      <!-- 送信フォーム -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">新しいお知らせを送る</h2>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 block mb-1">件名</label>
+          <input id="announce-subject" type="text" placeholder="例: メンテナンスのお知らせ"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500">
+        </div>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 block mb-1">本文</label>
+          <textarea id="announce-body" rows="5" placeholder="お知らせの内容を入力してください…"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500 resize-y"></textarea>
+        </div>
+        <div class="flex gap-4 items-center mb-4">
+          <label class="text-xs text-gray-500">配信対象:</label>
+          <label class="flex items-center gap-1.5 text-sm text-gray-300">
+            <input type="radio" name="announce-target" value="all" checked class="accent-white"> 全員
+          </label>
+          <label class="flex items-center gap-1.5 text-sm text-gray-300">
+            <input type="radio" name="announce-target" value="active" class="accent-white"> アクティブのみ
+          </label>
+          <label class="flex items-center gap-1.5 text-sm text-gray-300">
+            <input type="radio" name="announce-target" value="invite" class="accent-white"> 体験中のみ
+          </label>
+        </div>
+        <div class="flex gap-3 items-center">
+          <button onclick="sendAnnouncement()" id="btn-announce"
+            class="bg-white text-gray-900 font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+            送信する
+          </button>
+          <button onclick="previewAnnouncement()"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2.5 rounded-lg transition-colors">
+            プレビュー
+          </button>
+        </div>
+        <div id="announce-result" class="mt-3 hidden"></div>
+        <div id="announce-preview" class="mt-3 hidden"></div>
+      </div>
+
+      <!-- 送信履歴 -->
+      <div class="bg-gray-900 rounded-xl border border-gray-800">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 class="text-sm font-bold text-gray-300">送信履歴</h2>
+          <button onclick="loadAnnounceHistory()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">更新</button>
+        </div>
+        <div id="announce-history">
+          <div class="p-6 text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -351,6 +455,7 @@ function showAdminApp() {
   document.getElementById('adminApp').classList.remove('hidden');
   document.getElementById('adminApp').classList.add('flex');
   loadStats();
+  loadSubscriberChart();
 }
 
 function logout() {
@@ -361,7 +466,7 @@ function logout() {
 // ===== セクション切り替え =====
 
 function showSection(name) {
-  ['dashboard', 'preview', 'sample', 'subscribers', 'invites', 'logs'].forEach(s => {
+  ['dashboard', 'preview', 'sample', 'subscribers', 'invites', 'logs', 'content', 'announce'].forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     document.getElementById(`nav-${s}`).classList.remove('active');
   });
@@ -373,6 +478,8 @@ function showSection(name) {
   if (name === 'subscribers') loadSubscribers();
   if (name === 'invites') loadInvites();
   if (name === 'logs') loadDeliveryLogs();
+  if (name === 'content') loadContent();
+  if (name === 'announce') loadAnnounceHistory();
 }
 
 // ===== ダッシュボード =====
@@ -876,6 +983,326 @@ function renderLogEntry(entry) {
   const email = entry.emailSent != null ? ` メール ${entry.emailSent}件` : '';
   const sec = entry.elapsedMs ? ` ${(entry.elapsedMs / 1000).toFixed(1)}秒` : '';
   return `<span class="text-xs text-gray-400">${icon}${email}${sec}</span>`;
+}
+
+// ===== Phase 3: ダッシュボードグラフ =====
+
+let subscriberChart = null;
+
+async function loadSubscriberChart() {
+  try {
+    const res = await apiCall('/api/admin/stats/daily?days=7');
+    if (!res.ok) return;
+    const data = await res.json();
+    const days = data.days || [];
+
+    const labels = days.map(d => {
+      const parts = d.date.split('-');
+      return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+    });
+    const totals = days.map(d => d.total || 0);
+    const newSubs = days.map(d => d.new || 0);
+    const churned = days.map(d => d.churned || 0);
+
+    const ctx = document.getElementById('chart-subscribers').getContext('2d');
+
+    if (subscriberChart) subscriberChart.destroy();
+
+    subscriberChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '購読者数',
+            data: totals,
+            borderColor: '#fff',
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+          },
+          {
+            label: '新規',
+            data: newSubs,
+            borderColor: '#4ade80',
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            pointRadius: 3,
+            borderDash: [4, 4],
+          },
+          {
+            label: '解約',
+            data: churned,
+            borderColor: '#f87171',
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            pointRadius: 3,
+            borderDash: [4, 4],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#9ca3af', font: { size: 11 } },
+          },
+        },
+        scales: {
+          x: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true },
+        },
+      },
+    });
+  } catch (err) {
+    console.error('Chart load failed:', err);
+  }
+}
+
+// ===== Phase 3: コンテンツ確認 =====
+
+const CORNER_LABELS = {
+  headline:      { emoji: '📰', name: '一面' },
+  articles:      { emoji: '📝', name: '記事' },
+  culture:       { emoji: '🎭', name: '催事' },
+  weatherFashion:{ emoji: '🌤️', name: '天気と服装' },
+  localNews:     { emoji: '🏘️', name: 'ご近所情報' },
+  genArt:        { emoji: '🎨', name: 'GEN ART' },
+  aiEditorial:   { emoji: '✍️', name: '天声生成' },
+  snsTrend:      { emoji: '📱', name: 'SNSトレンド' },
+  numbers:       { emoji: '🔢', name: '数字で読む' },
+  heartwarming:  { emoji: '☀️', name: 'ひだまり' },
+};
+
+async function loadContent() {
+  const dateInput = document.getElementById('content-date');
+  const edition = document.getElementById('content-edition').value;
+  const el = document.getElementById('content-body');
+
+  // デフォルトで今日の日付を設定
+  if (!dateInput.value) {
+    const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    dateInput.value = now.toISOString().slice(0, 10);
+  }
+
+  const date = dateInput.value;
+  el.innerHTML = '<div class="text-sm text-gray-500">読み込み中…</div>';
+
+  try {
+    const res = await fetch(`${API}/api/generate?edition=${edition}&date=${date}`);
+    if (!res.ok) {
+      el.innerHTML = `<div class="text-sm text-gray-500">この日の${edition === 'morning' ? '朝刊' : '夕刊'}データがありません</div>`;
+      return;
+    }
+    const data = await res.json();
+    const np = data.newspaper || data;
+
+    renderContentView(np, el);
+  } catch (err) {
+    el.innerHTML = `<div class="text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+function renderContentView(np, el) {
+  let html = '';
+
+  // 一面
+  if (np.headline) {
+    html += renderCornerCard('headline', np.headline);
+  }
+
+  // 記事一覧
+  if (np.articles && np.articles.length > 0) {
+    html += `<div class="bg-gray-900 rounded-xl border border-gray-800 mb-4">
+      <div class="px-5 py-3 border-b border-gray-800">
+        <span class="text-sm font-bold text-gray-300">📝 記事（${np.articles.length}本）</span>
+      </div>`;
+    np.articles.forEach((a, i) => {
+      html += `<div class="px-5 py-3 border-b border-gray-800/50">
+        <div class="text-xs text-gray-500 mb-1">記事 ${i + 1}${a.category ? ` / ${escapeHtml(a.category)}` : ''}</div>
+        <div class="text-sm font-bold text-white mb-1">${escapeHtml(a.title || '')}</div>
+        <div class="text-sm text-gray-400 leading-relaxed">${escapeHtml(a.body || a.content || '')}</div>
+        ${a.source ? `<div class="text-xs text-gray-600 mt-1">ソース: ${escapeHtml(a.source)}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // その他のコーナー
+  const otherKeys = ['culture', 'weatherFashion', 'localNews', 'genArt', 'aiEditorial', 'snsTrend', 'numbers', 'heartwarming'];
+  for (const key of otherKeys) {
+    if (np[key]) {
+      html += renderCornerCard(key, np[key]);
+    }
+  }
+
+  if (!html) {
+    html = '<div class="text-sm text-gray-500">紙面データにコーナーが含まれていません</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function renderCornerCard(key, data) {
+  const label = CORNER_LABELS[key] || { emoji: '📄', name: key };
+  let content = '';
+
+  if (typeof data === 'string') {
+    content = `<div class="text-sm text-gray-400 leading-relaxed">${escapeHtml(data)}</div>`;
+  } else if (typeof data === 'object') {
+    // タイトル
+    if (data.title) {
+      content += `<div class="text-sm font-bold text-white mb-1">${escapeHtml(data.title)}</div>`;
+    }
+    // 本文
+    if (data.body || data.content || data.text) {
+      content += `<div class="text-sm text-gray-400 leading-relaxed mb-2">${escapeHtml(data.body || data.content || data.text)}</div>`;
+    }
+    // 配列（snsTrendのitems等）
+    if (data.items && Array.isArray(data.items)) {
+      data.items.forEach(item => {
+        content += `<div class="text-sm text-gray-400 py-1 border-b border-gray-800/30 last:border-0">`;
+        if (item.title) content += `<span class="text-white font-medium">${escapeHtml(item.title)}</span> `;
+        if (item.body || item.text || item.content) content += escapeHtml(item.body || item.text || item.content);
+        if (item.platform) content += ` <span class="text-xs text-gray-600">[${escapeHtml(item.platform)}]</span>`;
+        content += '</div>';
+      });
+    }
+    // 炎上中（snsTrend内）
+    if (data.flame) {
+      content += `<div class="mt-2 p-2 bg-red-950/30 rounded-lg border border-red-900/30">
+        <div class="text-xs text-red-400 font-bold mb-1">🔥 炎上中</div>
+        <div class="text-sm text-gray-400">${escapeHtml(typeof data.flame === 'string' ? data.flame : (data.flame.title || data.flame.body || JSON.stringify(data.flame)))}</div>
+      </div>`;
+    }
+    // tip（天気と服装のtip等）
+    if (data.tip) {
+      content += `<div class="mt-2 p-2 bg-blue-950/30 rounded-lg border border-blue-900/30">
+        <div class="text-xs text-blue-400 mb-1">💡 ティップ</div>
+        <div class="text-sm text-gray-400">${escapeHtml(data.tip)}</div>
+      </div>`;
+    }
+    // フォールバック: 他のキーを表示
+    if (!content) {
+      content = `<pre class="text-xs text-gray-500 overflow-x-auto">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+    }
+  }
+
+  return `<div class="bg-gray-900 rounded-xl border border-gray-800 mb-4">
+    <div class="px-5 py-3 border-b border-gray-800">
+      <span class="text-sm font-bold text-gray-300">${label.emoji} ${label.name}</span>
+    </div>
+    <div class="px-5 py-4">${content}</div>
+  </div>`;
+}
+
+// ===== Phase 3: お知らせ配信 =====
+
+function previewAnnouncement() {
+  const subject = document.getElementById('announce-subject').value.trim();
+  const body = document.getElementById('announce-body').value.trim();
+  const target = document.querySelector('input[name="announce-target"]:checked').value;
+  const el = document.getElementById('announce-preview');
+
+  if (!subject || !body) {
+    el.innerHTML = '<div class="text-sm text-yellow-400">件名と本文を入力してください</div>';
+    el.classList.remove('hidden');
+    return;
+  }
+
+  const targetLabel = { all: '全員', active: 'アクティブのみ', invite: '体験中のみ' }[target];
+  el.innerHTML = `
+    <div class="bg-gray-800 rounded-lg p-4">
+      <div class="text-xs text-gray-500 mb-2">プレビュー（配信対象: ${targetLabel}）</div>
+      <div class="text-sm font-bold text-white mb-2">${escapeHtml(subject)}</div>
+      <div class="text-sm text-gray-400 whitespace-pre-wrap leading-relaxed">${escapeHtml(body)}</div>
+    </div>
+  `;
+  el.classList.remove('hidden');
+}
+
+async function sendAnnouncement() {
+  const subject = document.getElementById('announce-subject').value.trim();
+  const body = document.getElementById('announce-body').value.trim();
+  const target = document.querySelector('input[name="announce-target"]:checked').value;
+  const btn = document.getElementById('btn-announce');
+  const result = document.getElementById('announce-result');
+
+  if (!subject || !body) {
+    result.innerHTML = '<div class="text-sm text-yellow-400">件名と本文を入力してください</div>';
+    result.classList.remove('hidden');
+    return;
+  }
+
+  if (!confirm(`お知らせを送信します。よろしいですか？\n\n件名: ${subject}\n対象: ${target}`)) return;
+
+  btn.disabled = true;
+  btn.textContent = '送信中…';
+  result.classList.add('hidden');
+  document.getElementById('announce-preview').classList.add('hidden');
+
+  try {
+    const res = await apiCall('/api/admin/announce', {
+      method: 'POST',
+      body: JSON.stringify({ subject, body, target }),
+    });
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (!res.ok) {
+      result.innerHTML = `<div class="text-sm text-red-400">❌ ${escapeHtml(data.error)}</div>`;
+      result.classList.remove('hidden');
+      return;
+    }
+
+    result.innerHTML = `<div class="text-sm text-green-400">✅ ${data.sentCount || 0}件 に送信しました</div>`;
+    result.classList.remove('hidden');
+    document.getElementById('announce-subject').value = '';
+    document.getElementById('announce-body').value = '';
+    loadAnnounceHistory();
+  } catch (err) {
+    result.innerHTML = `<div class="text-sm text-red-400">❌ エラー: ${err.message}</div>`;
+    result.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '送信する';
+  }
+}
+
+async function loadAnnounceHistory() {
+  const el = document.getElementById('announce-history');
+  try {
+    const res = await apiCall('/api/admin/announcements');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+    const items = data.announcements || [];
+
+    if (items.length === 0) {
+      el.innerHTML = '<div class="p-6 text-sm text-gray-500">まだお知らせを送信していません</div>';
+      return;
+    }
+
+    el.innerHTML = items.map(a => {
+      const dt = new Date(a.sentAt);
+      const dateStr = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      const targetLabel = { all: '全員', active: 'アクティブ', invite: '体験中' }[a.target] || a.target;
+      return `
+        <div class="px-6 py-4 border-b border-gray-800/50 last:border-0">
+          <div class="flex items-center gap-3 mb-1">
+            <span class="text-xs text-gray-500">${dateStr}</span>
+            <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">${targetLabel}</span>
+            <span class="text-xs text-gray-600">${a.sentCount || 0}件送信</span>
+          </div>
+          <div class="text-sm font-bold text-white">${escapeHtml(a.subject)}</div>
+          <div class="text-sm text-gray-500 mt-0.5 line-clamp-2">${escapeHtml(a.body)}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
 }
 </script>
 </body>

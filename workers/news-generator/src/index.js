@@ -16,6 +16,10 @@ import {
   handleInviteDeactivate,
   handleDeliveryLogs,
   writeDeliveryLog,
+  handleStatsDailyChart,
+  writeDailyStats,
+  handleAnnounce,
+  handleAnnouncementList,
 } from './admin.js';
 
 /**
@@ -514,6 +518,27 @@ async function handleRequest(request, env) {
       return jsonResponse(result, 200, request);
     }
 
+    // GET /api/admin/stats/daily — 購読者推移グラフ用
+    if (path === '/api/admin/stats/daily' && request.method === 'GET') {
+      const days = parseInt(url.searchParams.get('days') || '7');
+      const result = await handleStatsDailyChart(env, days);
+      return jsonResponse(result, 200, request);
+    }
+
+    // POST /api/admin/announce — お知らせ配信
+    if (path === '/api/admin/announce' && request.method === 'POST') {
+      const result = await handleAnnounce(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // GET /api/admin/announcements — お知らせ履歴
+    if (path === '/api/admin/announcements' && request.method === 'GET') {
+      const result = await handleAnnouncementList(env);
+      return jsonResponse(result, 200, request);
+    }
+
     return jsonResponse({ error: 'Admin endpoint not found' }, 404, request);
   }
 
@@ -625,6 +650,8 @@ export default {
     } finally {
       // 配信ログをKVに記録
       await writeDeliveryLog(env, edition, logData).catch(e => console.error('writeDeliveryLog failed:', e));
+      // 日次購読者統計を記録（グラフ用）
+      await writeDailyStats(env).catch(e => console.error('writeDailyStats failed:', e));
     }
   },
 };

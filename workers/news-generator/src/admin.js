@@ -361,6 +361,147 @@ export async function writeDeliveryLog(env, edition, logData) {
   });
 }
 
+// ===== Phase 3: GET /api/admin/stats/daily =====
+
+export async function handleStatsDailyChart(env, days = 7) {
+  const result = [];
+  const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().slice(0, 10);
+    const raw = await env.NEWSPAPER_CACHE.get(`admin:stats:daily:${dateStr}`);
+    if (raw) {
+      result.push({ date: dateStr, ...JSON.parse(raw) });
+    } else {
+      result.push({ date: dateStr, total: 0, trial: 0, new: 0, churned: 0 });
+    }
+  }
+
+  return { days: result };
+}
+
+// ===== Phase 3: 日次統計の記録（Cronから呼ぶ） =====
+
+export async function writeDailyStats(env) {
+  if (!env.NEWSPAPER_CACHE || !env.SUBSCRIBERS) return;
+
+  const dateStr = getJstDateString();
+  const key = `admin:stats:daily:${dateStr}`;
+
+  // 既に記録済みならスキップ
+  const existing = await env.NEWSPAPER_CACHE.get(key);
+  if (existing) return;
+
+  const subs = await getSubscriberList(env);
+  const active = subs.filter(s => s.status === 'active').length;
+  const trial = subs.filter(s => s.status === 'invite').length;
+  const total = active + trial;
+
+  // 前日のデータと比較して新規・解約を推定
+  const yesterday = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+  const yesterdayKey = `admin:stats:daily:${yesterday.toISOString().slice(0, 10)}`;
+  const yesterdayRaw = await env.NEWSPAPER_CACHE.get(yesterdayKey);
+  const yesterdayData = yesterdayRaw ? JSON.parse(yesterdayRaw) : null;
+
+  const prevTotal = yesterdayData ? yesterdayData.total : total;
+  const diff = total - prevTotal;
+  const newCount = diff > 0 ? diff : 0;
+  const churnedCount = diff < 0 ? Math.abs(diff) : 0;
+
+  const stats = { total, trial, new: newCount, churned: churnedCount };
+  await env.NEWSPAPER_CACHE.put(key, JSON.stringify(stats), {
+    expirationTtl: 90 * 24 * 3600,
+  });
+}
+
+// ===== Phase 3: POST /api/admin/announce =====
+
+export async function handleAnnounce(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const { subject, body: text, target } = body;
+
+  if (!subject || !text) {
+    return { error: '件名と本文は必須です', _status: 400 };
+  }
+
+  if (!['all', 'active', 'invite'].includes(target)) {
+    return { error: '配信対象が不正です', _status: 400 };
+  }
+
+  // 配信対象の購読者を取得
+  let subscribers = [];
+  if (env.SUBSCRIBERS) {
+    subscribers = await getSubscriberList(env);
+    if (target === 'active') {
+      subscribers = subscribers.filter(s => s.status === 'active');
+    } else if (target === 'invite') {
+      subscribers = subscribers.filter(s => s.status === 'invite');
+    } else {
+      subscribers = subscribers.filter(s => s.status === 'active' || s.status === 'invite');
+    }
+    // メール通知がオンの人のみ
+    subscribers = subscribers.filter(s => s.email_notify !== false);
+  }
+
+  // EMAIL_API が利用可能ならメール送信
+  let sentCount = 0;
+  if (env.EMAIL_API && subscribers.length > 0) {
+    try {
+      const emailRes = await env.EMAIL_API.fetch(new Request('https://email-api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: subscribers.map(s => s.email),
+          subject: `[生成新聞] ${subject}`,
+          body: text,
+        }),
+      }));
+      if (emailRes.ok) {
+        const emailData = await emailRes.json();
+        sentCount = emailData.sentCount || subscribers.length;
+      }
+    } catch (err) {
+      console.error('Email send failed:', err);
+    }
+  } else {
+    sentCount = subscribers.length;
+  }
+
+  // 履歴を保存
+  const id = `announce-${Date.now()}`;
+  const announcement = {
+    id,
+    subject,
+    body: text,
+    target,
+    sentAt: new Date().toISOString(),
+    sentCount,
+  };
+
+  await env.NEWSPAPER_CACHE.put(
+    `admin:announcement:${id}`,
+    JSON.stringify(announcement),
+    { expirationTtl: 180 * 24 * 3600 }
+  );
+
+  // インデックス更新
+  const indexRaw = await env.NEWSPAPER_CACHE.get('admin:announcements:index');
+  const index = indexRaw ? JSON.parse(indexRaw) : [];
+  index.unshift(announcement);
+  await env.NEWSPAPER_CACHE.put('admin:announcements:index', JSON.stringify(index.slice(0, 100)));
+
+  return { id, sentCount };
+}
+
+// ===== Phase 3: GET /api/admin/announcements =====
+
+export async function handleAnnouncementList(env) {
+  const indexRaw = await env.NEWSPAPER_CACHE.get('admin:announcements:index');
+  const announcements = indexRaw ? JSON.parse(indexRaw) : [];
+  return { announcements };
+}
+
 // ===== GET /api/sample/{id} (公開エンドポイント・認証不要) =====
 
 export async function handleSampleGet(id, env) {
