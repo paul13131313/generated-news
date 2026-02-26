@@ -64,6 +64,19 @@
         class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
         <span>📤</span> 見本紙発行
       </button>
+      <div class="border-t border-gray-800 my-2"></div>
+      <button onclick="showSection('subscribers')" id="nav-subscribers"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>👥</span> 購読者管理
+      </button>
+      <button onclick="showSection('invites')" id="nav-invites"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>🎟️</span> 招待コード
+      </button>
+      <button onclick="showSection('logs')" id="nav-logs"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>📋</span> 配信ログ
+      </button>
     </nav>
     <div class="px-4 py-4 border-t border-gray-800">
       <button onclick="logout()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
@@ -176,6 +189,91 @@
       </div>
     </section>
 
+    <!-- ===== 購読者管理 ===== -->
+    <section id="section-subscribers" class="hidden p-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-white">購読者管理</h1>
+        <button onclick="exportSubscribers()"
+          class="text-sm bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+          <span>⬇️</span> CSV エクスポート
+        </button>
+      </div>
+
+      <!-- ステータスフィルタ -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button onclick="filterSubscribers('all')" id="filter-all"
+          class="text-xs px-3 py-1.5 rounded-lg bg-white text-gray-900 font-medium">全員</button>
+        <button onclick="filterSubscribers('active')" id="filter-active"
+          class="text-xs px-3 py-1.5 rounded-lg bg-gray-700 text-white">アクティブ</button>
+        <button onclick="filterSubscribers('invite')" id="filter-invite"
+          class="text-xs px-3 py-1.5 rounded-lg bg-gray-700 text-white">体験中</button>
+        <button onclick="filterSubscribers('canceled')" id="filter-canceled"
+          class="text-xs px-3 py-1.5 rounded-lg bg-gray-700 text-white">解約済み</button>
+      </div>
+
+      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
+        <div id="subscribers-list">
+          <div class="p-6 text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 招待コード管理 ===== -->
+    <section id="section-invites" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">招待コード管理</h1>
+
+      <!-- 発行フォーム -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">新しいコードを発行</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">コード（空欄で自動生成）</label>
+            <input id="invite-code" type="text" placeholder="例: WELCOME2026"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500">
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">利用上限（空欄で無制限）</label>
+            <input id="invite-max-uses" type="number" placeholder="例: 10" min="1"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500">
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">有効期限（空欄で無期限）</label>
+            <input id="invite-expires-at" type="date"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-gray-500 [color-scheme:dark]">
+          </div>
+        </div>
+        <button onclick="createInvite()" id="btn-create-invite"
+          class="bg-white text-gray-900 font-bold text-sm px-5 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+          発行する
+        </button>
+        <div id="invite-create-result" class="mt-3 hidden"></div>
+      </div>
+
+      <!-- 一覧 -->
+      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 class="text-sm font-bold text-gray-300">発行済みコード一覧</h2>
+          <button onclick="loadInvites()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">更新</button>
+        </div>
+        <div id="invites-list">
+          <div class="p-6 text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 配信ログ ===== -->
+    <section id="section-logs" class="hidden p-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-white">配信ログ（直近30日）</h1>
+        <button onclick="loadDeliveryLogs()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">更新</button>
+      </div>
+      <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
+        <div id="logs-list">
+          <div class="p-6 text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -263,7 +361,7 @@ function logout() {
 // ===== セクション切り替え =====
 
 function showSection(name) {
-  ['dashboard', 'preview', 'sample'].forEach(s => {
+  ['dashboard', 'preview', 'sample', 'subscribers', 'invites', 'logs'].forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     document.getElementById(`nav-${s}`).classList.remove('active');
   });
@@ -272,6 +370,9 @@ function showSection(name) {
 
   if (name === 'preview') loadPreview('morning');
   if (name === 'sample') loadSampleList();
+  if (name === 'subscribers') loadSubscribers();
+  if (name === 'invites') loadInvites();
+  if (name === 'logs') loadDeliveryLogs();
 }
 
 // ===== ダッシュボード =====
@@ -485,6 +586,296 @@ function shareToX(url, editionLabel) {
   const text = `生成新聞 ${editionLabel}の見本紙を公開中です。AIが毎朝・毎夕生成する新聞をぜひご覧ください。`;
   const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   window.open(tweetUrl, '_blank');
+}
+
+// ===== ユーティリティ（Phase 2 共通） =====
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatDate(isoString) {
+  const d = new Date(isoString);
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function statusBadge(status) {
+  const map = {
+    active:         ['text-green-300 bg-green-900/40', 'アクティブ'],
+    invite:         ['text-blue-300 bg-blue-900/40', '体験中'],
+    invite_expired: ['text-yellow-300 bg-yellow-900/40', '期限切れ'],
+    canceled:       ['text-gray-400 bg-gray-800', '解約済み'],
+    past_due:       ['text-red-300 bg-red-900/40', '支払遅延'],
+  };
+  const [cls, label] = map[status] || ['text-gray-400 bg-gray-800', status];
+  return `<span class="text-xs px-2 py-0.5 rounded-full ${cls}">${label}</span>`;
+}
+
+// ===== 購読者管理 =====
+
+let allSubscribers = [];
+let currentFilter = 'all';
+
+async function loadSubscribers() {
+  const el = document.getElementById('subscribers-list');
+  el.innerHTML = '<div class="p-6 text-sm text-gray-500">読み込み中…</div>';
+  try {
+    const res = await apiCall('/api/admin/subscribers');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+    allSubscribers = data.subscribers || [];
+    renderSubscribers();
+  } catch (err) {
+    el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+function filterSubscribers(filter) {
+  currentFilter = filter;
+  ['all', 'active', 'invite', 'canceled'].forEach(f => {
+    const btn = document.getElementById(`filter-${f}`);
+    btn.className = f === filter
+      ? 'text-xs px-3 py-1.5 rounded-lg bg-white text-gray-900 font-medium'
+      : 'text-xs px-3 py-1.5 rounded-lg bg-gray-700 text-white';
+  });
+  renderSubscribers();
+}
+
+function renderSubscribers() {
+  const el = document.getElementById('subscribers-list');
+  const filtered = currentFilter === 'all'
+    ? allSubscribers
+    : allSubscribers.filter(s =>
+        currentFilter === 'canceled'
+          ? (s.status === 'canceled' || s.status === 'past_due')
+          : s.status === currentFilter
+      );
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="p-6 text-sm text-gray-500">該当する購読者はいません</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-800">
+          <th class="text-left px-6 py-3 text-xs text-gray-500 font-medium">メールアドレス</th>
+          <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">ステータス</th>
+          <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">登録日</th>
+          <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">招待コード</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(s => `
+          <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+            <td class="px-6 py-3 text-gray-300 font-mono text-xs">${escapeHtml(s.email)}</td>
+            <td class="px-4 py-3">${statusBadge(s.status)}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">${s.subscribedAt ? formatDate(s.subscribedAt) : '—'}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs font-mono">${s.inviteCode ? escapeHtml(s.inviteCode) : '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <div class="px-6 py-3 border-t border-gray-800 text-xs text-gray-500">${filtered.length} 件</div>
+  `;
+}
+
+async function exportSubscribers() {
+  try {
+    const res = await apiCall('/api/admin/subscribers/export');
+    if (!res.ok) { alert('エクスポートに失敗しました'); return; }
+    const csv = await res.text();
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(`エラー: ${err.message}`);
+  }
+}
+
+// ===== 招待コード管理 =====
+
+async function loadInvites() {
+  const el = document.getElementById('invites-list');
+  el.innerHTML = '<div class="p-6 text-sm text-gray-500">読み込み中…</div>';
+  try {
+    const res = await apiCall('/api/admin/invites');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+    const invites = data.invites || [];
+
+    if (invites.length === 0) {
+      el.innerHTML = '<div class="p-6 text-sm text-gray-500">招待コードがありません</div>';
+      return;
+    }
+
+    el.innerHTML = `
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800">
+            <th class="text-left px-6 py-3 text-xs text-gray-500 font-medium">コード</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">利用数 / 上限</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">有効期限</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">状態</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${invites.map(inv => `
+            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+              <td class="px-6 py-3">
+                <span class="font-mono text-white text-sm">${escapeHtml(inv.code)}</span>
+                <button onclick="copyText('${escapeHtml(inv.code)}')"
+                  class="ml-2 text-xs text-gray-500 hover:text-white transition-colors px-1.5 py-0.5 bg-gray-800 rounded">コピー</button>
+              </td>
+              <td class="px-4 py-3 text-gray-400 text-xs">
+                ${inv.usedCount != null ? inv.usedCount : '—'} / ${inv.maxUses != null ? inv.maxUses : '∞'}
+              </td>
+              <td class="px-4 py-3 text-gray-400 text-xs">${inv.expiresAt ? formatDate(inv.expiresAt) : '無期限'}</td>
+              <td class="px-4 py-3">
+                ${inv.active !== false
+                  ? '<span class="text-xs px-2 py-0.5 rounded-full text-green-300 bg-green-900/40">有効</span>'
+                  : '<span class="text-xs px-2 py-0.5 rounded-full text-gray-400 bg-gray-800">無効</span>'}
+              </td>
+              <td class="px-4 py-3 text-right">
+                ${inv.active !== false
+                  ? `<button onclick="deactivateInvite('${escapeHtml(inv.code)}')"
+                      class="text-xs text-red-400 hover:text-red-300 transition-colors">無効化</button>`
+                  : ''}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+async function createInvite() {
+  const code = document.getElementById('invite-code').value.trim();
+  const maxUses = document.getElementById('invite-max-uses').value;
+  const expiresAt = document.getElementById('invite-expires-at').value;
+  const btn = document.getElementById('btn-create-invite');
+  const result = document.getElementById('invite-create-result');
+
+  btn.disabled = true;
+  btn.textContent = '発行中…';
+  result.classList.add('hidden');
+
+  try {
+    const body = {};
+    if (code) body.code = code;
+    if (maxUses) body.maxUses = parseInt(maxUses);
+    if (expiresAt) body.expiresAt = expiresAt;
+
+    const res = await apiCall('/api/admin/invites', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (!res.ok) {
+      result.innerHTML = `<div class="text-sm text-red-400">❌ ${escapeHtml(data.error)}</div>`;
+      result.classList.remove('hidden');
+      return;
+    }
+
+    result.innerHTML = `
+      <div class="text-sm text-green-400 flex items-center gap-2 flex-wrap">
+        ✅ コード <span class="font-mono font-bold">${escapeHtml(data.code)}</span> を発行しました
+        <button onclick="copyText('${escapeHtml(data.code)}')"
+          class="text-xs text-gray-400 hover:text-white px-1.5 py-0.5 bg-gray-700 rounded">コピー</button>
+      </div>
+    `;
+    result.classList.remove('hidden');
+    document.getElementById('invite-code').value = '';
+    document.getElementById('invite-max-uses').value = '';
+    document.getElementById('invite-expires-at').value = '';
+    loadInvites();
+  } catch (err) {
+    result.innerHTML = `<div class="text-sm text-red-400">❌ エラー: ${err.message}</div>`;
+    result.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '発行する';
+  }
+}
+
+async function deactivateInvite(code) {
+  if (!confirm(`コード "${code}" を無効化しますか？`)) return;
+  try {
+    const res = await apiCall(`/api/admin/invites/${encodeURIComponent(code)}`, { method: 'PATCH' });
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    if (!res.ok) {
+      const data = await res.json();
+      alert(`エラー: ${data.error}`);
+      return;
+    }
+    loadInvites();
+  } catch (err) {
+    alert(`エラー: ${err.message}`);
+  }
+}
+
+// ===== 配信ログ =====
+
+async function loadDeliveryLogs() {
+  const el = document.getElementById('logs-list');
+  el.innerHTML = '<div class="p-6 text-sm text-gray-500">読み込み中…</div>';
+  try {
+    const res = await apiCall('/api/admin/delivery-logs?days=30');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+    const logs = data.logs || [];
+
+    if (logs.length === 0) {
+      el.innerHTML = '<div class="p-6 text-sm text-gray-500">配信ログがありません。次回のCron実行から記録されます。</div>';
+      return;
+    }
+
+    el.innerHTML = `
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800">
+            <th class="text-left px-6 py-3 text-xs text-gray-500 font-medium">日付</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">朝刊</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">夕刊</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${logs.map(log => `
+            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+              <td class="px-6 py-3 text-gray-300 text-xs font-mono">${log.date}</td>
+              <td class="px-4 py-3">${renderLogEntry(log.morning)}</td>
+              <td class="px-4 py-3">${renderLogEntry(log.evening)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+function renderLogEntry(entry) {
+  if (!entry) return '<span class="text-xs text-gray-600">—</span>';
+  const icon = entry.status === 'success' ? '✅' : '❌';
+  const email = entry.emailSent != null ? ` メール ${entry.emailSent}件` : '';
+  const sec = entry.elapsedMs ? ` ${(entry.elapsedMs / 1000).toFixed(1)}秒` : '';
+  return `<span class="text-xs text-gray-400">${icon}${email}${sec}</span>`;
 }
 </script>
 </body>

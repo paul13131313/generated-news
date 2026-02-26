@@ -9,6 +9,13 @@ import {
   handleSampleIssue,
   handleSampleList,
   handleSampleGet,
+  handleSubscriberList,
+  handleSubscriberExport,
+  handleInviteList,
+  handleInviteCreate,
+  handleInviteDeactivate,
+  handleDeliveryLogs,
+  writeDeliveryLog,
 } from './admin.js';
 
 /**
@@ -44,8 +51,8 @@ function getCorsHeaders(request) {
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Vary': 'Origin',
   };
 }
@@ -451,6 +458,62 @@ async function handleRequest(request, env) {
       return jsonResponse(result, 200, request);
     }
 
+    // GET /api/admin/subscribers
+    if (path === '/api/admin/subscribers' && request.method === 'GET') {
+      const result = await handleSubscriberList(env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // GET /api/admin/subscribers/export
+    if (path === '/api/admin/subscribers/export' && request.method === 'GET') {
+      const result = await handleSubscriberExport(env);
+      if (result._status) {
+        return jsonResponse({ error: result.error }, result._status, request);
+      }
+      return new Response(result._csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="subscribers-${new Date().toISOString().slice(0, 10)}.csv"`,
+          ...getCorsHeaders(request),
+        },
+      });
+    }
+
+    // GET /api/admin/invites
+    if (path === '/api/admin/invites' && request.method === 'GET') {
+      const result = await handleInviteList(env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // POST /api/admin/invites
+    if (path === '/api/admin/invites' && request.method === 'POST') {
+      const result = await handleInviteCreate(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // PATCH /api/admin/invites/{code}
+    const inviteMatch = path.match(/^\/api\/admin\/invites\/([^/]+)$/);
+    if (inviteMatch && request.method === 'PATCH') {
+      const result = await handleInviteDeactivate(inviteMatch[1], env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // GET /api/admin/delivery-logs
+    if (path === '/api/admin/delivery-logs' && request.method === 'GET') {
+      const days = parseInt(url.searchParams.get('days') || '30');
+      const result = await handleDeliveryLogs(env, days);
+      return jsonResponse(result, 200, request);
+    }
+
     return jsonResponse({ error: 'Admin endpoint not found' }, 404, request);
   }
 
@@ -496,8 +559,11 @@ export default {
 
     console.log(`Cron triggered: generating ${edition} edition (UTC ${hour}:00)`);
 
+    const logData = { status: 'success', elapsedMs: null, emailSent: null, emailFailed: null };
+
     try {
       const result = await generateAndCache(env, edition);
+      logData.elapsedMs = result.meta.elapsedMs;
       console.log(`Cron: ${edition} generated and cached (${result.meta.elapsedMs}ms)`);
 
       // Push通知を送信
@@ -524,6 +590,8 @@ export default {
             body: JSON.stringify({ edition }),
           });
           const emailResult = await emailRes.json();
+          logData.emailSent = emailResult.sent ?? null;
+          logData.emailFailed = emailResult.failed ?? null;
           console.log(`Email: sent=${emailResult.sent}, failed=${emailResult.failed}`);
         } catch (emailError) {
           console.error('Email notification failed:', emailError);
@@ -551,7 +619,12 @@ export default {
         }
       }
     } catch (error) {
+      logData.status = 'failed';
+      logData.error = error.message;
       console.error(`Cron: ${edition} generation failed:`, error);
+    } finally {
+      // 配信ログをKVに記録
+      await writeDeliveryLog(env, edition, logData).catch(e => console.error('writeDeliveryLog failed:', e));
     }
   },
 };

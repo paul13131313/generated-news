@@ -78,6 +78,19 @@ export async function handleAdminStats(env) {
     env.NEWSPAPER_CACHE.get(`evening-${today}`),
   ]);
 
+  // 購読者数集計（SUBSCRIBERS KV が利用可能な場合）
+  let subscriberStats = { total: 0, trial: 0 };
+  if (env.SUBSCRIBERS) {
+    try {
+      const subs = await getSubscriberList(env);
+      const active = subs.filter(s => s.status === 'active').length;
+      const trial = subs.filter(s => s.status === 'invite').length;
+      subscriberStats = { total: active + trial, trial };
+    } catch {
+      // バインディングが未設定などの場合は0のまま
+    }
+  }
+
   const parseMeta = (raw) => {
     if (!raw) return { status: 'pending' };
     try {
@@ -96,7 +109,7 @@ export async function handleAdminStats(env) {
       morning: parseMeta(morningRaw),
       evening: parseMeta(eveningRaw),
     },
-    subscribers: { total: 0, trial: 0 }, // TODO: 購読者システム実装後に更新
+    subscribers: subscriberStats,
     samples: sampleCount,
     currentEdition: detectEdition(),
     today,
@@ -157,6 +170,195 @@ export async function handleSampleList(env) {
   const rawIndex = await env.NEWSPAPER_CACHE.get('admin:samples:index');
   const samples = rawIndex ? JSON.parse(rawIndex) : [];
   return { samples };
+}
+
+// ===== Phase 2: 購読者管理ヘルパー =====
+
+async function getSubscriberList(env) {
+  const subscribers = [];
+  let cursor;
+
+  do {
+    const listResult = cursor
+      ? await env.SUBSCRIBERS.list({ cursor })
+      : await env.SUBSCRIBERS.list();
+
+    for (const key of listResult.keys) {
+      if (key.name === 'INVITE_CODES') continue;
+      if (key.name.startsWith('invite:')) continue;
+
+      const data = await env.SUBSCRIBERS.get(key.name, { type: 'json' });
+      if (!data) continue;
+
+      let status = data.status;
+      if (status === 'invite' && data.expiresAt && new Date(data.expiresAt) < new Date()) {
+        status = 'invite_expired';
+      }
+
+      subscribers.push({
+        email: data.email || key.name,
+        status,
+        plan: data.plan || null,
+        subscribedAt: data.subscribedAt || null,
+        inviteCode: data.inviteCode || null,
+        email_notify: data.email_notify !== false,
+      });
+    }
+
+    cursor = listResult.list_complete ? null : listResult.cursor;
+  } while (cursor);
+
+  return subscribers;
+}
+
+// ===== GET /api/admin/subscribers =====
+
+export async function handleSubscriberList(env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+  const subscribers = await getSubscriberList(env);
+  return { subscribers, total: subscribers.length };
+}
+
+// ===== GET /api/admin/subscribers/export (CSV) =====
+
+export async function handleSubscriberExport(env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+  const subscribers = await getSubscriberList(env);
+  const header = 'email,status,plan,subscribedAt,inviteCode,email_notify';
+  const rows = subscribers.map(s =>
+    [s.email, s.status, s.plan || '', s.subscribedAt || '', s.inviteCode || '', s.email_notify]
+      .map(v => `"${String(v).replace(/"/g, '""')}"`)
+      .join(',')
+  );
+  return { _csv: `${header}\n${rows.join('\n')}` };
+}
+
+// ===== GET /api/admin/invites =====
+
+export async function handleInviteList(env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+
+  const invites = [];
+  const listResult = await env.SUBSCRIBERS.list({ prefix: 'invite:' });
+
+  for (const key of listResult.keys) {
+    const code = key.name.slice('invite:'.length);
+    const data = await env.SUBSCRIBERS.get(key.name, { type: 'json' });
+    if (!data) continue;
+    invites.push({ code, ...data });
+  }
+
+  // invite: キーが1件もない場合は INVITE_CODES 配列からレガシーデータを読む
+  if (invites.length === 0) {
+    const codesRaw = await env.SUBSCRIBERS.get('INVITE_CODES');
+    if (codesRaw) {
+      const codes = JSON.parse(codesRaw);
+      for (const code of codes) {
+        invites.push({ code, maxUses: null, usedCount: null, expiresAt: null, active: true, createdAt: null });
+      }
+    }
+  }
+
+  invites.sort((a, b) => {
+    if (!a.createdAt) return 1;
+    if (!b.createdAt) return -1;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  return { invites };
+}
+
+// ===== POST /api/admin/invites =====
+
+export async function handleInviteCreate(request, env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+
+  const body = await request.json().catch(() => ({}));
+
+  const code = body.code
+    ? body.code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    : Math.random().toString(36).slice(2, 10).toUpperCase();
+
+  if (!code || code.length < 4) {
+    return { error: 'コードは4文字以上で入力してください', _status: 400 };
+  }
+
+  const existing = await env.SUBSCRIBERS.get(`invite:${code}`);
+  if (existing) return { error: `コード "${code}" は既に存在します`, _status: 409 };
+
+  const invite = {
+    maxUses: body.maxUses ? parseInt(body.maxUses) : null,
+    usedCount: 0,
+    expiresAt: body.expiresAt || null,
+    active: true,
+    createdAt: new Date().toISOString(),
+  };
+
+  await env.SUBSCRIBERS.put(`invite:${code}`, JSON.stringify(invite));
+
+  // INVITE_CODES 配列にも追加（payment-api との後方互換）
+  const codesRaw = await env.SUBSCRIBERS.get('INVITE_CODES');
+  const codes = codesRaw ? JSON.parse(codesRaw) : [];
+  if (!codes.includes(code)) {
+    codes.push(code);
+    await env.SUBSCRIBERS.put('INVITE_CODES', JSON.stringify(codes));
+  }
+
+  return { code, ...invite };
+}
+
+// ===== PATCH /api/admin/invites/{code} =====
+
+export async function handleInviteDeactivate(code, env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+
+  const key = `invite:${code}`;
+  const raw = await env.SUBSCRIBERS.get(key);
+  if (!raw) return { error: `コード "${code}" が見つかりません`, _status: 404 };
+
+  const invite = JSON.parse(raw);
+  invite.active = false;
+  await env.SUBSCRIBERS.put(key, JSON.stringify(invite));
+
+  // INVITE_CODES 配列からも除去
+  const codesRaw = await env.SUBSCRIBERS.get('INVITE_CODES');
+  if (codesRaw) {
+    const codes = JSON.parse(codesRaw).filter(c => c !== code);
+    await env.SUBSCRIBERS.put('INVITE_CODES', JSON.stringify(codes));
+  }
+
+  return { code, active: false };
+}
+
+// ===== GET /api/admin/delivery-logs =====
+
+export async function handleDeliveryLogs(env, days = 30) {
+  const logs = [];
+  const now = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().slice(0, 10);
+    const raw = await env.NEWSPAPER_CACHE.get(`admin:delivery-log:${dateStr}`);
+    if (raw) {
+      logs.push({ date: dateStr, ...JSON.parse(raw) });
+    }
+  }
+
+  return { logs };
+}
+
+// ===== 配信ログ書き込み（scheduledハンドラーから呼ぶ） =====
+
+export async function writeDeliveryLog(env, edition, logData) {
+  if (!env.NEWSPAPER_CACHE) return;
+  const dateStr = getJstDateString();
+  const key = `admin:delivery-log:${dateStr}`;
+  const existing = JSON.parse(await env.NEWSPAPER_CACHE.get(key) || '{}');
+  existing[edition] = { ...logData, loggedAt: new Date().toISOString() };
+  await env.NEWSPAPER_CACHE.put(key, JSON.stringify(existing), {
+    expirationTtl: 30 * 24 * 3600,
+  });
 }
 
 // ===== GET /api/sample/{id} (公開エンドポイント・認証不要) =====

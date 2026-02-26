@@ -10,6 +10,11 @@ enabled = true
 binding = "NEWSPAPER_CACHE"
 id = "49aa8a52de304cd5b4c3a3625b7f3899"
 
+# KV namespace for subscribers (shared with payment-api, auth-api)
+[[kv_namespaces]]
+binding = "SUBSCRIBERS"
+id = "e41c7b32f3714d668e2bea60c56be914"
+
 # Service Binding: Push通知API
 [[services]]
 binding = "PUSH_API"
