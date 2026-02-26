@@ -1248,7 +1248,7 @@
     <div class="weather-header">
       <div class="weather-title-row">
         <span class="weather-title">天気と服装</span>
-        <span class="weather-area">渋谷区</span>
+        <span class="weather-area">恵比寿</span>
       </div>
       <div class="weather-data" id="weatherData"></div>
     </div>
@@ -2119,7 +2119,7 @@ function renderLocalNews(localNews) {
     return;
   }
   block.style.display = '';
-  areaEl.textContent = localNews.area || '渋谷区';
+  areaEl.textContent = localNews.area || '恵比寿';
   bodyEl.innerHTML = localNews.items.map(item =>
     `<div class="local-item">
       <div class="local-item-title">${item.title}</div>
