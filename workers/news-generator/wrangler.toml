@@ -20,6 +20,11 @@ service = "push-api"
 binding = "EMAIL_API"
 service = "email-notifier"
 
+# Service Binding: Threads投稿（未デプロイのため一時無効化）
+# [[services]]
+# binding = "THREADS_API"
+# service = "threads-poster"
+
 # Cron Triggers: 朝刊 06:00 JST (21:00 UTC前日), 夕刊 17:00 JST (08:00 UTC)
 [triggers]
 crons = ["0 21 * * *", "0 8 * * *"]
