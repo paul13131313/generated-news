@@ -2,6 +2,14 @@ import { buildPrompt } from './prompt.js';
 import { callClaude, parseGeneratedJson } from './claude.js';
 import { FEED_SOURCES } from './feeds.js';
 import { fetchAndParseFeed } from './parser.js';
+import {
+  requireAdmin,
+  handleAdminAuth,
+  handleAdminStats,
+  handleSampleIssue,
+  handleSampleList,
+  handleSampleGet,
+} from './admin.js';
 
 /**
  * 生成新聞 - 紙面生成 Worker
@@ -399,6 +407,53 @@ async function handleRequest(request, env) {
     }
   }
 
+  // ===== Admin: 認証 (認証不要) =====
+  if (path === '/api/admin/auth' && request.method === 'POST') {
+    const result = await handleAdminAuth(request, env);
+    const status = result._status || 200;
+    delete result._status;
+    return jsonResponse(result, status, request);
+  }
+
+  // ===== 見本紙: 公開取得 (認証不要) =====
+  const sampleMatch = path.match(/^\/api\/sample\/([^/]+)$/);
+  if (sampleMatch && request.method === 'GET') {
+    const result = await handleSampleGet(sampleMatch[1], env);
+    const status = result._status || 200;
+    delete result._status;
+    return jsonResponse(result, status, request);
+  }
+
+  // ===== Admin API: 以下はJWT認証必須 =====
+  if (path.startsWith('/api/admin/')) {
+    const isAdmin = await requireAdmin(request, env);
+    if (!isAdmin) {
+      return jsonResponse({ error: 'Unauthorized' }, 401, request);
+    }
+
+    // GET /api/admin/stats
+    if (path === '/api/admin/stats' && request.method === 'GET') {
+      const result = await handleAdminStats(env);
+      return jsonResponse(result, 200, request);
+    }
+
+    // POST /api/admin/sample/issue
+    if (path === '/api/admin/sample/issue' && request.method === 'POST') {
+      const result = await handleSampleIssue(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // GET /api/admin/sample/list
+    if (path === '/api/admin/sample/list' && request.method === 'GET') {
+      const result = await handleSampleList(env);
+      return jsonResponse(result, 200, request);
+    }
+
+    return jsonResponse({ error: 'Admin endpoint not found' }, 404, request);
+  }
+
   // 404
   return jsonResponse({
     error: 'Not Found',
@@ -408,6 +463,11 @@ async function handleRequest(request, env) {
       'GET /api/generate?edition=evening',
       'GET /api/generate?force=true',
       'GET /health',
+      'POST /api/admin/auth',
+      'GET /api/admin/stats',
+      'POST /api/admin/sample/issue',
+      'GET /api/admin/sample/list',
+      'GET /api/sample/{id}',
     ],
   }, 404, request);
 }
@@ -467,6 +527,27 @@ export default {
           console.log(`Email: sent=${emailResult.sent}, failed=${emailResult.failed}`);
         } catch (emailError) {
           console.error('Email notification failed:', emailError);
+        }
+      }
+
+      // Threads投稿
+      if (env.THREADS_API) {
+        try {
+          const threadsRes = await env.THREADS_API.fetch('https://threads-poster/api/threads/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ edition }),
+          });
+          const threadsResult = await threadsRes.json();
+          if (threadsResult.skipped) {
+            console.log('Threads: already posted, skipped');
+          } else if (threadsResult.success) {
+            console.log(`Threads: posted, id=${threadsResult.threadId}`);
+          } else {
+            console.error('Threads: post failed:', threadsResult.error);
+          }
+        } catch (threadsError) {
+          console.error('Threads post failed:', threadsError);
         }
       }
     } catch (error) {

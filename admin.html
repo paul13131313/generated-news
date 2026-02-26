@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生成新聞 — 管理画面</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif; }
+  .nav-item { transition: background 0.15s; }
+  .nav-item.active { background: rgba(255,255,255,0.1); }
+  .nav-item:hover { background: rgba(255,255,255,0.07); }
+  .status-badge { display: inline-flex; align-items: center; gap: 4px; }
+  #preview-frame { width: 100%; height: calc(100vh - 120px); border: none; border-radius: 8px; }
+  .copy-btn:active { transform: scale(0.95); }
+  .sample-card { transition: box-shadow 0.15s; }
+  .sample-card:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.15); }
+</style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<!-- ===== ログイン画面 ===== -->
+<div id="loginScreen" class="fixed inset-0 flex items-center justify-center bg-gray-950 z-50">
+  <div class="bg-gray-900 rounded-xl p-8 w-full max-w-sm shadow-2xl border border-gray-800">
+    <div class="text-center mb-6">
+      <div class="text-2xl font-bold text-white tracking-widest">生成新聞</div>
+      <div class="text-sm text-gray-400 mt-1">管理画面</div>
+    </div>
+    <div id="loginError" class="hidden bg-red-900/50 text-red-300 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <form id="loginForm">
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="パスワード"
+        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 mb-4"
+      />
+      <button
+        type="submit"
+        class="w-full bg-white text-gray-900 font-bold rounded-lg py-3 hover:bg-gray-200 transition-colors"
+      >ログイン</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 管理画面本体 ===== -->
+<div id="adminApp" class="hidden flex h-screen">
+
+  <!-- サイドバー -->
+  <aside class="w-52 bg-gray-900 border-r border-gray-800 flex flex-col flex-shrink-0">
+    <div class="px-5 py-5 border-b border-gray-800">
+      <div class="font-bold text-white text-sm tracking-widest">生成新聞</div>
+      <div class="text-xs text-gray-500 mt-0.5">管理画面</div>
+    </div>
+    <nav class="flex-1 py-3 space-y-0.5 px-2">
+      <button onclick="showSection('dashboard')" id="nav-dashboard"
+        class="nav-item active w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>📊</span> ダッシュボード
+      </button>
+      <button onclick="showSection('preview')" id="nav-preview"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>🗞️</span> 紙面プレビュー
+      </button>
+      <button onclick="showSection('sample')" id="nav-sample"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>📤</span> 見本紙発行
+      </button>
+    </nav>
+    <div class="px-4 py-4 border-t border-gray-800">
+      <button onclick="logout()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+        ログアウト
+      </button>
+    </div>
+  </aside>
+
+  <!-- メインコンテンツ -->
+  <main class="flex-1 overflow-y-auto bg-gray-950">
+
+    <!-- ===== ダッシュボード ===== -->
+    <section id="section-dashboard" class="p-8">
+      <h1 class="text-xl font-bold text-white mb-6">ダッシュボード</h1>
+
+      <!-- ステータスカード -->
+      <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <div class="text-xs text-gray-500 mb-1">購読者数</div>
+          <div class="text-3xl font-bold text-white" id="stat-subscribers">—</div>
+          <div class="text-xs text-gray-500 mt-1"><span id="stat-trial">—</span> 体験中</div>
+        </div>
+        <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <div class="text-xs text-gray-500 mb-1">今日の朝刊</div>
+          <div class="text-2xl font-bold" id="stat-morning">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="stat-morning-time">—</div>
+        </div>
+        <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <div class="text-xs text-gray-500 mb-1">今日の夕刊</div>
+          <div class="text-2xl font-bold" id="stat-evening">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="stat-evening-time">—</div>
+        </div>
+      </div>
+
+      <!-- クイックアクション -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">クイックアクション</h2>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="regenerateNow()" id="btn-regen"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2">
+            <span>🔄</span> 今すぐ再生成
+          </button>
+          <button onclick="showSection('sample')"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2">
+            <span>📤</span> 見本紙を発行
+          </button>
+        </div>
+        <div id="regen-result" class="hidden mt-3 text-sm text-green-400"></div>
+      </div>
+
+      <!-- 見本紙発行数 -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <h2 class="text-sm font-bold text-gray-300 mb-2">見本紙</h2>
+        <div class="flex items-end gap-2">
+          <div class="text-3xl font-bold text-white" id="stat-samples">—</div>
+          <div class="text-sm text-gray-500 pb-1">件発行済み</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 紙面プレビュー ===== -->
+    <section id="section-preview" class="hidden p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-bold text-white">紙面プレビュー</h1>
+        <div class="flex gap-2">
+          <button onclick="loadPreview('morning')" id="prev-btn-morning"
+            class="text-sm px-4 py-2 rounded-lg bg-white text-gray-900 font-medium">朝刊</button>
+          <button onclick="loadPreview('evening')" id="prev-btn-evening"
+            class="text-sm px-4 py-2 rounded-lg bg-gray-700 text-white font-medium">夕刊</button>
+        </div>
+      </div>
+      <iframe id="preview-frame" src="about:blank" class="bg-gray-900 rounded-lg"></iframe>
+    </section>
+
+    <!-- ===== 見本紙発行 ===== -->
+    <section id="section-sample" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">見本紙発行</h1>
+
+      <!-- 発行フォーム -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">見本紙を発行する</h2>
+        <p class="text-sm text-gray-400 mb-4">
+          今日の紙面データを元に見本紙を発行します。発行された見本紙は誰でも閲覧できる公開URLが生成されます。
+        </p>
+        <div class="flex gap-3 mb-4">
+          <select id="sample-edition"
+            class="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500">
+            <option value="morning">朝刊</option>
+            <option value="evening">夕刊</option>
+          </select>
+          <button onclick="issueSample()" id="btn-issue"
+            class="bg-white text-gray-900 font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+            発行する
+          </button>
+        </div>
+        <div id="issue-result" class="hidden"></div>
+      </div>
+
+      <!-- 発行済み一覧 -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-gray-300">発行済み一覧</h2>
+          <button onclick="loadSampleList()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            更新
+          </button>
+        </div>
+        <div id="sample-list">
+          <div class="text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const API = 'https://news-generator.hiroshinagano0113.workers.dev';
+let token = null;
+
+// ===== 認証 =====
+
+function getToken() {
+  return localStorage.getItem('admin_token');
+}
+
+function setToken(t) {
+  token = t;
+  localStorage.setItem('admin_token', t);
+}
+
+function clearToken() {
+  token = null;
+  localStorage.removeItem('admin_token');
+}
+
+async function apiCall(path, options = {}) {
+  const t = token || getToken();
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(t ? { Authorization: `Bearer ${t}` } : {}),
+      ...options.headers,
+    },
+  });
+  return res;
+}
+
+// ページ読み込み時: トークンがあればログイン済みとして扱う
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = getToken();
+  if (saved) {
+    token = saved;
+    showAdminApp();
+  }
+});
+
+// ログインフォーム
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('passwordInput').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API}/api/admin/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = 'パスワードが違います';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    setToken(data.token);
+    showAdminApp();
+  } catch (err) {
+    errEl.textContent = 'ネットワークエラーが発生しました';
+    errEl.classList.remove('hidden');
+  }
+});
+
+function showAdminApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('adminApp').classList.remove('hidden');
+  document.getElementById('adminApp').classList.add('flex');
+  loadStats();
+}
+
+function logout() {
+  clearToken();
+  location.reload();
+}
+
+// ===== セクション切り替え =====
+
+function showSection(name) {
+  ['dashboard', 'preview', 'sample'].forEach(s => {
+    document.getElementById(`section-${s}`).classList.add('hidden');
+    document.getElementById(`nav-${s}`).classList.remove('active');
+  });
+  document.getElementById(`section-${name}`).classList.remove('hidden');
+  document.getElementById(`nav-${name}`).classList.add('active');
+
+  if (name === 'preview') loadPreview('morning');
+  if (name === 'sample') loadSampleList();
+}
+
+// ===== ダッシュボード =====
+
+async function loadStats() {
+  try {
+    const res = await apiCall('/api/admin/stats');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    document.getElementById('stat-subscribers').textContent = data.subscribers?.total ?? 0;
+    document.getElementById('stat-trial').textContent = data.subscribers?.trial ?? 0;
+    document.getElementById('stat-samples').textContent = data.samples ?? 0;
+
+    setDeliveryStatus('morning', data.delivery?.morning);
+    setDeliveryStatus('evening', data.delivery?.evening);
+  } catch (err) {
+    console.error('Stats load failed:', err);
+  }
+}
+
+function setDeliveryStatus(edition, info) {
+  const el = document.getElementById(`stat-${edition}`);
+  const timeEl = document.getElementById(`stat-${edition}-time`);
+  if (!info || info.status === 'pending') {
+    el.textContent = '⏳';
+    el.className = 'text-2xl font-bold text-yellow-400';
+    timeEl.textContent = '未配信';
+  } else {
+    el.textContent = '✅';
+    el.className = 'text-2xl font-bold text-green-400';
+    if (info.generatedAt) {
+      const d = new Date(info.generatedAt);
+      timeEl.textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} 配信済み`;
+    } else {
+      timeEl.textContent = '配信済み';
+    }
+  }
+}
+
+async function regenerateNow() {
+  const btn = document.getElementById('btn-regen');
+  const result = document.getElementById('regen-result');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中…（約30秒）';
+  result.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API}/api/generate?force=true`);
+    if (res.ok) {
+      result.textContent = '✅ 再生成が完了しました。';
+      result.className = 'mt-3 text-sm text-green-400';
+      result.classList.remove('hidden');
+      loadStats();
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (err) {
+    result.textContent = `❌ 失敗しました: ${err.message}`;
+    result.className = 'mt-3 text-sm text-red-400';
+    result.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔄</span> 今すぐ再生成';
+  }
+}
+
+// ===== 紙面プレビュー =====
+
+function loadPreview(edition) {
+  const frame = document.getElementById('preview-frame');
+  frame.src = `index.html?edition=${edition}`;
+  document.getElementById('prev-btn-morning').className =
+    edition === 'morning'
+      ? 'text-sm px-4 py-2 rounded-lg bg-white text-gray-900 font-medium'
+      : 'text-sm px-4 py-2 rounded-lg bg-gray-700 text-white font-medium';
+  document.getElementById('prev-btn-evening').className =
+    edition === 'evening'
+      ? 'text-sm px-4 py-2 rounded-lg bg-white text-gray-900 font-medium'
+      : 'text-sm px-4 py-2 rounded-lg bg-gray-700 text-white font-medium';
+}
+
+// ===== 見本紙発行 =====
+
+async function issueSample() {
+  const edition = document.getElementById('sample-edition').value;
+  const btn = document.getElementById('btn-issue');
+  const result = document.getElementById('issue-result');
+
+  btn.disabled = true;
+  btn.textContent = '発行中…';
+  result.classList.add('hidden');
+
+  try {
+    const res = await apiCall('/api/admin/sample/issue', {
+      method: 'POST',
+      body: JSON.stringify({ edition }),
+    });
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (!res.ok) {
+      result.innerHTML = `<div class="text-sm text-red-400">❌ ${data.error}</div>`;
+      result.classList.remove('hidden');
+      return;
+    }
+
+    const editionLabel = edition === 'morning' ? '朝刊' : '夕刊';
+    result.innerHTML = `
+      <div class="bg-gray-800 rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-green-400 font-bold text-sm">✅ 見本紙を発行しました</span>
+          <span class="text-xs text-gray-500">${editionLabel} / ID: ${data.id}</span>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2.5">
+          <input
+            id="issued-url"
+            value="${data.url}"
+            readonly
+            class="flex-1 bg-transparent text-sm text-gray-300 focus:outline-none min-w-0"
+          />
+          <button onclick="copyUrl('issued-url')" class="copy-btn text-xs text-gray-400 hover:text-white transition-colors shrink-0 px-2 py-1 bg-gray-700 rounded">
+            コピー
+          </button>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a href="${data.url}" target="_blank"
+            class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+            <span>🔗</span> 開く
+          </a>
+          <button onclick="shareToX('${data.url}', '${editionLabel}')"
+            class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+            <span>𝕏</span> Xに投稿
+          </button>
+        </div>
+      </div>
+    `;
+    result.classList.remove('hidden');
+    loadSampleList();
+    // ダッシュボードのサンプル数も更新
+    loadStats();
+  } catch (err) {
+    result.innerHTML = `<div class="text-sm text-red-400">❌ エラー: ${err.message}</div>`;
+    result.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '発行する';
+  }
+}
+
+async function loadSampleList() {
+  const el = document.getElementById('sample-list');
+  try {
+    const res = await apiCall('/api/admin/sample/list');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (!data.samples || data.samples.length === 0) {
+      el.innerHTML = '<div class="text-sm text-gray-500">まだ見本紙が発行されていません</div>';
+      return;
+    }
+
+    el.innerHTML = data.samples.map(s => {
+      const editionLabel = s.edition === 'morning' ? '朝刊' : '夕刊';
+      const url = `https://paul13131313.github.io/generated-news/?sample=${s.id}`;
+      const dt = new Date(s.issuedAt);
+      const dateStr = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      return `
+        <div class="sample-card flex items-center gap-3 py-3 border-b border-gray-800 last:border-0">
+          <div class="shrink-0 text-xs text-gray-500 w-20">${dateStr}</div>
+          <div class="shrink-0">
+            <span class="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">${editionLabel}</span>
+          </div>
+          <div class="flex-1 text-sm text-gray-400 truncate font-mono">${s.id}</div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="copyText('${url}')" class="copy-btn text-xs text-gray-500 hover:text-white transition-colors px-2 py-1 bg-gray-800 rounded">
+              URL
+            </button>
+            <a href="${url}" target="_blank" class="text-xs text-gray-500 hover:text-white transition-colors">
+              開く
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+// ===== ユーティリティ =====
+
+function copyUrl(inputId) {
+  const input = document.getElementById(inputId);
+  copyText(input.value);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    // 簡易フィードバック
+    const el = document.activeElement;
+    if (el && el.textContent === 'コピー') { el.textContent = '✓'; setTimeout(() => { el.textContent = 'コピー'; }, 1500); }
+    if (el && el.textContent === 'URL') { el.textContent = '✓'; setTimeout(() => { el.textContent = 'URL'; }, 1500); }
+  } catch {
+    prompt('URLをコピーしてください:', text);
+  }
+}
+
+function shareToX(url, editionLabel) {
+  const text = `生成新聞 ${editionLabel}の見本紙を公開中です。AIが毎朝・毎夕生成する新聞をぜひご覧ください。`;
+  const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(tweetUrl, '_blank');
+}
+</script>
+</body>
+</html>
