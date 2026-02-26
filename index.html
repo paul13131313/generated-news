@@ -783,10 +783,20 @@
     letter-spacing: 0.03em;
   }
   .weather-advice {
-    font-family: var(--font-mincho);
-    font-size: 13px;
-    line-height: 1.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 0 4px;
+  }
+  .weather-item-tag {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    letter-spacing: 0.05em;
     color: var(--ink);
+    background: rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 3px 10px;
+    border-radius: 2px;
   }
   .weather-tip-row {
     margin-top: 10px;
@@ -2148,13 +2158,9 @@ function renderWeatherFashion(wf) {
   dataEl.innerHTML =
     `<div class="weather-data-temp">${wf.tempHigh || ''}℃ <small>/ ${wf.tempLow || ''}℃</small></div>` +
     `<div class="weather-data-detail">${wf.weather || ''}　降水 ${wf.rain || ''}</div>`;
-  adviceEl.innerHTML = `<p>${wf.advice || ''}</p>`;
-  if (wf.tip) {
-    tipEl.style.display = '';
-    tipEl.textContent = wf.tip;
-  } else {
-    tipEl.style.display = 'none';
-  }
+  const items = wf.items || (wf.advice ? wf.advice.split(/[・\/\s]+/).filter(Boolean) : []);
+  adviceEl.innerHTML = items.map(item => `<span class="weather-item-tag">${item}</span>`).join('');
+  tipEl.style.display = 'none';
 }
 
 function renderCulture(culture) {
