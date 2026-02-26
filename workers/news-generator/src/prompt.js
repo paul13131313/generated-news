@@ -147,7 +147,59 @@ ${compressed}
   ],
   "numbers": [
     { "number": "13万人", "label": "米1月雇用者増加数（20字以内）" }
-  ]
+  ],
+  "snsTrend": {
+    "title": "ネットの潮目",
+    "items": [
+      {
+        "platform": "X",
+        "topic": "トレンドトピック名（ハッシュタグ含む可）",
+        "description": "なぜ話題なのか1〜2文の解説",
+        "url": "https://x.com/search?q=%23ハッシュタグ or https://www.youtube.com/results?search_query=検索語"
+      }
+    ],
+    "flame": {
+      "topic": "炎上中のトピック名",
+      "description": "何が問題になっているか2〜3文の解説（100〜150字）",
+      "url": "https://x.com/search?q=%23キーワード"
+    }
+  },
+  "heartwarming": {
+    "title": "ひだまり",
+    "body": "心温まる小さなニュース1本（200〜300字）"
+  },
+  "localNews": {
+    "title": "ご近所情報",
+    "area": "渋谷区",
+    "items": [
+      {
+        "title": "記事見出し（20字以内）",
+        "body": "本文2〜3文（80〜120字）"
+      }
+    ]
+  },
+  "weatherFashion": {
+    "title": "天気と服装",
+    "weather": "晴れ時々くもり",
+    "tempHigh": "18",
+    "tempLow": "9",
+    "rain": "10%",
+    "advice": "天気に合わせたファッション提案（100〜150字）",
+    "tip": "ワンポイントアドバイス（30〜50字）"
+  },
+  "culture": {
+    "title": "催事",
+    "items": [
+      {
+        "type": "展示会 or 映画",
+        "title": "タイトル",
+        "venue": "場所",
+        "period": "期間",
+        "description": "一言紹介（30〜50字）",
+        "recommended": true
+      }
+    ]
+  }
 }
 
 制約:
@@ -158,6 +210,12 @@ ${compressed}
 - tickerの数値はニュース一覧から推測できなければモック値でよい
 - コラムは具体的なニュースに言及しつつ、哲学的・文学的な深みを持たせる
 - headline.imageKeywordは記事の場面を撮影した報道写真のような画像を検索するためのキーワード。英語2〜4語で、写真に写る物理的対象を具体的に指定する（例: speed skating rink athlete, electric vehicle assembly line）。日本のニュースならjapan/tokyoなど地域キーワードを含める
+- snsTrend: X（Twitter）トレンド3〜5件＋YouTube急上昇2〜3件。platformは"X"または"YouTube"。各itemにtopic（見出し）とdescription（なぜ話題か1〜2文）とurl（リンク先）。ネット文化に詳しい記者のトーンで。ニュース一覧から推測できるSNSの反応や、一般的に話題になりそうなトピックを取り上げる。urlはXの場合 https://x.com/search?q=%23キーワード（URLエンコード済み）、YouTubeの場合 https://www.youtube.com/results?search_query=キーワード（URLエンコード済み）の形式で生成する
+- snsTrend.flame: ネット上で炎上中のトピックがあれば1件掲載する。企業の不祥事、著名人の失言、政策への批判など。topic（炎上トピック名）、description（何が問題か2〜3文、100〜150字）、url（Xの検索URL）。炎上と呼べるほどの話題がなければflameフィールドごとnullにする。事実ベースで中立的なトーンを保ち、過度な煽りは避ける
+- heartwarming: 新聞の最後を飾る心温まる小さなニュース。動物の癒しエピソード、善意の話、子どもの面白い一言、季節の小さな発見など。短くても印象に残る、温かみのある文体で。事実に基づきつつ読み物として楽しめるように200〜300字で
+- localNews: 渋谷区エリアのローカル情報3〜4件。新店オープン・閉店、地域イベント、再開発・工事情報、行列店や季節の風景など。住民目線の温かみのあるトーンで、各記事はtitle（見出し）とbody（本文2〜3文）。areaは"渋谷区"固定
+- weatherFashion: 今日の東京の天気に合わせた服装提案。weather（天気）、tempHigh/tempLow（最高/最低気温）、rain（降水確率）は現実的な値を推測で生成。advice（服装提案100〜150字）は具体的なアイテム名を含める。tip（ワンポイント30〜50字）は折りたたみ傘・日焼け止め・花粉対策など実用的な助言
+- culture: 東京都内の催事情報。展示会2〜3件＋映画1〜2件。各itemにtype（"展示会"or"映画"）、title、venue（場所）、period（期間）、description（一言紹介30〜50字）、recommended（おすすめならtrue、それ以外false）。実在する施設名を使い、期間は現実的に設定する
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 
   return { systemPrompt: SYSTEM_PROMPT, userPrompt };

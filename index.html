@@ -606,6 +606,322 @@
     letter-spacing: 0.02em;
   }
 
+  /* ===== CORNERS (新コーナー共通) ===== */
+  .corner-block {
+    margin: 20px 0 0;
+    padding: 16px 0 12px;
+    border-top: 2px solid var(--rule);
+  }
+  .corner-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .corner-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .corner-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .corner-body {
+    font-family: var(--font-mincho);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink);
+  }
+
+  /* SNS・YouTubeトレンド */
+  .sns-platform-label {
+    font-family: var(--font-gothic);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 12px 0 6px;
+    text-transform: uppercase;
+  }
+  .sns-platform-label:first-child {
+    margin-top: 0;
+  }
+  .sns-item {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .sns-item:last-child {
+    border-bottom: none;
+  }
+  .sns-topic {
+    font-family: var(--font-mincho);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .sns-topic-link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-light);
+    transition: border-color 0.2s;
+  }
+  .sns-topic-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .sns-desc {
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    color: var(--caption);
+    line-height: 1.6;
+  }
+
+  /* 炎上中ミニコーナー */
+  .flame-box {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid var(--accent);
+    border-left: 3px solid var(--accent);
+    background: rgba(184, 32, 16, 0.03);
+  }
+  .flame-label {
+    font-family: var(--font-gothic);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .flame-topic {
+    font-family: var(--font-mincho);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .flame-topic a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-light);
+    transition: border-color 0.2s;
+  }
+  .flame-topic a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .flame-desc {
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    color: var(--caption);
+    line-height: 1.6;
+  }
+
+  /* ほっこりニュース */
+  .heartwarming-body p {
+    text-indent: 1em;
+    margin-bottom: 0.5em;
+  }
+
+  /* ===== 天気と服装 ===== */
+  .weather-block {
+    margin: 24px 0 0;
+    padding: 20px 0 16px;
+    border-top: 2px solid var(--rule);
+  }
+  .weather-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .weather-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .weather-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .weather-area {
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--caption);
+  }
+  .weather-data {
+    text-align: right;
+  }
+  .weather-data-temp {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .weather-data-temp small {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--caption);
+  }
+  .weather-data-detail {
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    color: var(--caption);
+    margin-top: 2px;
+    letter-spacing: 0.03em;
+  }
+  .weather-advice {
+    font-family: var(--font-mincho);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink);
+  }
+  .weather-tip-row {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.02);
+    border-left: 2px solid var(--accent);
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    color: var(--caption);
+    line-height: 1.5;
+  }
+
+  /* ===== ご近所情報 ===== */
+  .local-block {
+    margin: 24px 0 0;
+    padding: 20px 0 16px;
+    border-top: 2px solid var(--rule);
+  }
+  .local-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .local-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .local-area {
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--caption);
+  }
+  .local-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .local-item:last-child { border-bottom: none; }
+  .local-item-title {
+    font-family: var(--font-mincho);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .local-item-body {
+    font-family: var(--font-mincho);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--ink);
+  }
+
+  /* ===== 催事 ===== */
+  .culture-block {
+    margin: 24px 0 0;
+    padding: 20px 0 16px;
+    border-top: 2px solid var(--rule);
+  }
+  .culture-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .culture-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .culture-sub {
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--caption);
+  }
+  .culture-type-label {
+    font-family: var(--font-gothic);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 14px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px dotted var(--rule-light);
+  }
+  .culture-type-label:first-child { margin-top: 0; }
+  .culture-item {
+    padding: 8px 0;
+  }
+  .culture-item-title {
+    font-family: var(--font-mincho);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .culture-item-recommended {
+    display: inline-block;
+    font-family: var(--font-gothic);
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: 1px;
+    letter-spacing: 0.05em;
+  }
+  .culture-item-meta {
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    color: var(--caption);
+    margin-top: 3px;
+  }
+  .culture-item-desc {
+    font-family: var(--font-mincho);
+    font-size: 12px;
+    color: var(--ink);
+    margin-top: 3px;
+    line-height: 1.7;
+  }
+
   /* ===== FOOTER ===== */
   footer {
     padding: 24px 16px;
@@ -918,13 +1234,44 @@
   <!-- ARTICLES (generated dynamically) -->
   <div id="articlesContainer"></div>
 
-  <!-- GEN ART -->
+  <!-- 3. 催事（展示会・映画） -->
+  <div class="culture-block gen-animate" id="cultureBlock" style="display:none;">
+    <div class="culture-header">
+      <span class="culture-title">催事</span>
+      <span class="culture-sub">EXHIBITIONS & FILMS</span>
+    </div>
+    <div class="culture-body" id="cultureBody"></div>
+  </div>
+
+  <!-- 4. 天気と服装 -->
+  <div class="weather-block gen-animate" id="weatherFashionBlock" style="display:none;">
+    <div class="weather-header">
+      <div class="weather-title-row">
+        <span class="weather-title">天気と服装</span>
+        <span class="weather-area">渋谷区</span>
+      </div>
+      <div class="weather-data" id="weatherData"></div>
+    </div>
+    <div class="weather-advice" id="weatherAdvice"></div>
+    <div class="weather-tip-row" id="weatherTip"></div>
+  </div>
+
+  <!-- 5. ご近所情報 -->
+  <div class="local-block gen-animate" id="localNewsBlock" style="display:none;">
+    <div class="local-header">
+      <span class="local-title">ご近所情報</span>
+      <span class="local-area" id="localNewsArea"></span>
+    </div>
+    <div class="local-body" id="localNewsBody"></div>
+  </div>
+
+  <!-- 6. GEN ART（視覚的区切り） -->
   <div class="gen-art gen-animate">
     <canvas id="genArt"></canvas>
     <div class="gen-art-tag">INFORMATION FLOW — REAL-TIME GENERATIVE VISUALIZATION</div>
   </div>
 
-  <!-- 天声生成 -->
+  <!-- 7. 天声生成 -->
   <div class="column-block gen-animate">
     <div class="column-head">
       <div>
@@ -935,10 +1282,22 @@
     <div class="column-body" id="columnBody"></div>
   </div>
 
-  <!-- TOPICS -->
-  <div class="sec-rule gen-animate" id="numbersHeader"><span>数字で読む</span></div>
+  <!-- 8. SNS・YouTubeトレンド -->
+  <div class="corner-block gen-animate" id="snsTrendBlock" style="display:none;">
+    <div class="corner-body" id="snsTrendBody"></div>
+  </div>
 
+  <!-- 9. 数字で読む -->
+  <div class="sec-rule gen-animate" id="numbersHeader"><span>数字で読む</span></div>
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
+
+  <!-- 10. ひだまり（締めくくり） -->
+  <div class="corner-block gen-animate" id="heartwarmingBlock" style="display:none;">
+    <div class="corner-head">
+      <span class="corner-title" id="heartwarmingTitle">ひだまり</span>
+    </div>
+    <div class="corner-body" id="heartwarmingBody"></div>
+  </div>
 
 </main>
 
@@ -1543,6 +1902,13 @@ function renderNewspaper(data) {
   // Highlights / Numbers
   renderNumbers(data);
 
+  // 新コーナー
+  renderWeatherFashion(data.weatherFashion);
+  renderLocalNews(data.localNews);
+  renderCulture(data.culture);
+  renderSnsTrend(data.snsTrend);
+  renderHeartwarming(data.heartwarming);
+
   // Footer — 配達時刻を固定表示（朝刊=06:00、夕刊=17:00）
   const stamp = document.getElementById('genTimeStamp');
   const genTime = data.edition === '夕刊' ? '17:00' : '06:00';
@@ -1680,6 +2046,140 @@ function renderNumbers(data) {
       <span class="s-label">${label || ''}</span>
     </div>`;
   }).join('');
+}
+
+function renderSnsTrend(snsTrend) {
+  const block = document.getElementById('snsTrendBlock');
+  const bodyEl = document.getElementById('snsTrendBody');
+  if (!snsTrend || !snsTrend.items || snsTrend.items.length === 0) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+
+  // プラットフォームごとにグループ化
+  const grouped = {};
+  for (const item of snsTrend.items) {
+    const p = item.platform || 'その他';
+    if (!grouped[p]) grouped[p] = [];
+    grouped[p].push(item);
+  }
+
+  let html = '';
+  for (const [platform, items] of Object.entries(grouped)) {
+    html += `<div class="sns-platform-label">${platform}</div>`;
+    html += items.map(item => {
+      const topicHtml = item.url
+        ? `<a href="${item.url}" target="_blank" rel="noopener" class="sns-topic-link">▸ ${item.topic}</a>`
+        : `▸ ${item.topic}`;
+      return `<div class="sns-item">
+        <div class="sns-topic">${topicHtml}</div>
+        <div class="sns-desc">${item.description}</div>
+      </div>`;
+    }).join('');
+  }
+  // 炎上中ミニコーナー（オプショナル）
+  if (snsTrend.flame && snsTrend.flame.topic) {
+    const f = snsTrend.flame;
+    const topicHtml = f.url
+      ? `<a href="${f.url}" target="_blank" rel="noopener">${f.topic}</a>`
+      : f.topic;
+    html += `<div class="flame-box">
+      <div class="flame-label">炎上中</div>
+      <div class="flame-topic">${topicHtml}</div>
+      <div class="flame-desc">${f.description}</div>
+    </div>`;
+  }
+
+  bodyEl.innerHTML = html;
+}
+
+function renderHeartwarming(heartwarming) {
+  const block = document.getElementById('heartwarmingBlock');
+  const titleEl = document.getElementById('heartwarmingTitle');
+  const bodyEl = document.getElementById('heartwarmingBody');
+  if (!heartwarming || !heartwarming.body) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+  titleEl.textContent = heartwarming.title || 'ひだまり';
+  const paragraphs = heartwarming.body.split(/\n\n|\n/).filter(p => p.trim());
+  bodyEl.innerHTML = '<div class="heartwarming-body">' +
+    paragraphs.map(p => `<p>${p}</p>`).join('') +
+    '</div>';
+}
+
+function renderLocalNews(localNews) {
+  const block = document.getElementById('localNewsBlock');
+  const areaEl = document.getElementById('localNewsArea');
+  const bodyEl = document.getElementById('localNewsBody');
+  if (!localNews || !localNews.items || localNews.items.length === 0) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+  areaEl.textContent = localNews.area || '渋谷区';
+  bodyEl.innerHTML = localNews.items.map(item =>
+    `<div class="local-item">
+      <div class="local-item-title">${item.title}</div>
+      <div class="local-item-body">${item.body}</div>
+    </div>`
+  ).join('');
+}
+
+function renderWeatherFashion(wf) {
+  const block = document.getElementById('weatherFashionBlock');
+  const dataEl = document.getElementById('weatherData');
+  const adviceEl = document.getElementById('weatherAdvice');
+  const tipEl = document.getElementById('weatherTip');
+  if (!wf) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+  dataEl.innerHTML =
+    `<div class="weather-data-temp">${wf.tempHigh || ''}℃ <small>/ ${wf.tempLow || ''}℃</small></div>` +
+    `<div class="weather-data-detail">${wf.weather || ''}　降水 ${wf.rain || ''}</div>`;
+  adviceEl.innerHTML = `<p>${wf.advice || ''}</p>`;
+  if (wf.tip) {
+    tipEl.style.display = '';
+    tipEl.textContent = wf.tip;
+  } else {
+    tipEl.style.display = 'none';
+  }
+}
+
+function renderCulture(culture) {
+  const block = document.getElementById('cultureBlock');
+  const bodyEl = document.getElementById('cultureBody');
+  if (!culture || !culture.items || culture.items.length === 0) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+
+  // タイプごとにグループ化
+  const grouped = {};
+  for (const item of culture.items) {
+    const t = item.type || 'その他';
+    if (!grouped[t]) grouped[t] = [];
+    grouped[t].push(item);
+  }
+
+  let html = '';
+  for (const [type, items] of Object.entries(grouped)) {
+    html += `<div class="culture-type-label">${type}</div>`;
+    html += items.map(item => {
+      const rec = item.recommended ? '<span class="culture-item-recommended">推薦</span>' : '';
+      return `<div class="culture-item">
+        <div class="culture-item-title">${rec}${item.title}</div>
+        <div class="culture-item-meta">${item.venue || ''}${item.period ? '　' + item.period : ''}</div>
+        <div class="culture-item-desc">${item.description || ''}</div>
+      </div>`;
+    }).join('');
+  }
+  bodyEl.innerHTML = html;
 }
 
 // ===== DETECT EDITION (JST) =====
