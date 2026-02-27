@@ -1988,7 +1988,7 @@ function renderHeadlineBody(body) {
 function articlePhotoHtml(a) {
   if (!a.imageUrl) return '';
   const credit = a.imageCredit
-    ? `<div class="art-photo-credit">Photo by <a href="${a.imageCreditLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">${a.imageCredit}</a> / <a href="${a.unsplashLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a></div>`
+    ? `<div class="art-photo-credit">Based on photo by <a href="${a.imageCreditLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">${a.imageCredit}</a> / <a href="${a.unsplashLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a></div>`
     : '';
   const canvasId = 'artCanvas_' + Math.random().toString(36).slice(2, 8);
   const category = a.category || 'ニュース';
@@ -2565,7 +2565,7 @@ function updateHeroTheme(data) {
     if (data.headline.imageCredit) {
       const creditLink = data.headline.imageCreditLink || '#';
       const unsplashLink = data.headline.unsplashLink || 'https://unsplash.com';
-      credit.innerHTML = `Photo by <a href="${creditLink}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">${data.headline.imageCredit}</a> on <a href="${unsplashLink}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a>`;
+      credit.innerHTML = `Based on photo by <a href="${creditLink}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">${data.headline.imageCredit}</a> / <a href="${unsplashLink}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a>`;
     } else {
       credit.innerHTML = '';
     }
