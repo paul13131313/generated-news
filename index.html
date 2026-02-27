@@ -441,7 +441,6 @@
   .media-frame {
     position: relative;
     width: 100%;
-    aspect-ratio: 16/9;
     overflow: hidden;
     margin-bottom: 6px;
   }
@@ -449,6 +448,12 @@
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
+  }
+  .hero-photo-canvas {
+    width: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
   }
   .photo-credit {
     font-family: var(--font-gothic);
@@ -522,7 +527,6 @@
   /* ===== ARTICLE PHOTO ===== */
   .art-photo-wrap {
     width: 100%;
-    aspect-ratio: 16/9;
     overflow: hidden;
     margin-bottom: 6px;
   }
@@ -530,6 +534,12 @@
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
+  }
+  .art-photo-canvas {
+    width: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
   }
   .art-photo-credit {
     font-family: var(--font-gothic);
@@ -1242,7 +1252,7 @@
     <p class="top-sub" id="topSub"></p>
 
     <div class="media-frame" id="mediaFrame" style="display:none;">
-      <img id="heroPhoto" class="hero-photo" alt="">
+      <canvas id="heroPhotoCanvas" class="hero-photo-canvas"></canvas>
       <div class="photo-credit" id="photoCredit"></div>
     </div>
     <div class="body-text" id="headlineBody"></div>
@@ -1980,7 +1990,13 @@ function articlePhotoHtml(a) {
   const credit = a.imageCredit
     ? `<div class="art-photo-credit">Photo by <a href="${a.imageCreditLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">${a.imageCredit}</a> / <a href="${a.unsplashLink || '#'}?utm_source=generated_news&utm_medium=referral" target="_blank" rel="noopener">Unsplash</a></div>`
     : '';
-  return `<div class="art-photo-wrap"><img class="art-photo" src="${a.imageUrl}" alt="" loading="lazy"></div>${credit}`;
+  const canvasId = 'artCanvas_' + Math.random().toString(36).slice(2, 8);
+  const category = a.category || 'ニュース';
+  setTimeout(() => {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) loadAndPixelate(a.imageUrl, canvas, category, 16, 9);
+  }, 50);
+  return `<div class="art-photo-wrap"><canvas id="${canvasId}" class="art-photo-canvas"></canvas></div>${credit}`;
 }
 
 function renderArticleFull(a) {
@@ -2444,18 +2460,107 @@ function typeSub(body) {
   }, 35);
 }
 
+// ===== PIXELATION ENGINE =====
+const CATEGORY_TINTS = {
+  '経済':         { tint: [0, 60, 120],  strength: 0.2  },
+  'テクノロジー': { tint: [80, 0, 160],  strength: 0.2  },
+  '政治':         { tint: [120, 20, 20], strength: 0.15 },
+  '社会':         { tint: [0, 80, 40],   strength: 0.15 },
+  '国際':         { tint: [20, 20, 80],  strength: 0.15 },
+  '文化':         { tint: [100, 20, 60], strength: 0.2  },
+  '一面':         { tint: [40, 20, 20],  strength: 0.1  },
+};
+
+function pixelateToCanvas(img, canvas, category, aspectW, aspectH) {
+  const pixelSize = 10;
+  const posterizeLevels = 16;
+  const contrast = 1.4;
+  const palette = CATEGORY_TINTS[category] || CATEGORY_TINTS['一面'];
+  const tint = palette.tint;
+  const tintStr = palette.strength;
+
+  // Canvas幅はコンテナに合わせる（後でCSS width:100%で伸縮）
+  const outW = Math.floor(canvas.parentElement.getBoundingClientRect().width);
+  const outH = Math.floor(outW * (aspectH / aspectW));
+  const cols = Math.ceil(outW / pixelSize);
+  const rows = Math.ceil(outH / pixelSize);
+
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+
+  // 縮小キャンバスで元画像をサンプリング
+  const small = document.createElement('canvas');
+  small.width = cols; small.height = rows;
+  const sCtx = small.getContext('2d');
+
+  // アスペクト比を合わせてセンタークロップ
+  const srcRatio = aspectW / aspectH;
+  const imgRatio = img.naturalWidth / img.naturalHeight;
+  let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+  if (imgRatio > srcRatio) {
+    sw = img.naturalHeight * srcRatio;
+    sx = (img.naturalWidth - sw) / 2;
+  } else {
+    sh = img.naturalWidth / srcRatio;
+    sy = (img.naturalHeight - sh) / 2;
+  }
+  sCtx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
+  const data = sCtx.getImageData(0, 0, cols, rows).data;
+
+  // 背景
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, outW, outH);
+
+  const step = 256 / posterizeLevels;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const i = (row * cols + col) * 4;
+      let r = data[i], g = data[i+1], b = data[i+2];
+      // カテゴリティント
+      r = Math.round(r * (1 - tintStr) + tint[0] * tintStr);
+      g = Math.round(g * (1 - tintStr) + tint[1] * tintStr);
+      b = Math.round(b * (1 - tintStr) + tint[2] * tintStr);
+      // コントラスト強調
+      r = Math.min(255, Math.max(0, Math.round(((r/255 - 0.5) * contrast + 0.5) * 255)));
+      g = Math.min(255, Math.max(0, Math.round(((g/255 - 0.5) * contrast + 0.5) * 255)));
+      b = Math.min(255, Math.max(0, Math.round(((b/255 - 0.5) * contrast + 0.5) * 255)));
+      // ポスタライズ
+      r = Math.round(r / step) * step;
+      g = Math.round(g / step) * step;
+      b = Math.round(b / step) * step;
+      ctx.fillStyle = `rgb(${Math.max(0,Math.min(255,r))},${Math.max(0,Math.min(255,g))},${Math.max(0,Math.min(255,b))})`;
+      ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+    }
+  }
+}
+
+function loadAndPixelate(url, canvas, category, aspectW, aspectH) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    pixelateToCanvas(img, canvas, category, aspectW || 16, aspectH || 9);
+  };
+  img.onerror = function() {
+    // 画像取得失敗時は非表示
+    canvas.style.display = 'none';
+  };
+  img.src = url;
+}
+
 // ===== HERO PHOTO =====
 function updateHeroTheme(data) {
   if (!data || !data.headline) return;
 
   const frame = document.getElementById('mediaFrame');
-  const photo = document.getElementById('heroPhoto');
+  const canvas = document.getElementById('heroPhotoCanvas');
   const credit = document.getElementById('photoCredit');
 
   if (data.headline.imageUrl) {
-    photo.src = data.headline.imageUrl;
-    photo.alt = data.headline.imageKeyword || data.headline.title || '';
     frame.style.display = '';
+    canvas.style.display = 'block';
+    const category = data.headline.category || data.headline.kicker || '一面';
+    loadAndPixelate(data.headline.imageUrl, canvas, category, 16, 9);
 
     if (data.headline.imageCredit) {
       const creditLink = data.headline.imageCreditLink || '#';
