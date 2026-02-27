@@ -184,6 +184,350 @@ async function fetchUnsplashImage(accessKey, keyword) {
 }
 
 /**
+ * Nominatimで逆ジオコーディング（座標→地名）
+ * KVキャッシュ付き（7日間）
+ */
+async function reverseGeocode(lat, lon, kvCache) {
+  // KVキャッシュ確認（小数点3桁に丸める = 約111m精度）
+  const cacheKey = `geo-${lat.toFixed(3)}-${lon.toFixed(3)}`;
+  if (kvCache) {
+    const cached = await kvCache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
+
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=16&accept-language=ja`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'GeneratedNews/1.0 (local-news-feature)' },
+  });
+
+  if (!res.ok) {
+    console.warn('Nominatim API failed:', res.status);
+    return null;
+  }
+
+  const data = await res.json();
+  const addr = data.address || {};
+
+  const area = addr.quarter || addr.neighbourhood || addr.suburb
+    || addr.city_district || addr.city || addr.state || '';
+  const broader = addr.city_district || addr.city || addr.state || '';
+
+  const result = { area, broader, raw: addr };
+
+  // KVに7日間キャッシュ
+  if (kvCache) {
+    await kvCache.put(cacheKey, JSON.stringify(result), {
+      expirationTtl: 7 * 24 * 60 * 60,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Google News RSSでローカルニュースを取得
+ */
+async function fetchLocalNewsFromGoogle(areaName) {
+  const queries = [areaName];
+
+  const allArticles = [];
+  for (const q of queries) {
+    const feedUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=ja&gl=JP&ceid=JP:ja`;
+    try {
+      const articles = await fetchAndParseFeed({
+        url: feedUrl,
+        name: 'Google News',
+        category: 'ローカル',
+        format: 'rss2',
+      });
+      allArticles.push(...articles);
+    } catch (err) {
+      console.warn(`Google News fetch failed for "${q}":`, err.message);
+    }
+  }
+
+  // 重複除去、最大4件
+  const seen = new Set();
+  return allArticles.filter(a => {
+    if (seen.has(a.url)) return false;
+    seen.add(a.url);
+    return true;
+  }).slice(0, 4);
+}
+
+/**
+ * ご近所情報エンドポイント用ハンドラ
+ * GET /api/local-news?lat=35.65&lon=139.71
+ */
+async function handleLocalNews(lat, lon, env) {
+  const kvCache = env.NEWSPAPER_CACHE;
+
+  // 1. 逆ジオコーディング
+  const geo = await reverseGeocode(lat, lon, kvCache);
+  const area = geo?.area || '';
+  const broader = geo?.broader || '';
+
+  if (!area && !broader) {
+    return { localNews: null, error: 'Could not determine area from coordinates' };
+  }
+
+  const searchArea = area || broader;
+
+  // 2. KVキャッシュ確認（エリア+日付で6時間）
+  const dateStr = getJstDateString();
+  const cacheKey = `local-${searchArea}-${dateStr}`;
+  if (kvCache) {
+    const cached = await kvCache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
+
+  // 3. Google News RSSで実ニュース取得
+  let articles = await fetchLocalNewsFromGoogle(searchArea);
+
+  // 4. 結果が少なければ広域で再検索
+  if (articles.length < 2 && broader && broader !== searchArea) {
+    const broaderArticles = await fetchLocalNewsFromGoogle(broader);
+    const existingUrls = new Set(articles.map(a => a.url));
+    for (const a of broaderArticles) {
+      if (!existingUrls.has(a.url)) {
+        articles.push(a);
+        if (articles.length >= 4) break;
+      }
+    }
+  }
+
+  const result = {
+    localNews: {
+      title: 'ご近所情報',
+      area: searchArea,
+      items: articles.map(a => ({
+        title: a.title,
+        body: a.summary || '',
+        url: a.url,
+        source: a.source || 'Google News',
+      })),
+    },
+  };
+
+  // 5. KVに6時間キャッシュ
+  if (kvCache) {
+    await kvCache.put(cacheKey, JSON.stringify(result), {
+      expirationTtl: 6 * 60 * 60,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * 文化ニュースRSSから催事データを取得（展示会・映画）
+ * Claude生成ではなく実データに基づく催事コーナー
+ */
+async function fetchCultureNews() {
+  try {
+    const feeds = [
+      { url: 'https://artscape.jp/rss', name: 'artscape', category: '展示会', format: 'rss2' },
+      { url: 'https://www.cinra.net/feed', name: 'CINRA.NET', category: '文化', format: 'rss2' },
+      { url: 'https://www.cinemacafe.net/rss/index.rdf', name: 'cinemacafe', category: '映画', format: 'rdf' },
+    ];
+
+    const allItems = [];
+
+    for (const feed of feeds) {
+      try {
+        const articles = await fetchAndParseFeed(feed);
+        allItems.push(...articles.map(a => ({ ...a, sourceCategory: feed.category, sourceName: feed.name })));
+      } catch (err) {
+        console.warn(`Culture feed ${feed.name} failed:`, err.message);
+      }
+    }
+
+    // 重複除去、最新順で最大5件
+    const seen = new Set();
+    const unique = allItems.filter(a => {
+      if (seen.has(a.url)) return false;
+      seen.add(a.url);
+      return true;
+    }).slice(0, 5);
+
+    if (unique.length === 0) return null;
+
+    return {
+      title: '催事',
+      items: unique.map(a => ({
+        type: a.sourceCategory,
+        title: a.title,
+        description: a.summary ? a.summary.slice(0, 80) : '',
+        url: a.url,
+        source: a.sourceName,
+      })),
+    };
+  } catch (err) {
+    console.error('Culture news fetch error:', err);
+    return null;
+  }
+}
+
+/**
+ * 株価・為替・BTCの実データを取得
+ * Yahoo Finance (株価・為替) + CoinGecko (BTC)
+ */
+async function fetchMarketData() {
+  const ticker = [];
+
+  try {
+    // Yahoo Finance: 日経平均, TOPIX, ドル円, NYダウ, S&P500
+    const symbols = '^N225,^TOPIX,USDJPY=X,^DJI,^GSPC';
+    const yahooUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
+    const yahooRes = await fetch(yahooUrl, {
+      headers: { 'User-Agent': 'GeneratedNews/1.0' },
+    });
+
+    if (yahooRes.ok) {
+      const yahooData = await yahooRes.json();
+      const quotes = yahooData?.quoteResponse?.result || [];
+
+      const nameMap = {
+        '^N225': '日経平均',
+        '^TOPIX': 'TOPIX',
+        'USDJPY=X': 'ドル円',
+        '^DJI': 'NYダウ',
+        '^GSPC': 'S&P500',
+      };
+
+      for (const symbol of ['^N225', '^TOPIX', 'USDJPY=X', '^DJI', '^GSPC']) {
+        const q = quotes.find(r => r.symbol === symbol);
+        if (q && q.regularMarketPrice != null) {
+          const price = q.regularMarketPrice;
+          const change = q.regularMarketChange || 0;
+          const isForex = symbol === 'USDJPY=X';
+
+          ticker.push({
+            name: nameMap[symbol],
+            value: isForex ? price.toFixed(2) : price.toLocaleString('en-US', { maximumFractionDigits: 0 }),
+            change: (change >= 0 ? '+' : '') + (isForex ? change.toFixed(2) : change.toLocaleString('en-US', { maximumFractionDigits: 0 })),
+          });
+        }
+      }
+    } else {
+      console.warn('Yahoo Finance API failed:', yahooRes.status);
+    }
+  } catch (err) {
+    console.error('Yahoo Finance fetch error:', err);
+  }
+
+  try {
+    // CoinGecko: BTC
+    const btcUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true';
+    const btcRes = await fetch(btcUrl);
+
+    if (btcRes.ok) {
+      const btcData = await btcRes.json();
+      const btc = btcData?.bitcoin;
+      if (btc && btc.usd != null) {
+        const price = Math.round(btc.usd);
+        const changePct = btc.usd_24h_change || 0;
+        ticker.push({
+          name: 'BTC',
+          value: price.toLocaleString('en-US'),
+          change: (changePct >= 0 ? '+' : '') + changePct.toFixed(1) + '%',
+        });
+      }
+    } else {
+      console.warn('CoinGecko API failed:', btcRes.status);
+    }
+  } catch (err) {
+    console.error('CoinGecko fetch error:', err);
+  }
+
+  return ticker;
+}
+
+/**
+ * はてなブックマーク ホットエントリから「ネットで話題」データを取得
+ * Claude生成ではなく実データに基づくSNSトレンド代替
+ */
+async function fetchHatenaHotEntries() {
+  try {
+    const feeds = [
+      { url: 'https://b.hatena.ne.jp/hotentry.rss', category: '総合' },
+      { url: 'https://b.hatena.ne.jp/hotentry/it.rss', category: 'テクノロジー' },
+    ];
+
+    const allItems = [];
+
+    for (const feed of feeds) {
+      const articles = await fetchAndParseFeed({
+        name: `はてブ（${feed.category}）`,
+        url: feed.url,
+        category: feed.category,
+        format: 'rdf',
+      });
+      allItems.push(...articles);
+    }
+
+    // 重複除去（URLベース）、最新順で最大8件
+    const seen = new Set();
+    const unique = allItems.filter(a => {
+      if (seen.has(a.url)) return false;
+      seen.add(a.url);
+      return true;
+    }).slice(0, 8);
+
+    // snsTrend形式に変換
+    return {
+      title: 'ネットで話題',
+      items: unique.map(a => ({
+        platform: 'はてブ',
+        topic: a.title,
+        description: a.summary || '',
+        url: a.url,
+      })),
+      flame: null,
+    };
+  } catch (err) {
+    console.error('Hatena hot entries fetch error:', err);
+    return null;
+  }
+}
+
+/**
+ * 天気データをOpen-Meteo APIから取得（東京・無料・キー不要）
+ * WMO Weather Code → 日本語天気名に変換
+ */
+async function fetchWeatherData() {
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Tokyo&forecast_days=1';
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.warn('Open-Meteo API failed:', res.status);
+    return null;
+  }
+
+  const data = await res.json();
+  const daily = data?.daily;
+  if (!daily) return null;
+
+  // WMO Weather Code → 日本語
+  const weatherCodeMap = {
+    0: '快晴', 1: '晴れ', 2: '晴れ時々くもり', 3: 'くもり',
+    45: '霧', 48: '霧', 51: '小雨', 53: '雨', 55: '雨',
+    56: '凍雨', 57: '凍雨', 61: '小雨', 63: '雨', 65: '大雨',
+    66: '凍雨', 67: '凍雨', 71: '小雪', 73: '雪', 75: '大雪',
+    77: '霰', 80: 'にわか雨', 81: 'にわか雨', 82: '激しい雨',
+    85: 'にわか雪', 86: 'にわか雪', 95: '雷雨', 96: '雷雨', 99: '雷雨',
+  };
+
+  const code = daily.weather_code?.[0];
+  const weather = weatherCodeMap[code] || 'くもり';
+  const tempHigh = String(Math.round(daily.temperature_2m_max?.[0] ?? 0));
+  const tempLow = String(Math.round(daily.temperature_2m_min?.[0] ?? 0));
+  const rain = String(daily.precipitation_probability_max?.[0] ?? 0) + '%';
+
+  return { weather, tempHigh, tempLow, rain };
+}
+
+/**
  * 前の版の記事タイトル一覧をKVから取得（重複排除用）
  */
 async function getPreviousEditionTitles(kvCache, edition) {
@@ -254,7 +598,51 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
   // 4. JSONパース
   const newspaper = parseGeneratedJson(rawText);
 
-  // 5. Unsplash写真取得（headline + articles）
+  // 5. 株価ティッカー実データ取得（Claudeに生成させない）
+  try {
+    const marketData = await fetchMarketData();
+    if (marketData.length > 0) {
+      newspaper.ticker = marketData;
+    }
+  } catch (err) {
+    console.error('Market data fetch failed, keeping Claude-generated ticker:', err);
+  }
+
+  // 6. 天気データ実データ取得（Open-Meteo API）
+  try {
+    const weatherData = await fetchWeatherData();
+    if (weatherData && newspaper.weatherFashion) {
+      newspaper.weatherFashion.title = '天気と服装';
+      newspaper.weatherFashion.weather = weatherData.weather;
+      newspaper.weatherFashion.tempHigh = weatherData.tempHigh;
+      newspaper.weatherFashion.tempLow = weatherData.tempLow;
+      newspaper.weatherFashion.rain = weatherData.rain;
+    }
+  } catch (err) {
+    console.error('Weather data fetch failed:', err);
+  }
+
+  // 8. SNSトレンド → はてブホットエントリ実データで上書き
+  try {
+    const hatenaData = await fetchHatenaHotEntries();
+    if (hatenaData && hatenaData.items.length > 0) {
+      newspaper.snsTrend = hatenaData;
+    }
+  } catch (err) {
+    console.error('Hatena hot entries fetch failed:', err);
+  }
+
+  // 10. 催事 → 文化ニュースRSSから実データで上書き
+  try {
+    const cultureData = await fetchCultureNews();
+    if (cultureData && cultureData.items.length > 0) {
+      newspaper.culture = cultureData;
+    }
+  } catch (err) {
+    console.error('Culture news fetch failed:', err);
+  }
+
+  // 11. Unsplash写真取得（headline + articles）
   if (unsplashKey) {
     const photoPromises = [];
 
@@ -357,6 +745,22 @@ async function handleRequest(request, env) {
       hasUnsplashKey: !!env.UNSPLASH_ACCESS_KEY,
       hasCache: !!env.NEWSPAPER_CACHE,
     }, 200, request);
+  }
+
+  // ご近所情報（位置情報ベース）
+  if (path === '/api/local-news') {
+    const lat = parseFloat(url.searchParams.get('lat'));
+    const lon = parseFloat(url.searchParams.get('lon'));
+    if (isNaN(lat) || isNaN(lon)) {
+      return jsonResponse({ error: 'lat and lon query parameters are required' }, 400, request);
+    }
+    try {
+      const result = await handleLocalNews(lat, lon, env);
+      return jsonResponse(result, 200, request);
+    } catch (error) {
+      console.error('Local news error:', error);
+      return jsonResponse({ error: 'Local news fetch failed', message: error.message }, 500, request);
+    }
   }
 
   // 紙面生成（キャッシュ優先）

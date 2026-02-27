@@ -730,12 +730,6 @@
     line-height: 1.6;
   }
 
-  /* ほっこりニュース */
-  .heartwarming-body p {
-    text-indent: 1em;
-    margin-bottom: 0.5em;
-  }
-
   /* ===== 天気と服装 ===== */
   .weather-block {
     margin: 24px 0 0;
@@ -1309,7 +1303,7 @@
     <div class="column-body" id="columnBody"></div>
   </div>
 
-  <!-- 8. SNS・YouTubeトレンド -->
+  <!-- 8. ネットで話題（はてブホットエントリ） -->
   <div class="corner-block gen-animate" id="snsTrendBlock" style="display:none;">
     <div class="corner-body" id="snsTrendBody"></div>
   </div>
@@ -1317,14 +1311,6 @@
   <!-- 9. 数字で読む -->
   <div class="sec-rule gen-animate" id="numbersHeader"><span>数字で読む</span></div>
   <div class="stories-list gen-animate" id="highlightsContainer"></div>
-
-  <!-- 10. ひだまり（締めくくり） -->
-  <div class="corner-block gen-animate" id="heartwarmingBlock" style="display:none;">
-    <div class="corner-head">
-      <span class="corner-title" id="heartwarmingTitle">ひだまり</span>
-    </div>
-    <div class="corner-body" id="heartwarmingBody"></div>
-  </div>
 
 </main>
 
@@ -1917,8 +1903,8 @@ function renderNewspaper(data) {
   // Ticker
   renderTicker(data.ticker || []);
 
-  // Headline body
-  renderHeadlineBody(data.headline.body);
+  // Headline body + source
+  renderHeadlineBody(data.headline.body, data.headline.sourceUrl, data.headline.sourceName);
 
   // Articles
   renderArticles(data.articles || []);
@@ -1931,10 +1917,11 @@ function renderNewspaper(data) {
 
   // 新コーナー
   renderWeatherFashion(data.weatherFashion);
-  renderLocalNews(data.localNews);
+  // ご近所情報はGeolocationから非同期で取得（Claude生成データは使わない）
+  fetchLocalNewsWithGeolocation();
   renderCulture(data.culture);
   renderSnsTrend(data.snsTrend);
-  renderHeartwarming(data.heartwarming);
+
 
   // Footer — 配達時刻を固定表示（朝刊=06:00、夕刊=17:00）
   const stamp = document.getElementById('genTimeStamp');
@@ -1976,13 +1963,17 @@ function renderTicker(tickers) {
   });
 }
 
-function renderHeadlineBody(body) {
+function renderHeadlineBody(body, sourceUrl, sourceName) {
   const el = document.getElementById('headlineBody');
   if (!body) return;
   const paragraphs = body.split(/\n\n|\n/).filter(p => p.trim());
-  el.innerHTML = paragraphs.map((p, i) =>
+  let html = paragraphs.map((p, i) =>
     i === 0 ? `<p class="dropcap">${p}</p>` : `<p>${p}</p>`
   ).join('');
+  if (sourceUrl && sourceName) {
+    html += `<div style="font-size:10px;color:var(--caption);margin-top:8px;">出典: <a href="${sourceUrl}" target="_blank" rel="noopener" style="color:var(--caption);">${sourceName}</a></div>`;
+  }
+  el.innerHTML = html;
 }
 
 function articlePhotoHtml(a) {
@@ -2000,12 +1991,16 @@ function articlePhotoHtml(a) {
 }
 
 function renderArticleFull(a) {
+  const sourceHtml = a.sourceUrl && a.sourceName
+    ? `<div style="font-size:10px;color:var(--caption);margin-top:4px;">出典: <a href="${a.sourceUrl}" target="_blank" rel="noopener" style="color:var(--caption);">${a.sourceName}</a></div>`
+    : '';
   return `<div class="sec-rule gen-animate"><span>${a.category}</span></div>
     <div class="duo gen-animate"><div class="duo-item" style="grid-column:1/-1;padding:0;">
       ${articlePhotoHtml(a)}
       <div class="duo-tag">${a.label || a.category}</div>
       <h3>${a.title}</h3>
       <p>${a.body}</p>
+      ${sourceHtml}
     </div></div>`;
 }
 
@@ -2032,13 +2027,17 @@ function renderArticles(articles) {
       const cat = a.category || 'ニュース';
       html += `<div class="sec-rule gen-animate"><span>${cat}</span></div>`;
       html += '<div class="duo gen-animate">';
-      html += [a, next].map(x => `
-        <div class="duo-item">
+      html += [a, next].map(x => {
+        const srcHtml = x.sourceUrl && x.sourceName
+          ? `<div style="font-size:10px;color:var(--caption);margin-top:4px;">出典: <a href="${x.sourceUrl}" target="_blank" rel="noopener" style="color:var(--caption);">${x.sourceName}</a></div>`
+          : '';
+        return `<div class="duo-item">
           <div class="duo-tag">${x.label || x.category}</div>
           <h3>${x.title}</h3>
           <p>${x.body}</p>
-        </div>
-      `).join('');
+          ${srcHtml}
+        </div>`;
+      }).join('');
       html += '</div>';
       i += 2;
     } else {
@@ -2074,9 +2073,10 @@ function renderNumbers(data) {
   container.innerHTML = items.map(n => {
     const num   = isLegacy ? n.title   : n.number;
     const label = isLegacy ? n.summary : n.label;
+    const src = n.source ? `<span style="font-size:9px;color:var(--caption);margin-left:4px;">(${n.source})</span>` : '';
     return `<div class="s-item">
       <span class="s-num">${num || ''}</span>
-      <span class="s-label">${label || ''}</span>
+      <span class="s-label">${label || ''}${src}</span>
     </div>`;
   }).join('');
 }
@@ -2090,57 +2090,30 @@ function renderSnsTrend(snsTrend) {
   }
   block.style.display = '';
 
-  // プラットフォームごとにグループ化
-  const grouped = {};
-  for (const item of snsTrend.items) {
-    const p = item.platform || 'その他';
-    if (!grouped[p]) grouped[p] = [];
-    grouped[p].push(item);
-  }
+  const title = snsTrend.title || 'ネットで話題';
 
-  let html = '';
-  for (const [platform, items] of Object.entries(grouped)) {
-    html += `<div class="sns-platform-label">${platform}</div>`;
-    html += items.map(item => {
-      const topicHtml = item.url
-        ? `<a href="${item.url}" target="_blank" rel="noopener" class="sns-topic-link">▸ ${item.topic}</a>`
-        : `▸ ${item.topic}`;
-      return `<div class="sns-item">
-        <div class="sns-topic">${topicHtml}</div>
-        <div class="sns-desc">${item.description}</div>
-      </div>`;
-    }).join('');
-  }
-  // 炎上中ミニコーナー（オプショナル）
-  if (snsTrend.flame && snsTrend.flame.topic) {
-    const f = snsTrend.flame;
-    const topicHtml = f.url
-      ? `<a href="${f.url}" target="_blank" rel="noopener">${f.topic}</a>`
-      : f.topic;
-    html += `<div class="flame-box">
-      <div class="flame-label">炎上中</div>
-      <div class="flame-topic">${topicHtml}</div>
-      <div class="flame-desc">${f.description}</div>
+  // プラットフォームの種類を確認
+  const platforms = new Set(snsTrend.items.map(i => i.platform || ''));
+  const showPlatformLabel = platforms.size > 1;
+
+  let html = `<div class="sns-platform-label">${title}</div>`;
+  let lastPlatform = '';
+
+  for (const item of snsTrend.items) {
+    if (showPlatformLabel && item.platform !== lastPlatform) {
+      html += `<div class="sns-platform-label">${item.platform}</div>`;
+      lastPlatform = item.platform;
+    }
+    const topicHtml = item.url
+      ? `<a href="${item.url}" target="_blank" rel="noopener" class="sns-topic-link">▸ ${item.topic}</a>`
+      : `▸ ${item.topic}`;
+    html += `<div class="sns-item">
+      <div class="sns-topic">${topicHtml}</div>
+      ${item.description ? `<div class="sns-desc">${item.description}</div>` : ''}
     </div>`;
   }
 
   bodyEl.innerHTML = html;
-}
-
-function renderHeartwarming(heartwarming) {
-  const block = document.getElementById('heartwarmingBlock');
-  const titleEl = document.getElementById('heartwarmingTitle');
-  const bodyEl = document.getElementById('heartwarmingBody');
-  if (!heartwarming || !heartwarming.body) {
-    block.style.display = 'none';
-    return;
-  }
-  block.style.display = '';
-  titleEl.textContent = heartwarming.title || 'ひだまり';
-  const paragraphs = heartwarming.body.split(/\n\n|\n/).filter(p => p.trim());
-  bodyEl.innerHTML = '<div class="heartwarming-body">' +
-    paragraphs.map(p => `<p>${p}</p>`).join('') +
-    '</div>';
 }
 
 function renderLocalNews(localNews) {
@@ -2152,13 +2125,53 @@ function renderLocalNews(localNews) {
     return;
   }
   block.style.display = '';
-  areaEl.textContent = localNews.area || '恵比寿';
-  bodyEl.innerHTML = localNews.items.map(item =>
-    `<div class="local-item">
-      <div class="local-item-title">${item.title}</div>
-      <div class="local-item-body">${item.body}</div>
-    </div>`
-  ).join('');
+  areaEl.textContent = localNews.area || '';
+  bodyEl.innerHTML = localNews.items.map(item => {
+    const titleHtml = item.url
+      ? `<a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>`
+      : item.title;
+    return `<div class="local-item">
+      <div class="local-item-title">${titleHtml}</div>
+      ${item.body ? `<div class="local-item-body">${item.body}</div>` : ''}
+      ${item.source ? `<div class="local-item-source" style="font-size:10px;color:var(--caption);">${item.source}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function fetchLocalNewsWithGeolocation() {
+  const block = document.getElementById('localNewsBlock');
+
+  if (!navigator.geolocation) {
+    block.style.display = 'none';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        const res = await fetch(
+          `${API_URL.replace('/api/generate', '')}/api/local-news?lat=${latitude}&lon=${longitude}`,
+          { signal: AbortSignal.timeout(15000) }
+        );
+        if (!res.ok) throw new Error('API error: ' + res.status);
+        const data = await res.json();
+        if (data.localNews) {
+          renderLocalNews(data.localNews);
+        } else {
+          block.style.display = 'none';
+        }
+      } catch (err) {
+        console.warn('Local news fetch failed:', err);
+        block.style.display = 'none';
+      }
+    },
+    () => {
+      // 位置情報拒否 → セクション非表示
+      block.style.display = 'none';
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+  );
 }
 
 function renderWeatherFashion(wf) {
@@ -2200,11 +2213,17 @@ function renderCulture(culture) {
   for (const [type, items] of Object.entries(grouped)) {
     html += `<div class="culture-type-label">${type}</div>`;
     html += items.map(item => {
-      const rec = item.recommended ? '<span class="culture-item-recommended">推薦</span>' : '';
+      const titleHtml = item.url
+        ? `<a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>`
+        : item.title;
+      const metaParts = [];
+      if (item.venue) metaParts.push(item.venue);
+      if (item.period) metaParts.push(item.period);
+      if (item.source) metaParts.push(item.source);
       return `<div class="culture-item">
-        <div class="culture-item-title">${rec}${item.title}</div>
-        <div class="culture-item-meta">${item.venue || ''}${item.period ? '　' + item.period : ''}</div>
-        <div class="culture-item-desc">${item.description || ''}</div>
+        <div class="culture-item-title">${titleHtml}</div>
+        ${metaParts.length > 0 ? `<div class="culture-item-meta">${metaParts.join('　')}</div>` : ''}
+        ${item.description ? `<div class="culture-item-desc">${item.description}</div>` : ''}
       </div>`;
     }).join('');
   }
