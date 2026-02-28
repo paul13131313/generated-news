@@ -1944,8 +1944,8 @@ function renderNewspaper(data) {
 
   // 新コーナー
   renderWeatherFashion(data.weatherFashion);
-  // ご近所情報はGeolocationから非同期で取得（Claude生成データは使わない）
-  fetchLocalNewsWithGeolocation();
+  // ご近所情報はnewspaper本体のデータを使用（step 10bで恵比寿・渋谷に限定済み）
+  renderLocalNews(data.localNews);
   renderCulture(data.culture);
   renderSnsTrend(data.snsTrend);
 
