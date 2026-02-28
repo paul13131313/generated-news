@@ -151,6 +151,35 @@ ${compressed}
   "weatherFashion": {
     "items": ["コート", "ニット", "チノパン", "スニーカー"]
   },
+  "snsTrend": {
+    "items": [
+      { "topic": "話題のキーワードや記事タイトル", "description": "1文の説明（30字程度）", "url": "元記事のURL or null", "platform": "はてブ" }
+    ]
+  },
+  "culture": {
+    "items": [
+      {
+        "type": "展覧会 or 映画",
+        "title": "展覧会名・映画タイトル",
+        "venue": "会場名",
+        "period": "会期・公開日",
+        "description": "1文の紹介（40字程度）",
+        "sourceUrl": "元記事のURL or null",
+        "sourceName": "元記事のメディア名 or null"
+      }
+    ]
+  },
+  "localNews": {
+    "area": "恵比寿・渋谷エリア",
+    "items": [
+      {
+        "title": "ご近所ニュースの見出し",
+        "body": "1〜2文の本文（60字程度）",
+        "sourceUrl": "元記事のURL or null",
+        "sourceName": "元記事のメディア名 or null"
+      }
+    ]
+  },
 }
 
 制約:
@@ -161,6 +190,9 @@ ${compressed}
 - コラムは具体的なニュースに言及しつつ、哲学的・文学的な深みを持たせる
 - headline.imageKeywordは記事の場面を撮影した報道写真のような画像を検索するためのキーワード。英語2〜4語で、写真に写る物理的対象を具体的に指定する（例: speed skating rink athlete, electric vehicle assembly line）。日本のニュースならjapan/tokyoなど地域キーワードを含める
 - weatherFashion: 天気データは別途注入されるので、items（服装アイテム配列）のみ生成する。3〜5個の服装アイテム名のみ。ブランド名は絶対に含めない。長い説明文・形容詞・接続詞は一切不要。「コート」「ニット」「デニム」のような単語のみ
+- snsTrend: items配列は3件ちょうど。ニュース一覧のはてブ記事から話題性の高いものを選び、重複・類似トピック禁止。同じ事件・テーマの別記事も含めない。urlはニュース一覧に含まれる実際のURLを使うこと
+- culture: items配列は3〜5件。ニュース一覧の文化カテゴリ記事から、展覧会・映画情報を中心に選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の展覧会・映画・会場を絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する
+- localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から恵比寿・渋谷・代官山エリアに関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 
   return { systemPrompt: SYSTEM_PROMPT, userPrompt };

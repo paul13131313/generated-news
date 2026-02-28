@@ -400,6 +400,16 @@
 
   /* ===== CONTENT ===== */
   .content { padding: 0 16px; }
+  .content a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-light);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .content a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
   /* ===== TOP ARTICLE ===== */
   .top-article {
@@ -1331,6 +1341,16 @@ const API_URL = 'https://news-generator.hiroshinagano0113.workers.dev/api/genera
 const AUTH_API = 'https://auth-api.hiroshinagano0113.workers.dev';
 let currentNewspaper = null;
 
+// ===== XSS ESCAPE =====
+function escapeForDisplay(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ===== AUTH USER BAR =====
 const PUSH_API = 'https://push-api.hiroshinagano0113.workers.dev';
 
@@ -2127,13 +2147,18 @@ function renderLocalNews(localNews) {
   block.style.display = '';
   areaEl.textContent = localNews.area || '';
   bodyEl.innerHTML = localNews.items.map(item => {
-    const titleHtml = item.url
-      ? `<a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>`
-      : item.title;
+    const safeTitle = escapeForDisplay(item.title);
+    const safeBody = escapeForDisplay(item.body);
+    const safeSrc = escapeForDisplay(item.sourceName || item.source);
+    const titleHtml = item.sourceUrl
+      ? `<a href="${encodeURI(item.sourceUrl)}" target="_blank" rel="noopener">${safeTitle}</a>`
+      : item.url
+        ? `<a href="${encodeURI(item.url)}" target="_blank" rel="noopener">${safeTitle}</a>`
+        : safeTitle;
     return `<div class="local-item">
       <div class="local-item-title">${titleHtml}</div>
-      ${item.body ? `<div class="local-item-body">${item.body}</div>` : ''}
-      ${item.source ? `<div class="local-item-source" style="font-size:10px;color:var(--caption);">${item.source}</div>` : ''}
+      ${safeBody ? `<div class="local-item-body">${safeBody}</div>` : ''}
+      ${safeSrc ? `<div class="local-item-source" style="font-size:10px;color:var(--caption);">${safeSrc}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -2211,19 +2236,26 @@ function renderCulture(culture) {
 
   let html = '';
   for (const [type, items] of Object.entries(grouped)) {
-    html += `<div class="culture-type-label">${type}</div>`;
+    html += `<div class="culture-type-label">${escapeForDisplay(type)}</div>`;
     html += items.map(item => {
-      const titleHtml = item.url
-        ? `<a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>`
-        : item.title;
+      const safeTitle = escapeForDisplay(item.title);
+      const safeVenue = escapeForDisplay(item.venue);
+      const safePeriod = escapeForDisplay(item.period);
+      const safeDesc = escapeForDisplay(item.description);
+      const safeSrc = escapeForDisplay(item.sourceName || item.source);
+      const titleHtml = item.sourceUrl
+        ? `<a href="${encodeURI(item.sourceUrl)}" target="_blank" rel="noopener">${safeTitle}</a>`
+        : item.url
+          ? `<a href="${encodeURI(item.url)}" target="_blank" rel="noopener">${safeTitle}</a>`
+          : safeTitle;
       const metaParts = [];
-      if (item.venue) metaParts.push(item.venue);
-      if (item.period) metaParts.push(item.period);
-      if (item.source) metaParts.push(item.source);
+      if (safeVenue) metaParts.push(safeVenue);
+      if (safePeriod) metaParts.push(safePeriod);
+      if (safeSrc) metaParts.push(safeSrc);
       return `<div class="culture-item">
         <div class="culture-item-title">${titleHtml}</div>
         ${metaParts.length > 0 ? `<div class="culture-item-meta">${metaParts.join('　')}</div>` : ''}
-        ${item.description ? `<div class="culture-item-desc">${item.description}</div>` : ''}
+        ${safeDesc ? `<div class="culture-item-desc">${safeDesc}</div>` : ''}
       </div>`;
     }).join('');
   }
