@@ -2079,7 +2079,7 @@ function renderColumn(column) {
   if (!column) return;
   const titleEl = document.getElementById('columnTitle');
   const bodyEl = document.getElementById('columnBody');
-  titleEl.textContent = column.title || '天声生成';
+  titleEl.textContent = '天声生成';
   const paragraphs = column.body.split(/\n\n|\n/).filter(p => p.trim());
   bodyEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
 }
