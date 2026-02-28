@@ -252,7 +252,7 @@ async function fetchLocalNewsFromGoogle(areaName) {
     if (seen.has(a.url)) return false;
     seen.add(a.url);
     return true;
-  }).slice(0, 4);
+  }).slice(0, 10);
 }
 
 /**
@@ -662,15 +662,41 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
     console.error('Culture news fetch failed:', err);
   }
 
-  // 10b. ご近所情報 → Google News RSS（恵比寿・渋谷を別々に検索+タイトルフィルタ）
+  // 10b. ご近所情報 → Google News RSS（恵比寿で検索+タイトルフィルタ）
   try {
-    const localKeywords = ['恵比寿', '渋谷'];
     const localFilter = ['恵比寿', '渋谷', '代官山', '中目黒', '広尾'];
+    const localSearchTerms = ['恵比寿', '渋谷'];
     const allLocal = [];
-    for (const kw of localKeywords) {
-      const arts = await fetchLocalNewsFromGoogle(kw);
-      allLocal.push(...arts);
+
+    for (const term of localSearchTerms) {
+      try {
+        const feedUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(term)}&hl=ja&gl=JP&ceid=JP:ja`;
+        const resp = await fetch(feedUrl, {
+          headers: { 'User-Agent': 'GeneratedNews/1.0', 'Accept': 'application/rss+xml, application/xml, text/xml, */*' },
+        });
+        if (resp.ok) {
+          const xml = await resp.text();
+          const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+          let m;
+          while ((m = itemRegex.exec(xml)) !== null) {
+            const itemXml = m[1];
+            const titleMatch = itemXml.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+            const linkMatch = itemXml.match(/<link>([\s\S]*?)<\/link>/);
+            const sourceMatch = itemXml.match(/<source[^>]*>([\s\S]*?)<\/source>/);
+            if (titleMatch) {
+              allLocal.push({
+                title: titleMatch[1].trim(),
+                url: linkMatch ? linkMatch[1].trim() : '',
+                source: sourceMatch ? sourceMatch[1].trim() : 'Google News',
+              });
+            }
+          }
+        }
+      } catch (innerErr) {
+        console.warn(`Local news fetch for "${term}" failed:`, innerErr.message);
+      }
     }
+
     // 重複排除 + タイトルに地名が含まれる記事のみ採用
     const seenLocalUrl = new Set();
     const filtered = allLocal.filter(a => {
@@ -678,6 +704,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
       seenLocalUrl.add(a.url);
       return localFilter.some(name => a.title.includes(name));
     });
+
     if (filtered.length > 0) {
       newspaper.localNews = {
         title: 'ご近所情報',
