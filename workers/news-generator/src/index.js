@@ -662,14 +662,27 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
     console.error('Culture news fetch failed:', err);
   }
 
-  // 10b. ご近所情報 → Google News RSS（渋谷・恵比寿固定）で実データ注入
+  // 10b. ご近所情報 → Google News RSS（恵比寿・渋谷を別々に検索+タイトルフィルタ）
   try {
-    const localArticles = await fetchLocalNewsFromGoogle('渋谷 恵比寿');
-    if (localArticles && localArticles.length > 0) {
+    const localKeywords = ['恵比寿', '渋谷'];
+    const localFilter = ['恵比寿', '渋谷', '代官山', '中目黒', '広尾'];
+    const allLocal = [];
+    for (const kw of localKeywords) {
+      const arts = await fetchLocalNewsFromGoogle(kw);
+      allLocal.push(...arts);
+    }
+    // 重複排除 + タイトルに地名が含まれる記事のみ採用
+    const seenLocalUrl = new Set();
+    const filtered = allLocal.filter(a => {
+      if (seenLocalUrl.has(a.url)) return false;
+      seenLocalUrl.add(a.url);
+      return localFilter.some(name => a.title.includes(name));
+    });
+    if (filtered.length > 0) {
       newspaper.localNews = {
         title: 'ご近所情報',
         area: '恵比寿・渋谷エリア',
-        items: localArticles.slice(0, 4).map(a => ({
+        items: filtered.slice(0, 4).map(a => ({
           title: a.title,
           body: '',
           url: a.url,
