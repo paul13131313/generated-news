@@ -2154,7 +2154,9 @@ function renderLocalNews(localNews) {
   areaEl.textContent = localNews.area || '';
   bodyEl.innerHTML = localNews.items.map(item => {
     const safeTitle = escapeForDisplay(item.title);
-    const safeBody = escapeForDisplay(item.body);
+    // HTMLタグが含まれるbodyは古いキャッシュの残骸なので無視
+    const rawBody = (item.body && /<[a-z][\s\S]*>/i.test(item.body)) ? '' : (item.body || '');
+    const safeBody = escapeForDisplay(rawBody);
     const safeSrc = escapeForDisplay(item.sourceName || item.source);
     const titleHtml = item.sourceUrl
       ? `<a href="${encodeURI(item.sourceUrl)}" target="_blank" rel="noopener">${safeTitle}</a>`

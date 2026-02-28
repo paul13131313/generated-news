@@ -709,14 +709,18 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
       newspaper.localNews = {
         title: 'ご近所情報',
         area: '恵比寿・渋谷エリア',
-        items: filtered.slice(0, 4).map(a => ({
-          title: a.title,
-          body: '',
-          url: a.url,
-          sourceUrl: a.url,
-          sourceName: a.source || 'Google News',
-          source: a.source || 'Google News',
-        })),
+        items: filtered.slice(0, 4).map(a => {
+          // titleからメディア名サフィックスを除去（「 - Yahoo!ニュース」等）
+          const cleanTitle = a.title.replace(/\s*[-–—|]\s*[^-–—|]+$/, '').trim() || a.title;
+          return {
+            title: cleanTitle,
+            body: '',
+            url: a.url,
+            sourceUrl: a.url,
+            sourceName: a.source || 'Google News',
+            source: a.source || 'Google News',
+          };
+        }),
       };
     }
   } catch (err) {
