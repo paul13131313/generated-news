@@ -749,7 +749,7 @@
   .weather-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: flex-start;
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--rule-light);
@@ -774,7 +774,7 @@
     color: var(--caption);
   }
   .weather-data {
-    text-align: right;
+    text-align: left;
   }
   .weather-data-temp {
     font-family: var(--font-mincho);
@@ -800,7 +800,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 10px 0 4px;
+    padding: 0;
+    align-items: flex-end;
+    justify-content: flex-end;
+    max-width: 50%;
   }
   .weather-item-tag {
     font-family: var(--font-gothic);
@@ -1277,13 +1280,15 @@
   <!-- 4. 天気と服装 -->
   <div class="weather-block gen-animate" id="weatherFashionBlock" style="display:none;">
     <div class="weather-header">
-      <div class="weather-title-row">
-        <span class="weather-title">天気と服装</span>
-        <span class="weather-area">恵比寿</span>
+      <div>
+        <div class="weather-title-row">
+          <span class="weather-title">天気と服装</span>
+          <span class="weather-area">恵比寿</span>
+        </div>
+        <div class="weather-data" id="weatherData"></div>
       </div>
-      <div class="weather-data" id="weatherData"></div>
+      <div class="weather-advice" id="weatherAdvice"></div>
     </div>
-    <div class="weather-advice" id="weatherAdvice"></div>
     <div class="weather-tip-row" id="weatherTip"></div>
   </div>
 
@@ -2093,10 +2098,9 @@ function renderNumbers(data) {
   container.innerHTML = items.map(n => {
     const num   = isLegacy ? n.title   : n.number;
     const label = isLegacy ? n.summary : n.label;
-    const src = n.source ? `<span style="font-size:9px;color:var(--caption);margin-left:4px;">(${n.source})</span>` : '';
     return `<div class="s-item">
       <span class="s-num">${num || ''}</span>
-      <span class="s-label">${label || ''}${src}</span>
+      <span class="s-label">${label || ''}</span>
     </div>`;
   }).join('');
 }
@@ -2241,7 +2245,8 @@ function renderCulture(culture) {
       const safeTitle = escapeForDisplay(item.title);
       const safeVenue = escapeForDisplay(item.venue);
       const safePeriod = escapeForDisplay(item.period);
-      const safeDesc = escapeForDisplay(item.description);
+      const rawDesc = escapeForDisplay(item.description);
+      const safeDesc = rawDesc.length > 30 ? rawDesc.slice(0, 30) + '…' : rawDesc;
       const safeSrc = escapeForDisplay(item.sourceName || item.source);
       const titleHtml = item.sourceUrl
         ? `<a href="${encodeURI(item.sourceUrl)}" target="_blank" rel="noopener">${safeTitle}</a>`
