@@ -104,33 +104,6 @@ export const FEED_SOURCES = [
     category: '文化',
     format: 'rss2',
   },
-  {
-    name: 'artscape',
-    url: 'https://artscape.jp/rss/',
-    category: '文化',
-    format: 'rss2',
-  },
-  {
-    name: 'Tokyo Art Beat',
-    url: 'https://www.tokyoartbeat.com/jp/articles.rss',
-    category: '文化',
-    format: 'rss2',
-  },
-  {
-    name: '美術手帖',
-    url: 'https://bijutsutecho.com/feed',
-    category: '文化',
-    format: 'rss2',
-  },
-
-  // --- ローカル ---
-  {
-    name: 'シブヤ経済新聞',
-    url: 'https://www.shibukei.com/rss/',
-    category: 'ローカル',
-    format: 'rss2',
-  },
-
   // --- 暮らし ---
   {
     name: 'Yahoo!ニュース（ライフ）',
@@ -161,7 +134,6 @@ export const CATEGORY_MAP = {
   sports: 'スポーツ',
   entertainment: 'エンタメ',
   lifestyle: '暮らし',
-  local: 'ローカル',
   // 日本語でもそのまま引ける
   '総合': '総合',
   'テクノロジー': 'テクノロジー',
@@ -173,5 +145,4 @@ export const CATEGORY_MAP = {
   'スポーツ': 'スポーツ',
   'エンタメ': 'エンタメ',
   '暮らし': '暮らし',
-  'ローカル': 'ローカル',
 };

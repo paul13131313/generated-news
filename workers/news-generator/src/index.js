@@ -326,7 +326,7 @@ async function handleLocalNews(lat, lon, env) {
 async function fetchCultureNews() {
   try {
     const feeds = [
-      { url: 'https://artscape.jp/rss', name: 'artscape', category: '展示会', format: 'rss2' },
+      { url: 'https://artscape.jp/feed/', name: 'artscape', category: '展示会', format: 'rss2' },
       { url: 'https://www.cinra.net/feed', name: 'CINRA.NET', category: '文化', format: 'rss2' },
       { url: 'https://www.cinemacafe.net/rss/index.rdf', name: 'cinemacafe', category: '映画', format: 'rdf' },
     ];
@@ -359,6 +359,8 @@ async function fetchCultureNews() {
         title: a.title,
         description: a.summary ? a.summary.slice(0, 80) : '',
         url: a.url,
+        sourceUrl: a.url,
+        sourceName: a.sourceName,
         source: a.sourceName,
       })),
     };
@@ -466,13 +468,13 @@ async function fetchHatenaHotEntries() {
       allItems.push(...articles);
     }
 
-    // 重複除去（URLベース）、最新順で最大8件
+    // 重複除去（URLベース）、最新順で最大3件
     const seen = new Set();
     const unique = allItems.filter(a => {
       if (seen.has(a.url)) return false;
       seen.add(a.url);
       return true;
-    }).slice(0, 8);
+    }).slice(0, 3);
 
     // snsTrend形式に変換
     return {
@@ -640,6 +642,27 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
     }
   } catch (err) {
     console.error('Culture news fetch failed:', err);
+  }
+
+  // 10b. ご近所情報 → Google News RSS（渋谷・恵比寿固定）で実データ注入
+  try {
+    const localArticles = await fetchLocalNewsFromGoogle('渋谷 恵比寿');
+    if (localArticles && localArticles.length > 0) {
+      newspaper.localNews = {
+        title: 'ご近所情報',
+        area: '恵比寿・渋谷エリア',
+        items: localArticles.slice(0, 4).map(a => ({
+          title: a.title,
+          body: a.summary || '',
+          url: a.url,
+          sourceUrl: a.url,
+          sourceName: a.source || 'Google News',
+          source: a.source || 'Google News',
+        })),
+      };
+    }
+  } catch (err) {
+    console.error('Local news fetch failed:', err);
   }
 
   // 11. Unsplash写真取得（headline + articles）
