@@ -342,22 +342,40 @@ async function fetchCultureNews() {
       }
     }
 
-    // 重複除去、最新順で最大5件
-    const seen = new Set();
-    const unique = allItems.filter(a => {
-      if (seen.has(a.url)) return false;
-      seen.add(a.url);
+    // 重複除去
+    const seenUrl = new Set();
+    const deduped = allItems.filter(a => {
+      if (seenUrl.has(a.url)) return false;
+      seenUrl.add(a.url);
       return true;
-    }).slice(0, 5);
+    });
 
-    if (unique.length === 0) return null;
+    // ソース多様化: 各ソースから最大1件ずつ選び、3件ちょうどに
+    const seenSource = new Set();
+    const diverse = [];
+    for (const a of deduped) {
+      if (seenSource.has(a.sourceName)) continue;
+      seenSource.add(a.sourceName);
+      diverse.push(a);
+      if (diverse.length >= 3) break;
+    }
+    // 3件に満たない場合は残りから補充
+    if (diverse.length < 3) {
+      for (const a of deduped) {
+        if (diverse.includes(a)) continue;
+        diverse.push(a);
+        if (diverse.length >= 3) break;
+      }
+    }
+
+    if (diverse.length === 0) return null;
 
     return {
       title: '催事',
-      items: unique.map(a => ({
+      items: diverse.map(a => ({
         type: a.sourceCategory,
         title: a.title,
-        description: a.summary ? a.summary.slice(0, 80) : '',
+        description: a.summary ? a.summary.slice(0, 30) : '',
         url: a.url,
         sourceUrl: a.url,
         sourceName: a.sourceName,
@@ -482,7 +500,7 @@ async function fetchHatenaHotEntries() {
       items: unique.map(a => ({
         platform: 'はてブ',
         topic: a.title,
-        description: a.summary || '',
+        description: '',
         url: a.url,
       })),
       flame: null,
@@ -653,7 +671,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
         area: '恵比寿・渋谷エリア',
         items: localArticles.slice(0, 4).map(a => ({
           title: a.title,
-          body: a.summary || '',
+          body: '',
           url: a.url,
           sourceUrl: a.url,
           sourceName: a.source || 'Google News',
