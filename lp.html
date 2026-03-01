@@ -1305,9 +1305,11 @@ async function handleSubscribe() {
   const btn = document.getElementById('subscribeBtn');
   const msg = document.getElementById('subscribeMsg');
 
-  btn.textContent = '処理中...';
-  btn.disabled = true;
-  msg.textContent = '';
+  if (btn) {
+    btn.textContent = '処理中...';
+    btn.disabled = true;
+  }
+  if (msg) msg.textContent = '';
 
   try {
     const res = await fetch(PAYMENT_API, {
@@ -1319,14 +1321,20 @@ async function handleSubscribe() {
     if (data.url) {
       window.location.href = data.url;
     } else {
-      btn.textContent = '初月無料で始める';
-      btn.disabled = false;
-      msg.textContent = data.message || '決済ページの作成に失敗しました。時間をおいてお試しください。';
+      if (btn) {
+        btn.textContent = '初月無料で始める';
+        btn.disabled = false;
+      }
+      if (msg) msg.textContent = data.message || '決済ページの作成に失敗しました。時間をおいてお試しください。';
+      if (!msg) alert(data.message || '決済ページの作成に失敗しました。時間をおいてお試しください。');
     }
   } catch (err) {
-    btn.textContent = '初月無料で始める';
-    btn.disabled = false;
-    msg.textContent = '決済ページの作成に失敗しました。時間をおいてお試しください。';
+    if (btn) {
+      btn.textContent = '初月無料で始める';
+      btn.disabled = false;
+    }
+    if (msg) msg.textContent = '決済ページの作成に失敗しました。時間をおいてお試しください。';
+    if (!msg) alert('決済ページの作成に失敗しました。時間をおいてお試しください。');
   }
 }
 

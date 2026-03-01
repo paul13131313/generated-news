@@ -91,6 +91,11 @@
         class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
         <span>📣</span> お知らせ配信
       </button>
+      <div class="border-t border-gray-800 my-2"></div>
+      <button onclick="showSection('diagnose')" id="nav-diagnose"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>🔧</span> 購読フロー診断
+      </button>
     </nav>
     <div class="px-4 py-4 border-t border-gray-800">
       <button onclick="logout()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
@@ -414,6 +419,56 @@
       </div>
     </section>
 
+    <!-- ===== 購読フロー診断 ===== -->
+    <section id="section-diagnose" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">購読フロー診断</h1>
+
+      <!-- フルテスト -->
+      <div class="mb-6">
+        <button onclick="runFullDiagnose()" id="btn-full-diagnose"
+          class="bg-white text-gray-900 font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+          フルテスト実行
+        </button>
+        <div id="diagnose-summary" class="mt-3 text-sm text-gray-400"></div>
+      </div>
+
+      <!-- 3-1. APIヘルスチェック -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-gray-300">APIヘルスチェック</h2>
+          <button onclick="runHealthCheck()" id="btn-health"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+            テスト実行
+          </button>
+        </div>
+        <div id="health-results" class="space-y-2 text-sm"></div>
+      </div>
+
+      <!-- 3-2. Checkout APIテスト -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-gray-300">Checkout APIテスト</h2>
+          <button onclick="runCheckoutTest()" id="btn-checkout"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+            Checkout Session作成テスト
+          </button>
+        </div>
+        <div id="checkout-results" class="text-sm"></div>
+      </div>
+
+      <!-- 3-3. ページ内ボタン動作チェック -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-gray-300">ページ内ボタン確認</h2>
+          <button onclick="runPageCheck()" id="btn-pagecheck"
+            class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+            ページ内ボタン確認
+          </button>
+        </div>
+        <div id="pagecheck-results" class="text-sm"></div>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -502,7 +557,7 @@ function logout() {
 // ===== セクション切り替え =====
 
 function showSection(name) {
-  ['dashboard', 'preview', 'pages', 'sample', 'subscribers', 'invites', 'logs', 'content', 'announce'].forEach(s => {
+  ['dashboard', 'preview', 'pages', 'sample', 'subscribers', 'invites', 'logs', 'content', 'announce', 'diagnose'].forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     document.getElementById(`nav-${s}`).classList.remove('active');
   });
@@ -1407,6 +1462,209 @@ async function loadAnnounceHistory() {
   } catch (err) {
     el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
   }
+}
+
+// ===== 購読フロー診断 =====
+
+const DIAGNOSE_ENDPOINTS = [
+  { name: 'Payment API', url: 'https://payment-api.hiroshinagano0113.workers.dev/health' },
+  { name: 'News Generator', url: `${API}/health` },
+];
+
+function setDiagnoseBtn(id, disabled) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  if (disabled) {
+    btn.dataset.origText = btn.textContent;
+    btn.textContent = 'テスト中...';
+    btn.disabled = true;
+  } else {
+    btn.textContent = btn.dataset.origText || btn.textContent;
+    btn.disabled = false;
+  }
+}
+
+async function runHealthCheck() {
+  const el = document.getElementById('health-results');
+  el.innerHTML = '<div class="text-gray-500">テスト中...</div>';
+  setDiagnoseBtn('btn-health', true);
+  const results = [];
+
+  for (const ep of DIAGNOSE_ENDPOINTS) {
+    const start = performance.now();
+    try {
+      const res = await fetch(ep.url);
+      const ms = Math.round(performance.now() - start);
+      if (res.ok) {
+        results.push({ name: ep.name, status: 'ok', msg: `${res.status} OK`, ms });
+      } else {
+        results.push({ name: ep.name, status: 'error', msg: `${res.status} ${res.statusText}`, ms });
+      }
+    } catch (err) {
+      const ms = Math.round(performance.now() - start);
+      results.push({ name: ep.name, status: 'error', msg: err.message, ms });
+    }
+  }
+
+  el.innerHTML = results.map(r => `
+    <div class="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+      <span>${r.status === 'ok' ? '✅' : '❌'}</span>
+      <span class="font-medium text-gray-200 w-40">${r.name}</span>
+      <span class="${r.status === 'ok' ? 'text-green-400' : 'text-red-400'}">${r.msg}</span>
+      <span class="text-gray-500 ml-auto">${r.ms}ms</span>
+    </div>
+  `).join('');
+
+  setDiagnoseBtn('btn-health', false);
+  return results;
+}
+
+async function runCheckoutTest() {
+  const el = document.getElementById('checkout-results');
+  el.innerHTML = '<div class="text-gray-500">テスト中...</div>';
+  setDiagnoseBtn('btn-checkout', true);
+  let result;
+
+  try {
+    const res = await fetch('https://payment-api.hiroshinagano0113.workers.dev/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+
+    if (data.url) {
+      result = { status: 'ok', msg: 'Checkout URL取得成功' };
+      el.innerHTML = `
+        <div class="p-3 bg-gray-800 rounded-lg">
+          <div class="flex items-center gap-2 mb-2">
+            <span>✅</span>
+            <span class="text-green-400 font-medium">Checkout Session作成成功</span>
+          </div>
+          <div class="text-xs text-gray-400 break-all">
+            <a href="${escapeHtml(data.url)}" target="_blank" rel="noopener" class="text-blue-400 hover:underline">${escapeHtml(data.url)}</a>
+          </div>
+        </div>`;
+    } else {
+      result = { status: 'error', msg: data.message || `HTTP ${res.status}` };
+      el.innerHTML = `
+        <div class="p-3 bg-gray-800 rounded-lg">
+          <div class="flex items-center gap-2">
+            <span>❌</span>
+            <span class="text-red-400">${escapeHtml(data.message || 'URL未取得')} (HTTP ${res.status})</span>
+          </div>
+        </div>`;
+    }
+  } catch (err) {
+    const isCors = err.message.includes('Failed to fetch') || err.name === 'TypeError';
+    result = { status: 'error', msg: isCors ? 'CORSエラーの可能性' : err.message };
+    el.innerHTML = `
+      <div class="p-3 bg-gray-800 rounded-lg">
+        <div class="flex items-center gap-2">
+          <span>❌</span>
+          <span class="text-red-400">${isCors ? 'CORSエラーの可能性: ' : ''}${escapeHtml(err.message)}</span>
+        </div>
+      </div>`;
+  }
+
+  setDiagnoseBtn('btn-checkout', false);
+  return result;
+}
+
+async function runPageCheck() {
+  const el = document.getElementById('pagecheck-results');
+  el.innerHTML = '<div class="text-gray-500">テスト中...</div>';
+  setDiagnoseBtn('btn-pagecheck', true);
+  const checks = [];
+
+  const pages = [
+    { name: 'lp.html', url: 'lp.html' },
+    { name: 'index.html', url: 'index.html' },
+  ];
+
+  for (const page of pages) {
+    try {
+      const res = await fetch(page.url);
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const hasHandleSubscribe = html.includes('function handleSubscribe');
+      const hasSubscribeBtn = !!doc.getElementById('subscribeBtn');
+      const hasSubscribeSection = !!doc.getElementById('subscribeSection');
+
+      const onclickBtns = [];
+      doc.querySelectorAll('[onclick]').forEach(el => {
+        const oc = el.getAttribute('onclick');
+        if (oc.includes('subscribe') || oc.includes('Subscribe')) {
+          onclickBtns.push({ tag: el.tagName, text: el.textContent.trim().slice(0, 30), onclick: oc });
+        }
+      });
+
+      const hrefBtns = [];
+      doc.querySelectorAll('a[href*="subscribe"], a[href*="lp.html"]').forEach(el => {
+        hrefBtns.push({ tag: 'A', text: el.textContent.trim().slice(0, 30), href: el.getAttribute('href') });
+      });
+
+      checks.push({
+        page: page.name,
+        status: 'ok',
+        hasHandleSubscribe,
+        hasSubscribeBtn,
+        hasSubscribeSection,
+        onclickBtns,
+        hrefBtns,
+      });
+    } catch (err) {
+      checks.push({ page: page.name, status: 'error', msg: err.message });
+    }
+  }
+
+  let html = '<table class="w-full text-sm"><thead><tr class="text-left text-gray-500 border-b border-gray-700">' +
+    '<th class="pb-2 pr-3">ページ</th><th class="pb-2 pr-3">handleSubscribe</th><th class="pb-2 pr-3">subscribeBtn</th>' +
+    '<th class="pb-2 pr-3">subscribeSection</th><th class="pb-2">購読関連ボタン</th></tr></thead><tbody>';
+
+  for (const c of checks) {
+    if (c.status === 'error') {
+      html += `<tr class="border-b border-gray-800"><td class="py-2 pr-3 text-gray-200">${c.page}</td>` +
+        `<td colspan="4" class="py-2 text-red-400">❌ ${escapeHtml(c.msg)}</td></tr>`;
+      continue;
+    }
+    const allBtns = [...(c.onclickBtns || []).map(b => `${b.tag}: "${b.text}" → ${b.onclick}`),
+                      ...(c.hrefBtns || []).map(b => `${b.tag}: "${b.text}" → href="${b.href}"`)];
+    html += `<tr class="border-b border-gray-800">` +
+      `<td class="py-2 pr-3 text-gray-200">${c.page}</td>` +
+      `<td class="py-2 pr-3">${c.hasHandleSubscribe ? '✅ あり' : '— なし'}</td>` +
+      `<td class="py-2 pr-3">${c.hasSubscribeBtn ? '✅ あり' : '— なし'}</td>` +
+      `<td class="py-2 pr-3">${c.hasSubscribeSection ? '⚠️ あり' : '✅ なし'}</td>` +
+      `<td class="py-2 text-gray-400">${allBtns.length ? allBtns.map(b => `<div class="truncate max-w-md">${escapeHtml(b)}</div>`).join('') : '— なし'}</td>` +
+      `</tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  setDiagnoseBtn('btn-pagecheck', false);
+  return checks;
+}
+
+async function runFullDiagnose() {
+  setDiagnoseBtn('btn-full-diagnose', true);
+  const summaryEl = document.getElementById('diagnose-summary');
+  summaryEl.textContent = 'テスト実行中...';
+
+  const healthResults = await runHealthCheck();
+  const checkoutResult = await runCheckoutTest();
+  const pageResults = await runPageCheck();
+
+  let total = 0, passed = 0;
+
+  healthResults.forEach(r => { total++; if (r.status === 'ok') passed++; });
+  if (checkoutResult) { total++; if (checkoutResult.status === 'ok') passed++; }
+  pageResults.forEach(r => { total++; if (r.status === 'ok') passed++; });
+
+  const icon = passed === total ? '✅' : passed > 0 ? '⚠️' : '❌';
+  summaryEl.innerHTML = `<span class="text-lg">${icon}</span> <strong>${total}件中 ${passed}件 正常</strong>`;
+
+  setDiagnoseBtn('btn-full-diagnose', false);
 }
 </script>
 </body>
