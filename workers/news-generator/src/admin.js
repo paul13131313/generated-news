@@ -211,6 +211,50 @@ async function getSubscriberList(env) {
   return subscribers;
 }
 
+// ===== PATCH /api/admin/subscribers/:email — メールアドレス更新 =====
+
+export async function handleSubscriberUpdate(oldEmail, request, env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+
+  const body = await request.json().catch(() => ({}));
+  const newEmail = (body.email || '').toLowerCase().trim();
+
+  if (!newEmail || !newEmail.includes('@')) {
+    return { error: 'メールアドレスの形式が正しくありません', _status: 400 };
+  }
+
+  // 現在の購読者データを取得
+  const raw = await env.SUBSCRIBERS.get(oldEmail);
+  if (!raw) {
+    return { error: '購読者が見つかりません', _status: 404 };
+  }
+
+  const subscriber = JSON.parse(raw);
+
+  // メールアドレスが変わらない場合はそのまま返す
+  if (oldEmail === newEmail) {
+    return { success: true, subscriber: { id: newEmail, email: newEmail } };
+  }
+
+  // 新しいメールアドレスが既に使われていないかチェック
+  const existingNew = await env.SUBSCRIBERS.get(newEmail);
+  if (existingNew) {
+    return { error: 'このメールアドレスは既に別の購読者に使われています', _status: 409 };
+  }
+
+  // 新しいキーでデータを保存し、古いキーを削除
+  subscriber.email = newEmail;
+  subscriber.previousEmail = oldEmail;
+  subscriber.updatedAt = new Date().toISOString();
+
+  await env.SUBSCRIBERS.put(newEmail, JSON.stringify(subscriber));
+  await env.SUBSCRIBERS.delete(oldEmail);
+
+  console.log(`Subscriber email updated: ${oldEmail} → ${newEmail}`);
+
+  return { success: true, subscriber: { id: newEmail, email: newEmail } };
+}
+
 // ===== GET /api/admin/subscribers =====
 
 export async function handleSubscriberList(env) {

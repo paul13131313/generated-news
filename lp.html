@@ -1378,9 +1378,12 @@ async function handleSubscribe() {
   if (msg) msg.textContent = '';
 
   try {
+    // 登録フォームのメールアドレスをStripeに渡す（Apple Pay等での上書き防止）
+    const authEmail = localStorage.getItem('auth_email') || '';
     const res = await fetch(PAYMENT_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: authEmail }),
     });
     const data = await res.json();
 

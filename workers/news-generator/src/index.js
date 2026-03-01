@@ -21,6 +21,7 @@ import {
   writeDailyStats,
   handleAnnounce,
   handleAnnouncementList,
+  handleSubscriberUpdate,
 } from './admin.js';
 
 /**
@@ -995,6 +996,16 @@ async function handleRequest(request, env) {
     // POST /api/admin/invites
     if (path === '/api/admin/invites' && request.method === 'POST') {
       const result = await handleInviteCreate(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // PATCH /api/admin/subscribers/{email} — 購読者メールアドレス更新
+    const subscriberMatch = path.match(/^\/api\/admin\/subscribers\/(.+)$/);
+    if (subscriberMatch && request.method === 'PATCH') {
+      const email = decodeURIComponent(subscriberMatch[1]);
+      const result = await handleSubscriberUpdate(email, request, env);
       const status = result._status || 200;
       delete result._status;
       return jsonResponse(result, status, request);

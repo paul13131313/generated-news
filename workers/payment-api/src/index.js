@@ -48,7 +48,7 @@ function jsonResponse(data, status = 200, request = null) {
 /**
  * Stripe APIを直接fetchで呼び出し
  */
-async function createCheckoutSession(stripeSecretKey) {
+async function createCheckoutSession(stripeSecretKey, customerEmail) {
   const params = new URLSearchParams();
   params.append('mode', 'subscription');
   params.append('line_items[0][price_data][currency]', 'jpy');
@@ -60,6 +60,12 @@ async function createCheckoutSession(stripeSecretKey) {
   params.append('subscription_data[trial_period_days]', '30');
   params.append('success_url', SUCCESS_URL);
   params.append('cancel_url', CANCEL_URL);
+
+  // 登録フォームのメールアドレスを Stripe に渡す（Apple Pay等で上書きされないようにする）
+  if (customerEmail) {
+    params.append('customer_email', customerEmail);
+    params.append('metadata[registration_email]', customerEmail);
+  }
 
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -152,12 +158,19 @@ async function handleWebhookEvent(event, env) {
       const session = event.data.object;
       // Checkout Sessionから詳細取得
       const fullSession = await retrieveCheckoutSession(session.id, env.STRIPE_SECRET_KEY);
-      const email = fullSession.customer_details?.email || fullSession.customer?.email || '';
+
+      // 登録フォームのメールアドレスを優先（Apple Pay等での上書きを防止）
+      const registrationEmail = fullSession.metadata?.registration_email || '';
+      const stripeEmail = fullSession.customer_details?.email || fullSession.customer?.email || '';
+      const email = registrationEmail || stripeEmail;
+      const applePayEmail = (registrationEmail && stripeEmail && registrationEmail !== stripeEmail)
+        ? stripeEmail : null;
+
       const customerId = fullSession.customer?.id || fullSession.customer || '';
       const subscriptionId = fullSession.subscription || '';
 
       if (email) {
-        await env.SUBSCRIBERS.put(email, JSON.stringify({
+        const subscriberData = {
           email,
           customerId,
           subscriptionId,
@@ -165,7 +178,15 @@ async function handleWebhookEvent(event, env) {
           plan: '生成新聞 月額300円',
           subscribedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        }));
+        };
+
+        // Apple Pay由来のメールが登録メールと異なる場合は別フィールドに保存
+        if (applePayEmail) {
+          subscriberData.apple_pay_email = applePayEmail;
+          console.log(`Apple Pay email differs: registration=${email}, apple_pay=${applePayEmail}`);
+        }
+
+        await env.SUBSCRIBERS.put(email, JSON.stringify(subscriberData));
         console.log(`New subscriber: ${email}`);
       } else {
         console.warn('checkout.session.completed: no email found', session.id);
@@ -270,7 +291,16 @@ async function handleRequest(request, env) {
     }
 
     try {
-      const session = await createCheckoutSession(env.STRIPE_SECRET_KEY);
+      // フロントエンドから送られた登録メールアドレスを取得
+      let customerEmail = '';
+      try {
+        const body = await request.json();
+        customerEmail = body.email || '';
+      } catch (e) {
+        // bodyがない場合は無視
+      }
+
+      const session = await createCheckoutSession(env.STRIPE_SECRET_KEY, customerEmail);
       return jsonResponse({ url: session.url }, 200, request);
     } catch (error) {
       console.error('Checkout error:', error);

@@ -938,8 +938,19 @@ function renderSubscribers() {
       </thead>
       <tbody>
         ${filtered.map(s => `
-          <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-            <td class="px-6 py-3 text-gray-300 font-mono text-xs">${escapeHtml(s.email)}</td>
+          <tr class="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors" id="row-${escapeHtml(s.email)}">
+            <td class="px-6 py-3 text-gray-300 font-mono text-xs">
+              <span class="subscriber-email-display" data-email="${escapeHtml(s.email)}">
+                ${escapeHtml(s.email)}
+                <button onclick="startEditEmail('${escapeHtml(s.email)}')" class="ml-2 text-gray-500 hover:text-white text-xs" title="メールアドレスを編集">✎</button>
+              </span>
+              <span class="subscriber-email-edit hidden" data-email="${escapeHtml(s.email)}">
+                <input type="email" value="${escapeHtml(s.email)}" class="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono w-48 focus:border-blue-500 focus:outline-none" />
+                <button onclick="saveEditEmail('${escapeHtml(s.email)}')" class="ml-1 text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">保存</button>
+                <button onclick="cancelEditEmail('${escapeHtml(s.email)}')" class="ml-1 text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded">キャンセル</button>
+                <span class="edit-error text-red-400 text-xs ml-2"></span>
+              </span>
+            </td>
             <td class="px-4 py-3">${statusBadge(s.status)}</td>
             <td class="px-4 py-3 text-gray-500 text-xs">${s.subscribedAt ? formatDate(s.subscribedAt) : '—'}</td>
             <td class="px-4 py-3 text-gray-500 text-xs font-mono">${s.inviteCode ? escapeHtml(s.inviteCode) : '—'}</td>
@@ -965,6 +976,81 @@ async function exportSubscribers() {
     URL.revokeObjectURL(url);
   } catch (err) {
     alert(`エラー: ${err.message}`);
+  }
+}
+
+// ===== 購読者メールアドレスのインライン編集 =====
+
+function startEditEmail(email) {
+  const display = document.querySelector(`.subscriber-email-display[data-email="${CSS.escape(email)}"]`);
+  const edit = document.querySelector(`.subscriber-email-edit[data-email="${CSS.escape(email)}"]`);
+  if (display) display.classList.add('hidden');
+  if (edit) {
+    edit.classList.remove('hidden');
+    const input = edit.querySelector('input');
+    if (input) input.focus();
+  }
+}
+
+function cancelEditEmail(email) {
+  const display = document.querySelector(`.subscriber-email-display[data-email="${CSS.escape(email)}"]`);
+  const edit = document.querySelector(`.subscriber-email-edit[data-email="${CSS.escape(email)}"]`);
+  if (display) display.classList.remove('hidden');
+  if (edit) {
+    edit.classList.add('hidden');
+    const input = edit.querySelector('input');
+    if (input) input.value = email;
+    const errSpan = edit.querySelector('.edit-error');
+    if (errSpan) errSpan.textContent = '';
+  }
+}
+
+async function saveEditEmail(oldEmail) {
+  const edit = document.querySelector(`.subscriber-email-edit[data-email="${CSS.escape(oldEmail)}"]`);
+  if (!edit) return;
+
+  const input = edit.querySelector('input');
+  const errSpan = edit.querySelector('.edit-error');
+  const newEmail = (input.value || '').trim().toLowerCase();
+
+  // バリデーション
+  if (!newEmail || !newEmail.includes('@')) {
+    errSpan.textContent = '正しいメールアドレスを入力してください';
+    return;
+  }
+
+  if (newEmail === oldEmail) {
+    cancelEditEmail(oldEmail);
+    return;
+  }
+
+  // 保存ボタンを無効化
+  const saveBtn = edit.querySelector('button');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中…';
+  errSpan.textContent = '';
+
+  try {
+    const res = await apiCall(`/api/admin/subscribers/${encodeURIComponent(oldEmail)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ email: newEmail }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errSpan.textContent = data.error || '更新に失敗しました';
+      saveBtn.disabled = false;
+      saveBtn.textContent = '保存';
+      return;
+    }
+
+    // 成功: 購読者リストを再読み込み
+    await loadSubscribers();
+  } catch (err) {
+    errSpan.textContent = `エラー: ${err.message}`;
+    saveBtn.disabled = false;
+    saveBtn.textContent = '保存';
   }
 }
 
