@@ -844,7 +844,7 @@ body::before {
     </div>
   </a>
   <div class="preview-cta">
-    <a href="sample.html" class="preview-link">紙面サンプルを見る</a>
+    <a href="sample.html" class="preview-link" id="previewLink">見本紙を読む</a>
   </div>
 </section>
 
@@ -1337,6 +1337,22 @@ async function handleSubscribe() {
     if (!msg) alert('決済ページの作成に失敗しました。時間をおいてお試しください。');
   }
 }
+
+// ===== 見本紙リンクを最新に更新 =====
+(function() {
+  const NEWS_API = 'https://news-generator.hiroshinagano0113.workers.dev';
+  fetch(`${NEWS_API}/api/sample/latest`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.id && data.url) {
+        const area = document.getElementById('previewArea');
+        const link = document.getElementById('previewLink');
+        if (area) area.href = data.url;
+        if (link) link.href = data.url;
+      }
+    })
+    .catch(() => {});
+})();
 
 </script>
 </body>

@@ -502,6 +502,23 @@ export async function handleAnnouncementList(env) {
   return { announcements };
 }
 
+// ===== GET /api/sample/latest (公開エンドポイント・認証不要) =====
+
+export async function handleSampleLatest(env) {
+  const rawIndex = await env.NEWSPAPER_CACHE.get('admin:samples:index');
+  const samples = rawIndex ? JSON.parse(rawIndex) : [];
+  if (samples.length === 0) {
+    return { url: 'sample.html', fallback: true, _status: 200 };
+  }
+  const latest = samples[0];
+  return {
+    id: latest.id,
+    url: `https://paul13131313.github.io/generated-news/?sample=${latest.id}`,
+    edition: latest.edition,
+    date: latest.date,
+  };
+}
+
 // ===== GET /api/sample/{id} (公開エンドポイント・認証不要) =====
 
 export async function handleSampleGet(id, env) {

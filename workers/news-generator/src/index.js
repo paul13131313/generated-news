@@ -9,6 +9,7 @@ import {
   handleSampleIssue,
   handleSampleList,
   handleSampleGet,
+  handleSampleLatest,
   handleSubscriberList,
   handleSubscriberExport,
   handleInviteList,
@@ -910,6 +911,14 @@ async function handleRequest(request, env) {
   // ===== Admin: 認証 (認証不要) =====
   if (path === '/api/admin/auth' && request.method === 'POST') {
     const result = await handleAdminAuth(request, env);
+    const status = result._status || 200;
+    delete result._status;
+    return jsonResponse(result, status, request);
+  }
+
+  // ===== 見本紙: 最新取得 (認証不要) =====
+  if (path === '/api/sample/latest' && request.method === 'GET') {
+    const result = await handleSampleLatest(env);
     const status = result._status || 200;
     delete result._status;
     return jsonResponse(result, status, request);
