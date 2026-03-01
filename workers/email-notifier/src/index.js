@@ -15,9 +15,10 @@
  */
 
 const RESEND_API = 'https://api.resend.com/emails';
-const SITE_URL = 'https://paul13131313.github.io/generated-news';
+const SITE_URL = 'https://seiseishinbun.com';
 
 const ALLOWED_ORIGINS = [
+  'https://seiseishinbun.com',
   'https://paul13131313.github.io',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
@@ -229,7 +230,7 @@ async function sendEmail(apiKey, to, subject, html, text) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: '生成新聞 <onboarding@resend.dev>',
+      from: '生成新聞 <noreply@seiseishinbun.com>',
       to: [to],
       subject: subject,
       html: html,

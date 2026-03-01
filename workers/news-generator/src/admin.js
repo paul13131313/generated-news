@@ -158,7 +158,7 @@ export async function handleSampleIssue(request, env) {
 
   return {
     id,
-    url: `https://paul13131313.github.io/generated-news/?sample=${id}`,
+    url: `https://seiseishinbun.com/?sample=${id}`,
     edition,
     date: today,
   };
@@ -617,7 +617,7 @@ export async function handleSampleLatest(env) {
   const latest = samples[0];
   return {
     id: latest.id,
-    url: `https://paul13131313.github.io/generated-news/?sample=${latest.id}`,
+    url: `https://seiseishinbun.com/?sample=${latest.id}`,
     edition: latest.edition,
     date: latest.date,
   };

@@ -2,6 +2,7 @@
 // Cloudflare Worker + Web Crypto API による Web Push 実装
 
 const ALLOWED_ORIGINS = [
+  'https://seiseishinbun.com',
   'https://paul13131313.github.io',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
@@ -354,10 +355,10 @@ export default {
         const notificationPayload = JSON.stringify({
           title: `生成新聞 — ${editionLabel}`,
           body: `本日の${editionLabel}が届きました。`,
-          icon: 'https://paul13131313.github.io/generated-news/icon-192.png',
-          badge: 'https://paul13131313.github.io/generated-news/icon-192.png',
+          icon: 'https://seiseishinbun.com/icon-192.png',
+          badge: 'https://seiseishinbun.com/icon-192.png',
           tag: `newspaper-${edition}`,
-          url: 'https://paul13131313.github.io/generated-news/index.html',
+          url: 'https://seiseishinbun.com/index.html',
         });
 
         // 全購読を取得して送信

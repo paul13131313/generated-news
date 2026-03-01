@@ -803,7 +803,7 @@ async function loadSampleList() {
 
     el.innerHTML = data.samples.map(s => {
       const editionLabel = s.edition === 'morning' ? '朝刊' : '夕刊';
-      const url = `https://paul13131313.github.io/generated-news/?sample=${s.id}`;
+      const url = `https://seiseishinbun.com/?sample=${s.id}`;
       const dt = new Date(s.issuedAt);
       const dateStr = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
       return `
@@ -1297,7 +1297,7 @@ async function deactivateInvite(code) {
 }
 
 function copyInviteLink(code, btnEl) {
-  const url = `https://paul13131313.github.io/generated-news/lp.html?invite=${encodeURIComponent(code)}`;
+  const url = `https://seiseishinbun.com/lp.html?invite=${encodeURIComponent(code)}`;
   navigator.clipboard.writeText(url).then(() => {
     btnEl.textContent = 'コピーしました!';
     setTimeout(() => { btnEl.textContent = 'リンクをコピー'; }, 2000);
@@ -1590,7 +1590,7 @@ function previewAnnouncement() {
         <div class="text-xs text-gray-500" style="line-height:1.8;">
           生成新聞<br>
           あなたの関心から、生まれる新聞。<br>
-          <a href="https://paul13131313.github.io/generated-news/#cancel" class="text-gray-500 underline">購読を解約する</a>
+          <a href="https://seiseishinbun.com/#cancel" class="text-gray-500 underline">購読を解約する</a>
         </div>
       </div>
     </div>

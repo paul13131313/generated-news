@@ -16,13 +16,14 @@
  */
 
 const ALLOWED_ORIGINS = [
+  'https://seiseishinbun.com',
   'https://paul13131313.github.io',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
 ];
 
-const SUCCESS_URL = 'https://paul13131313.github.io/generated-news/index.html?subscribed=true';
-const CANCEL_URL = 'https://paul13131313.github.io/generated-news/lp.html';
+const SUCCESS_URL = 'https://seiseishinbun.com/index.html?subscribed=true';
+const CANCEL_URL = 'https://seiseishinbun.com/lp.html';
 
 function getCorsHeaders(request) {
   const origin = request?.headers?.get('Origin') || '';

@@ -15,9 +15,10 @@
  */
 
 const THREADS_API_BASE = 'https://graph.threads.net/v1.0';
-const SITE_URL = 'https://paul13131313.github.io/generated-news';
+const SITE_URL = 'https://seiseishinbun.com';
 
 const ALLOWED_ORIGINS = [
+  'https://seiseishinbun.com',
   'https://paul13131313.github.io',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
