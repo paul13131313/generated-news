@@ -1,0 +1,54 @@
+# CHANGELOG.md — 変更履歴
+
+## 2026-03-01
+
+### Phase 1 実装
+- **天声生成コーナーを廃止** — index.html（CSS/HTML/JS）、prompt.js から天声生成（AIコラム）セクションを完全削除
+- **仕様書の一元化** — CLAUDE.md を全体指示書として書き直し、docs/ARCHITECTURE.md・ROADMAP.md・CHANGELOG.md を新規作成。旧仕様書（PROJECT.md, NEW_CORNERS_SPEC.md, ADMIN_SPEC.md, LP_SPEC.md）を docs/archive/ に移動
+- **Apple Payメール上書きバグ修正** — payment-api の Webhook で registrationEmail を優先保存、Checkout endpoint で lp.html から auth email を受け取り metadata に保存
+- **ダッシュボードにメール編集機能** — admin.html にインライン編集UI追加、admin.js に PATCH API 追加
+
+### インフラ
+- **カスタムドメイン設定** — seiseishinbun.com を Cloudflare Registrar で取得、GitHub Pages にCNAME設定、SSL証明書プロビジョニング
+- **メール配信の独自ドメイン化** — Resend で seiseishinbun.com を検証、送信元を noreply@seiseishinbun.com に変更
+- **全Worker URL移行** — 全7 Workers の ALLOWED_ORIGINS、SITE_URL、リダイレクトURLを seiseishinbun.com に更新
+- **未認証ユーザーのLPリダイレクト** — index.html のセッション検証でlp.htmlにリダイレクト（?sample, ?invite, ?subscribed, #cancel は除外）
+
+### コンテンツ品質
+- **催事・ご近所情報の重複排除** — KVキャッシュから前回URLを取得して同一記事をフィルタ、ニュースがない場合は「※本日のニュースはありませんでした」を表示
+
+## 2026-02-17
+- メール配信機能 — email-notifier Worker（Resend API連携）、news-generator Service Binding、メール通知トグルUI
+- RSSフィード修正 — NHK 2桁cat・natalie.mu の壊れたフィードを Yahoo!/モデルプレス/J-CASTに置換
+
+## 2026-02-16
+- 最新号表示ロジック — detectEdition() + フォールバック表示
+- 号数ロジック化 — 起算日 2026-01-01 から採番
+- 朝刊/夕刊ニュース重複排除 — 前回タイトルをプロンプトに注入
+
+## 2026-02-14
+- 一面リード文バグ修正 — switchEdition()でtypeSub()未呼び出し問題を修正
+
+## 2026-02-12
+- 招待URLパラメータ — ?invite=XXXX で招待モーダル自動表示
+- 「数字で読む」セクション — highlights → numbers 変更
+- 体験パス（Invite Pass）— 招待コードで7日間無料体験
+- 初月無料トライアル — trial_period_days: 30
+- ヘッダーデザイン洗練 — ユーザーバーをフッターに移動
+- UI整理 — カテゴリタブ削除、「注目の記事」→「本日の見出し」
+- 利用規約・プライバシーポリシー作成
+- Web Push通知 — push-api Worker + VAPID認証
+- PWA強化 — manifest改善、オフラインフォールバック
+- 関心プロファイル設定
+- ユーザー認証（auth-api Worker）
+- Stripe Webhook + 購読者管理
+- Stripe Checkout Session
+- ウェイトリスト登録フォーム
+- KVキャッシュ & Cron Triggers
+- Unsplash写真連携
+
+## 2026-02-11
+- news-generator Worker デプロイ
+- news-collector Worker デプロイ
+- LP制作・公開
+- プロジェクト開始

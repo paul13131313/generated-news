@@ -575,37 +575,6 @@
     font-size: 8px; color: rgba(255,255,255,0.35); letter-spacing: 0.18em;
   }
 
-  /* ===== COLUMN (天声生成) ===== */
-  .column-block {
-    padding: 20px 0;
-    border-bottom: 2px solid var(--rule);
-  }
-  .column-head {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 14px; padding-bottom: 10px;
-    border-bottom: 1px solid var(--rule-light);
-  }
-  .column-stamp {
-    font-family: var(--font-mincho);
-    font-weight: 800; font-size: 20px; letter-spacing: 0.08em;
-  }
-  .column-stamp-sub {
-    font-family: var(--font-gothic);
-    font-size: 10px; color: var(--caption); letter-spacing: 0.06em;
-  }
-  .column-body {
-    font-family: var(--font-mincho);
-    font-size: 15px; line-height: 2;
-    letter-spacing: -0.01em; text-align: justify;
-    position: relative;
-  }
-  .column-body::before {
-    content: '';
-    position: absolute; left: -16px; top: 0; bottom: 0;
-    width: 3px; background: var(--accent);
-  }
-  .column-body p { text-indent: 1em; margin-bottom: 0.4em; }
-
   /* ===== NUMBERS (数字で読む) ===== */
   .stories-list { padding: 8px 0 4px; }
   .s-item {
@@ -1310,18 +1279,7 @@
     <div class="gen-art-tag">INFORMATION FLOW — REAL-TIME GENERATIVE VISUALIZATION</div>
   </div>
 
-  <!-- 7. 天声生成 -->
-  <div class="column-block gen-animate">
-    <div class="column-head">
-      <div>
-        <div class="column-stamp" id="columnTitle">天声生成</div>
-        <div class="column-stamp-sub" id="columnSub">TENSEI GENERATED — AI朝刊コラム</div>
-      </div>
-    </div>
-    <div class="column-body" id="columnBody"></div>
-  </div>
-
-  <!-- 8. ネットで話題（はてブホットエントリ） -->
+  <!-- 7. ネットで話題（はてブホットエントリ） -->
   <div class="corner-block gen-animate" id="snsTrendBlock" style="display:none;">
     <div class="corner-body" id="snsTrendBody"></div>
   </div>
@@ -1876,10 +1834,6 @@ const FALLBACK = {
     { category: '経済', label: '株式市場', title: '日経平均、四万円台を視野——半導体関連銘柄が牽引', body: '国内メーカーの設備投資拡大が市場の楽観ムードを後押し。AI関連需要の拡大が追い風となっている。' },
     { category: '社会', label: '教育改革', title: '東京都、来年度予算にAIリテラシー教育を大幅拡充へ', body: '全公立小中学校にAI活用カリキュラム導入。教員研修も同時開始。デジタル人材育成の基盤構築を急ぐ。' }
   ],
-  column: {
-    title: '天声生成',
-    body: '朝、目が覚めて最初にすることが「画面を見る」になったのは、いつからだろう。かつてそれは新聞を広げることだった。インクの匂い、紙の擦れる音。あの所作には、一日を始める儀式としての重みがあった。\n\n新聞が衰退したのは、情報が遅いからではない。私たちが「待つ」ことをやめたからだ。ニュースは流れてくるものになり、見出しをスワイプで消費するものになった。記事を読むのではなく、見出しを読む。理解するのではなく、知った気になる。\n\n生成新聞という矛盾した名前のメディアが目指すのは、おそらくその逆である。最新の技術を使って、最も古い体験を取り戻す。あなたのために組まれた紙面を、朝、一枚ずつめくるように読む。急がなくていい。この紙面は、あなたが読み終わるまで、どこにも行かない。'
-  },
   ticker: [
     { name: '日経平均', value: '38,942', change: '+312' },
     { name: 'TOPIX', value: '2,748', change: '+18' },
@@ -1939,12 +1893,6 @@ function renderNewspaper(data) {
     mBtn.classList.add('active'); eBtn.classList.remove('active');
   }
 
-  // Column sub
-  const colSub = document.getElementById('columnSub');
-  colSub.textContent = data.edition === '夕刊'
-    ? 'TENSEI GENERATED — AI夕刊コラム'
-    : 'TENSEI GENERATED — AI朝刊コラム';
-
   // Ticker
   renderTicker(data.ticker || []);
 
@@ -1953,9 +1901,6 @@ function renderNewspaper(data) {
 
   // Articles
   renderArticles(data.articles || []);
-
-  // Column
-  renderColumn(data.column);
 
   // Highlights / Numbers
   renderNumbers(data);
@@ -2093,15 +2038,6 @@ function renderArticles(articles) {
   }
 
   container.innerHTML = html;
-}
-
-function renderColumn(column) {
-  if (!column) return;
-  const titleEl = document.getElementById('columnTitle');
-  const bodyEl = document.getElementById('columnBody');
-  titleEl.textContent = '天声生成';
-  const paragraphs = column.body.split(/\n\n|\n/).filter(p => p.trim());
-  bodyEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
 }
 
 function renderNumbers(data) {
