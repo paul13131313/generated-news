@@ -1848,6 +1848,12 @@ async function submitInvite() {
       updateUserBar();
     }
   } else {
+    // 未認証 → LPにリダイレクト（特定パラメータ付きURLは除外）
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('sample') && !params.has('invite') && !params.has('subscribed') && !window.location.hash.includes('cancel')) {
+      window.location.href = 'lp.html';
+      return;
+    }
     updateUserBar();
   }
 })();
