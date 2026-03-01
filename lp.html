@@ -821,7 +821,6 @@ body::before {
 <!-- ===== AUTH NAV ===== -->
 <nav class="auth-nav" id="authNav">
   <button class="auth-nav-btn" onclick="showAuthModal('login')">ログイン</button>
-  <button class="auth-nav-btn primary" onclick="showAuthModal('signup')">新規登録</button>
 </nav>
 
 <!-- ===== AUTH MODAL ===== -->
@@ -877,7 +876,7 @@ body::before {
 
 <!-- ===== PREVIEW ===== -->
 <section class="preview-section section-reveal">
-  <a href="sample.html" class="preview-area" id="previewArea">
+  <a href="#" class="preview-area" id="previewArea">
     <div class="pv-kicker" id="pvKicker">一面</div>
     <div class="pv-headline" id="pvHeadline"></div>
     <div class="pv-canvas-wrap" id="pvCanvasWrap">
@@ -890,7 +889,7 @@ body::before {
     </div>
   </a>
   <div class="preview-cta">
-    <a href="sample.html" class="preview-link" id="previewLink">見本紙を読む</a>
+    <a href="#" class="preview-link" id="previewLink">見本紙を読む</a>
   </div>
 </section>
 
@@ -1343,8 +1342,7 @@ function updateAuthNav() {
     nav.innerHTML = '<span class="auth-nav-user"><span>' + email + '</span></span>' +
       '<button class="auth-nav-btn" onclick="handleLogout()">ログアウト</button>';
   } else {
-    nav.innerHTML = '<button class="auth-nav-btn" onclick="showAuthModal(\'login\')">ログイン</button>' +
-      '<button class="auth-nav-btn primary" onclick="showAuthModal(\'signup\')">新規登録</button>';
+    nav.innerHTML = '<button class="auth-nav-btn" onclick="showAuthModal(\'login\')">ログイン</button>';
   }
 }
 

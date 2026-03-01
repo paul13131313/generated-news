@@ -1,0 +1,14 @@
+{
+  "name": "threads-poster",
+  "version": "1.0.0",
+  "description": "生成新聞 - Threads自動投稿",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.64.0"
+  }
+}

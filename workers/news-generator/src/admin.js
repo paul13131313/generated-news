@@ -508,7 +508,7 @@ export async function handleSampleLatest(env) {
   const rawIndex = await env.NEWSPAPER_CACHE.get('admin:samples:index');
   const samples = rawIndex ? JSON.parse(rawIndex) : [];
   if (samples.length === 0) {
-    return { url: 'sample.html', fallback: true, _status: 200 };
+    return { id: null, url: null, _status: 200 };
   }
   const latest = samples[0];
   return {

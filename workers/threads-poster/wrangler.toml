@@ -1,0 +1,11 @@
+name = "threads-poster"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[observability]
+enabled = true
+
+# NEWSPAPER_CACHE KV（新聞キャッシュ、見出し取得用）
+[[kv_namespaces]]
+binding = "NEWSPAPER_CACHE"
+id = "49aa8a52de304cd5b4c3a3625b7f3899"

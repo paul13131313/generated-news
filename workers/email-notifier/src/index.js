@@ -279,9 +279,9 @@ async function sendEditionEmails(env, edition) {
 
   for (const sub of subscribers) {
     try {
-      await sendEmail(env.RESEND_API_KEY, sub.email, subject, html, text);
+      const result = await sendEmail(env.RESEND_API_KEY, sub.email, subject, html, text);
       sent++;
-      console.log(`Email sent: ${sub.email}`);
+      console.log(`Email sent: ${sub.email}, id: ${result?.id}`);
     } catch (error) {
       failed++;
       errors.push({ email: sub.email, error: error.message });
