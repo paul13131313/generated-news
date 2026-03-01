@@ -452,11 +452,9 @@
     letter-spacing: 0.02em;
   }
   .ticker-track .ticker-item { padding: 0 24px; }
-  .ticker-label {
-    display: inline-block; padding: 0 14px; font-family: var(--font-gothic);
-    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
-    color: var(--ink); background: var(--paper); line-height: 20px;
-    vertical-align: middle; white-space: nowrap; margin-right: 8px;
+  .ticker-track .ticker-heading {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    opacity: 0.5; text-transform: uppercase;
   }
   .ticker-track .up { color: #5cc779; }
   .ticker-track .dn { color: #e05040; }
@@ -1194,7 +1192,6 @@
 
 <!-- TICKER -->
 <div class="ticker gen-animate">
-  <span class="ticker-label" id="tickerLabel"></span>
   <div class="ticker-track" id="tickerTrack"></div>
 </div>
 
@@ -1972,9 +1969,8 @@ function renderNewspaper(data) {
   }
 
   // Ticker
-  const tickerLabel = document.getElementById('tickerLabel');
-  tickerLabel.textContent = isEvening ? '明日の天気' : 'MARKET';
-  renderTicker(data.ticker || []);
+  const tickerHeading = isEvening ? '明日の天気' : 'MARKET';
+  renderTicker(data.ticker || [], tickerHeading);
 
   // Headline body + source
   renderHeadlineBody(data.headline.body, data.headline.sourceUrl, data.headline.sourceName);
@@ -2015,10 +2011,11 @@ function renderNewspaper(data) {
   }
 }
 
-function renderTicker(tickers) {
+function renderTicker(tickers, heading) {
   const track = document.getElementById('tickerTrack');
   if (!tickers.length) return;
-  const html = tickers.map(t => {
+  const headingHtml = heading ? `<span class="ticker-item ticker-heading">${heading}</span>` : '';
+  const html = headingHtml + tickers.map(t => {
     const ch = String(t.change);
     // 株価風（+/-で始まる）→ 矢印+色分け、天気風（それ以外）→ そのまま表示
     if (/^[+\-]/.test(ch)) {
