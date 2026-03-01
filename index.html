@@ -1005,110 +1005,7 @@
   }
   .subscribe-toast .toast-close:hover { opacity: 1; }
 
-  /* ===== CANCEL MODAL ===== */
-  .cancel-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5); z-index: 10001;
-    align-items: center; justify-content: center;
-  }
-  .cancel-overlay.show { display: flex; }
-  .cancel-modal {
-    background: var(--paper); width: 100%; max-width: 400px;
-    margin: 24px; padding: 32px 28px; position: relative;
-    border: 1px solid var(--rule); text-align: center;
-  }
-  .cancel-modal-close {
-    position: absolute; top: 10px; right: 14px;
-    background: none; border: none; font-size: 22px;
-    cursor: pointer; color: var(--caption); line-height: 1;
-  }
-  .cancel-modal-close:hover { color: var(--ink); }
-  .cancel-title {
-    font-family: var(--font-mincho); font-size: 20px;
-    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 16px;
-  }
-  .cancel-body {
-    font-family: var(--font-gothic); font-size: 13px;
-    color: var(--caption); line-height: 1.8; margin-bottom: 24px;
-  }
-  .cancel-btns {
-    display: flex; gap: 12px; justify-content: center;
-  }
-  .cancel-btn-back {
-    font-family: var(--font-gothic); font-size: 13px; font-weight: 700;
-    letter-spacing: 0.06em; padding: 12px 28px;
-    background: var(--ink); color: var(--paper); border: none;
-    cursor: pointer; transition: all 0.3s;
-  }
-  .cancel-btn-back:hover { background: #333; }
-  .cancel-btn-confirm {
-    font-family: var(--font-gothic); font-size: 13px; font-weight: 700;
-    letter-spacing: 0.06em; padding: 12px 28px;
-    background: none; color: var(--accent); border: 1px solid var(--accent);
-    cursor: pointer; transition: all 0.3s;
-  }
-  .cancel-btn-confirm:hover { background: var(--accent); color: var(--paper); }
-  .cancel-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
-  .cancel-msg {
-    font-family: var(--font-gothic); font-size: 12px;
-    text-align: center; margin-top: 12px; min-height: 1.5em;
-  }
-  .cancel-msg.success { color: #2d5016; }
-  .cancel-msg.error { color: var(--accent); }
-
-  /* ===== INVITE MODAL ===== */
-  .invite-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5); z-index: 10001;
-    align-items: center; justify-content: center;
-  }
-  .invite-overlay.show { display: flex; }
-  .invite-modal {
-    background: var(--paper); width: 100%; max-width: 400px;
-    margin: 24px; padding: 32px 28px; position: relative;
-    border: 1px solid var(--rule); text-align: center;
-  }
-  .invite-modal-close {
-    position: absolute; top: 10px; right: 14px;
-    background: none; border: none; font-size: 22px;
-    cursor: pointer; color: var(--caption); line-height: 1;
-  }
-  .invite-modal-close:hover { color: var(--ink); }
-  .invite-title {
-    font-family: var(--font-mincho); font-size: 20px;
-    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 10px;
-  }
-  .invite-sub {
-    font-family: var(--font-gothic); font-size: 12px;
-    color: var(--caption); line-height: 1.8; margin-bottom: 20px;
-  }
-  .invite-field { margin-bottom: 14px; text-align: left; }
-  .invite-field label {
-    display: block; font-family: var(--font-gothic);
-    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
-    color: var(--caption); margin-bottom: 6px;
-  }
-  .invite-field input {
-    width: 100%; font-family: var(--font-gothic); font-size: 15px;
-    padding: 12px 16px; border: 1px solid var(--rule-light);
-    background: #fff; color: var(--ink); outline: none;
-    transition: border-color 0.3s; box-sizing: border-box;
-  }
-  .invite-field input:focus { border-color: var(--accent); }
-  .invite-submit {
-    width: 100%; font-family: var(--font-gothic); font-size: 14px;
-    font-weight: 700; letter-spacing: 0.1em; padding: 14px;
-    background: var(--ink); color: var(--paper); border: none;
-    cursor: pointer; transition: all 0.3s; margin-top: 8px;
-  }
-  .invite-submit:hover { background: var(--accent); }
-  .invite-submit:disabled { opacity: 0.7; cursor: not-allowed; }
-  .invite-msg {
-    font-family: var(--font-gothic); font-size: 12px;
-    text-align: center; margin-top: 10px; min-height: 1.5em;
-  }
-  .invite-msg.success { color: #2d5016; }
-  .invite-msg.error { color: var(--accent); }
+  /* [DISABLED: 課金停止中] CANCEL MODAL / INVITE MODAL のCSSは無料化に伴い削除 */
 </style>
 </head>
 <body>
@@ -1117,8 +1014,7 @@
 <div id="sampleBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-family:'Noto Serif JP',serif;display:none;align-items:center;justify-content:center;gap:12px;">
   <span style="background:#fff;color:#b91c1c;font-weight:700;font-size:11px;padding:2px 8px;border-radius:2px;">見本紙</span>
   <span>これは見本紙です。毎朝・毎夕、あなただけの新聞をお届けします。</span>
-  <a href="lp.html" style="background:#fff;color:#b91c1c;font-weight:700;font-size:12px;padding:4px 14px;border-radius:2px;text-decoration:none;white-space:nowrap;">購読する</a>
-  <span style="color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;text-decoration:underline;" onclick="openInviteModal()">招待コードをお持ちの方</span>
+  <a href="lp.html" style="background:#fff;color:#b91c1c;font-weight:700;font-size:12px;padding:4px 14px;border-radius:2px;text-decoration:none;white-space:nowrap;">無料で購読する</a>
 </div>
 
 <!-- SUBSCRIBE TOAST -->
@@ -1161,42 +1057,11 @@
   </div>
 </div>
 
-<!-- CANCEL MODAL -->
-<div class="cancel-overlay" id="cancelOverlay" onclick="if(event.target===this)closeCancelModal()">
-  <div class="cancel-modal">
-    <button class="cancel-modal-close" onclick="closeCancelModal()">&times;</button>
-    <div class="cancel-title">購読を解約</div>
-    <div class="cancel-body">
-      解約すると、現在の請求期間の終了後に<br>新聞の配信が停止されます。<br>
-      期間終了まではこれまで通りお読みいただけます。<br><br>
-      <span style="font-size:12px;">※ 無料トライアル期間中に解約すれば料金は発生しません。</span>
-    </div>
-    <div class="cancel-btns">
-      <button class="cancel-btn-back" onclick="closeCancelModal()">戻る</button>
-      <button class="cancel-btn-confirm" id="cancelConfirmBtn" onclick="confirmCancel()">解約する</button>
-    </div>
-    <div class="cancel-msg" id="cancelMsg"></div>
-  </div>
-</div>
-
-<!-- INVITE MODAL -->
-<div class="invite-overlay" id="inviteOverlay" onclick="if(event.target===this)closeInviteModal()">
-  <div class="invite-modal">
-    <button class="invite-modal-close" onclick="closeInviteModal()">&times;</button>
-    <div class="invite-title">体験パス</div>
-    <div class="invite-sub">招待コードをお持ちの方は、メールアドレスとコードを入力してください。<br>7日間無料で新聞をお読みいただけます。</div>
-    <div class="invite-field">
-      <label>メールアドレス</label>
-      <input type="email" id="inviteEmail" placeholder="example@email.com">
-    </div>
-    <div class="invite-field">
-      <label>招待コード</label>
-      <input type="text" id="inviteCode" placeholder="例: PAUL" style="text-transform:uppercase;">
-    </div>
-    <button class="invite-submit" id="inviteSubmit" onclick="submitInvite()">体験パスを有効にする</button>
-    <div class="invite-msg" id="inviteMsg"></div>
-  </div>
-</div>
+<!-- [DISABLED: 課金停止中] 解約モーダル・招待モーダルは無料化に伴い非表示 -->
+<!--
+<div class="cancel-overlay" id="cancelOverlay" onclick="if(event.target===this)closeCancelModal()">...</div>
+<div class="invite-overlay" id="inviteOverlay" onclick="if(event.target===this)closeInviteModal()">...</div>
+-->
 
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
@@ -1370,24 +1235,8 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 function updateUserBar() {
   const bar = document.getElementById('userBar');
   const email = localStorage.getItem('auth_email');
-  const isInvite = localStorage.getItem('invite_user') === 'true';
 
-  if (email && isInvite) {
-    // 招待ユーザー
-    const expires = localStorage.getItem('invite_expires');
-    const expiresDate = expires ? new Date(expires).toLocaleDateString('ja-JP') : '';
-    const expiresText = expiresDate ? '（' + expiresDate + 'まで）' : '';
-    const inviteEmailToggle = getEmailToggleHtml();
-    bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
-      '<span class="user-bar-sep">|</span>' +
-      '<span style="font-size:10px;color:var(--caption);">体験パス' + expiresText + '</span>' +
-      '<span class="user-bar-sep">|</span>' +
-      inviteEmailToggle +
-      '<span class="user-bar-sep">|</span>' +
-      '<a class="user-bar-link" href="lp.html">正式購読する</a>' +
-      '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="handleInviteLogout()">ログアウト</span>';
-  } else if (email) {
+  if (email) {
     // 認証ユーザー
     const pushToggle = getPushToggleHtml();
     const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
@@ -1399,14 +1248,10 @@ function updateUserBar() {
       pushPart +
       emailPart +
       '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="openCancelModal()">購読管理</span>' +
-      '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
   } else {
     // 未認証
-    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>' +
-      '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="openInviteModal()">招待コードをお持ちの方</span>';
+    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>';
   }
 }
 
@@ -1423,12 +1268,7 @@ function handleLogoutIndex() {
   updateUserBar();
 }
 
-function handleInviteLogout() {
-  localStorage.removeItem('auth_email');
-  localStorage.removeItem('invite_user');
-  localStorage.removeItem('invite_expires');
-  updateUserBar();
-}
+// [DISABLED: 課金停止中] handleInviteLogout は無料化に伴い不要
 
 // ===== WEB PUSH 通知 =====
 async function togglePushSubscription() {
@@ -1609,143 +1449,19 @@ async function saveProfile() {
   btn.textContent = '保存する';
 }
 
-// ===== CANCEL SUBSCRIPTION =====
+// [DISABLED: 課金停止中] 解約・招待パス機能は無料化に伴い停止
 const PAYMENT_API = 'https://payment-api.hiroshinagano0113.workers.dev';
-
-function openCancelModal() {
-  const msg = document.getElementById('cancelMsg');
-  msg.textContent = '';
-  msg.className = 'cancel-msg';
-  document.getElementById('cancelConfirmBtn').disabled = false;
-  document.getElementById('cancelOverlay').classList.add('show');
-}
-
-function closeCancelModal() {
-  document.getElementById('cancelOverlay').classList.remove('show');
-}
-
-// URLハッシュ #cancel で解約モーダルを自動表示（メールからの導線）
-if (location.hash === '#cancel') {
-  openCancelModal();
-  history.replaceState(null, '', location.pathname + location.search);
-}
-
-async function confirmCancel() {
-  const email = localStorage.getItem('auth_email');
-  if (!email) return;
-
-  const btn = document.getElementById('cancelConfirmBtn');
-  const msg = document.getElementById('cancelMsg');
-  btn.disabled = true;
-  btn.textContent = '処理中...';
-  msg.textContent = '';
-  msg.className = 'cancel-msg';
-
-  try {
-    const res = await fetch(PAYMENT_API + '/api/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      const endDate = data.currentPeriodEnd
-        ? new Date(data.currentPeriodEnd).toLocaleDateString('ja-JP')
-        : '';
-      msg.textContent = endDate
-        ? `解約を受け付けました。${endDate}まで閲覧可能です。`
-        : '解約を受け付けました。期間終了まで閲覧可能です。';
-      msg.className = 'cancel-msg success';
-      setTimeout(() => closeCancelModal(), 3000);
-    } else {
-      msg.textContent = data.error || '解約に失敗しました';
-      msg.className = 'cancel-msg error';
-    }
-  } catch {
-    msg.textContent = '通信エラーが発生しました';
-    msg.className = 'cancel-msg error';
-  }
-
-  btn.disabled = false;
-  btn.textContent = '解約する';
-}
+/*
+// ===== CANCEL SUBSCRIPTION =====
+function openCancelModal() { ... }
+function closeCancelModal() { ... }
+async function confirmCancel() { ... }
 
 // ===== INVITE PASS =====
-function openInviteModal() {
-  document.getElementById('inviteEmail').value = '';
-  document.getElementById('inviteCode').value = '';
-  document.getElementById('inviteSubmit').disabled = false;
-  document.getElementById('inviteSubmit').textContent = '体験パスを有効にする';
-  const msg = document.getElementById('inviteMsg');
-  msg.textContent = '';
-  msg.className = 'invite-msg';
-  // URLパラメータから招待コードを自動入力
-  const urlCode = new URLSearchParams(window.location.search).get('invite');
-  if (urlCode) {
-    document.getElementById('inviteCode').value = urlCode.toUpperCase();
-  }
-  document.getElementById('inviteOverlay').classList.add('show');
-}
-
-function closeInviteModal() {
-  document.getElementById('inviteOverlay').classList.remove('show');
-}
-
-async function submitInvite() {
-  const email = document.getElementById('inviteEmail').value.trim();
-  const inviteCode = document.getElementById('inviteCode').value.trim();
-  const btn = document.getElementById('inviteSubmit');
-  const msg = document.getElementById('inviteMsg');
-
-  if (!email || !email.includes('@')) {
-    msg.textContent = 'メールアドレスを正しく入力してください';
-    msg.className = 'invite-msg error';
-    return;
-  }
-  if (!inviteCode) {
-    msg.textContent = '招待コードを入力してください';
-    msg.className = 'invite-msg error';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '処理中...';
-  msg.textContent = '';
-  msg.className = 'invite-msg';
-
-  try {
-    const res = await fetch(PAYMENT_API + '/api/invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, inviteCode }),
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      localStorage.setItem('auth_email', data.email);
-      localStorage.setItem('invite_user', 'true');
-      localStorage.setItem('invite_expires', data.expiresAt);
-
-      msg.textContent = data.message;
-      msg.className = 'invite-msg success';
-      setTimeout(() => {
-        closeInviteModal();
-        updateUserBar();
-      }, 1500);
-    } else {
-      msg.textContent = data.error || '体験パスの登録に失敗しました';
-      msg.className = 'invite-msg error';
-      btn.disabled = false;
-      btn.textContent = '体験パスを有効にする';
-    }
-  } catch {
-    msg.textContent = '通信エラーが発生しました';
-    msg.className = 'invite-msg error';
-    btn.disabled = false;
-    btn.textContent = '体験パスを有効にする';
-  }
-}
+function openInviteModal() { ... }
+function closeInviteModal() { ... }
+async function submitInvite() { ... }
+*/
 
 // セッション検証
 (function() {
@@ -1777,38 +1493,10 @@ async function submitInvite() {
       }
       updateUserBar();
     }).catch(() => updateUserBar());
-  } else if (isInvite) {
-    // 招待ユーザー: 期限チェック
-    const email = localStorage.getItem('auth_email');
-    if (email) {
-      fetch(PAYMENT_API + '/api/subscriber/' + encodeURIComponent(email))
-        .then(r => r.json())
-        .then(data => {
-          if (!data.subscribed || data.status === 'invite_expired') {
-            localStorage.removeItem('invite_user');
-            localStorage.removeItem('invite_expires');
-            localStorage.removeItem('auth_email');
-            // 期限切れ通知（subscribeToast流用）
-            const toast = document.getElementById('subscribeToast');
-            toast.querySelector('.toast-title').textContent = '体験パスの期限が終了しました';
-            toast.querySelector('.toast-body').textContent = '引き続きご利用いただくには、正式にご購読ください。';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 10000);
-          }
-          // メール通知設定を読み込み
-          if (data.email_notify !== undefined) {
-            _emailNotifyActive = data.email_notify;
-          }
-          updateUserBar();
-        })
-        .catch(() => updateUserBar());
-    } else {
-      updateUserBar();
-    }
   } else {
-    // 未認証 → LPにリダイレクト（特定パラメータ付きURLは除外）
+    // 未認証 → LPにリダイレクト（見本紙パラメータは除外）
     const params = new URLSearchParams(window.location.search);
-    if (!params.has('sample') && !params.has('invite') && !params.has('subscribed') && !window.location.hash.includes('cancel')) {
+    if (!params.has('sample')) {
       window.location.href = 'lp.html';
       return;
     }
@@ -2396,22 +2084,7 @@ function switchEdition(ed) {
     setTimeout(() => typeHeadline(data.headline.title), 400);
     setTimeout(() => typeSub(data.headline.body), 2200);
 
-    // 購読成功トースト表示
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('subscribed') === 'true') {
-      setTimeout(() => {
-        document.getElementById('subscribeToast').classList.add('show');
-        // 8秒後に自動で消す
-        setTimeout(() => {
-          document.getElementById('subscribeToast').classList.remove('show');
-        }, 8000);
-      }, 2000);
-      // URLからパラメータを削除（履歴を汚さない）
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, '', cleanUrl);
-    }
-
-    // ?invite=XXXX の処理は revealContent 外 (IIFE末尾) で実行
+    // [DISABLED: 課金停止中] 購読成功トースト・招待パラメータは無料化に伴い停止
   }
 
   setTimeout(nextStep, 600);
@@ -2428,31 +2101,7 @@ function switchEdition(ed) {
   }, 50000);
 })();
 
-// ===== ?invite=XXXX 招待モーダル自動表示 =====
-(function() {
-  var inviteParams = new URLSearchParams(window.location.search);
-  var inviteCode = inviteParams.get('invite');
-  if (!inviteCode) return;
-  // URLパラメータを即座にクリーン（履歴を汚さない）
-  window.history.replaceState({}, '', window.location.pathname);
-  // ログイン済み or 招待済みユーザーはスキップ
-  var isLoggedIn = !!localStorage.getItem('auth_email');
-  var isInviteUser = localStorage.getItem('invite_user') === 'true';
-  if (isLoggedIn || isInviteUser) return;
-  // ページ表示完了を待ってからモーダルを開く（ローディング完了後）
-  var _inviteTimer = setInterval(function() {
-    var overlay = document.querySelector('.gen-overlay');
-    if (overlay && overlay.classList.contains('done')) {
-      clearInterval(_inviteTimer);
-      setTimeout(function() {
-        openInviteModal();
-        document.getElementById('inviteCode').value = inviteCode.toUpperCase();
-      }, 800);
-    }
-  }, 300);
-  // 安全策: 60秒で諦める
-  setTimeout(function() { clearInterval(_inviteTimer); }, 60000);
-})();
+// [DISABLED: 課金停止中] 招待モーダル自動表示は無料化に伴い停止
 
 // ===== TYPEWRITER =====
 function typeHeadline(text) {

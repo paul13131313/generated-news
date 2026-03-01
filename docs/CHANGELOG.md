@@ -2,6 +2,14 @@
 
 ## 2026-03-01
 
+### Phase 2 実装: 無料化と導線整理
+- **課金フロー停止** — index.html: Stripe Checkout・解約モーダル・招待モーダルのHTML/CSS/JSをコメントアウト、購読管理リンク削除
+- **LP無料化** — lp.html: ヒーローCTA「無料で購読する」に変更、料金セクション「FREE / ¥0」に書き換え、招待モーダル・Stripe JS削除
+- **ユーザーバー簡素化** — 招待ユーザー状態・招待コードリンク・購読管理リンクを削除
+- **リダイレクト条件簡素化** — 未認証リダイレクトから invite/subscribed/cancel の除外条件を削除
+- **利用規約** — 第4条を「現在無料、将来有料化時は事前通知」に書き換え
+- **プライバシーポリシー** — Stripe連携を「現在未使用」に更新
+
 ### Phase 1 実装
 - **天声生成コーナーを廃止** — index.html（CSS/HTML/JS）、prompt.js から天声生成（AIコラム）セクションを完全削除
 - **仕様書の一元化** — CLAUDE.md を全体指示書として書き直し、docs/ARCHITECTURE.md・ROADMAP.md・CHANGELOG.md を新規作成。旧仕様書（PROJECT.md, NEW_CORNERS_SPEC.md, ADMIN_SPEC.md, LP_SPEC.md）を docs/archive/ に移動
