@@ -1149,6 +1149,7 @@
   <span style="background:#fff;color:#b91c1c;font-weight:700;font-size:11px;padding:2px 8px;border-radius:2px;">見本紙</span>
   <span>これは見本紙です。毎朝・毎夕、あなただけの新聞をお届けします。</span>
   <a href="lp.html" style="background:#fff;color:#b91c1c;font-weight:700;font-size:12px;padding:4px 14px;border-radius:2px;text-decoration:none;white-space:nowrap;">購読する</a>
+  <span style="color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;text-decoration:underline;" onclick="openInviteModal()">招待コードをお持ちの方</span>
 </div>
 
 <!-- SUBSCRIBE TOAST -->
@@ -1715,6 +1716,11 @@ function openInviteModal() {
   const msg = document.getElementById('inviteMsg');
   msg.textContent = '';
   msg.className = 'invite-msg';
+  // URLパラメータから招待コードを自動入力
+  const urlCode = new URLSearchParams(window.location.search).get('invite');
+  if (urlCode) {
+    document.getElementById('inviteCode').value = urlCode.toUpperCase();
+  }
   document.getElementById('inviteOverlay').classList.add('show');
 }
 
@@ -2372,6 +2378,12 @@ function switchEdition(ed) {
   if (initialEdition === 'evening') {
     document.getElementById('btnMorning').classList.remove('active');
     document.getElementById('btnEvening').classList.add('active');
+  }
+
+  // 招待コードパラメータ: ?invite=CODE があればモーダルを自動表示
+  const inviteParam = new URLSearchParams(window.location.search).get('invite');
+  if (inviteParam) {
+    openInviteModal();
   }
 
   // 見本紙モード: ?sample=ID がURLにある場合

@@ -992,6 +992,7 @@ async function loadInvites() {
             <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">利用数 / 上限</th>
             <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">有効期限</th>
             <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">状態</th>
+            <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">共有リンク</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -1011,6 +1012,10 @@ async function loadInvites() {
                 ${inv.active !== false
                   ? '<span class="text-xs px-2 py-0.5 rounded-full text-green-300 bg-green-900/40">有効</span>'
                   : '<span class="text-xs px-2 py-0.5 rounded-full text-gray-400 bg-gray-800">無効</span>'}
+              </td>
+              <td class="px-4 py-3">
+                <button onclick="copyInviteLink('${escapeHtml(inv.code)}', this)"
+                  class="text-xs text-blue-400 hover:text-blue-300 underline transition-colors">リンクをコピー</button>
               </td>
               <td class="px-4 py-3 text-right">
                 ${inv.active !== false
@@ -1093,6 +1098,14 @@ async function deactivateInvite(code) {
   } catch (err) {
     alert(`エラー: ${err.message}`);
   }
+}
+
+function copyInviteLink(code, btnEl) {
+  const url = `https://paul13131313.github.io/generated-news/lp.html?invite=${encodeURIComponent(code)}`;
+  navigator.clipboard.writeText(url).then(() => {
+    btnEl.textContent = 'コピーしました!';
+    setTimeout(() => { btnEl.textContent = 'リンクをコピー'; }, 2000);
+  });
 }
 
 // ===== 配信ログ =====

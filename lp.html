@@ -767,6 +767,49 @@ body::before {
 
 .auth-switch a:hover { color: var(--accent); }
 
+/* ===== INVITE MODAL ===== */
+.invite-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 10000; justify-content: center; align-items: center;
+}
+.invite-overlay.show { display: flex; }
+.invite-modal {
+  background: #fff; border-radius: 8px; padding: 36px 32px; width: 90%; max-width: 380px;
+  position: relative; font-family: 'Noto Sans JP', sans-serif;
+}
+.invite-modal-close {
+  position: absolute; top: 12px; right: 16px; background: none; border: none;
+  font-size: 22px; cursor: pointer; color: #999;
+}
+.invite-modal-close:hover { color: #333; }
+.invite-title {
+  font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 700;
+  text-align: center; margin-bottom: 8px; color: #1a1a1a;
+}
+.invite-sub {
+  font-size: 13px; color: #666; text-align: center; margin-bottom: 20px; line-height: 1.6;
+}
+.invite-field { margin-bottom: 14px; text-align: left; }
+.invite-field label {
+  display: block; font-size: 11px; font-weight: 500; color: #999;
+  margin-bottom: 4px; letter-spacing: 0.04em;
+}
+.invite-field input {
+  width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 14px; box-sizing: border-box;
+}
+.invite-field input:focus { border-color: #b91c1c; outline: none; }
+.invite-submit {
+  width: 100%; padding: 12px; background: #1a1a1a; color: #fff; border: none;
+  border-radius: 4px; font-size: 14px; font-weight: 700; cursor: pointer;
+  margin-top: 4px;
+}
+.invite-submit:hover { background: #b91c1c; }
+.invite-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+.invite-msg { margin-top: 10px; font-size: 13px; text-align: center; min-height: 20px; }
+.invite-msg.success { color: #2d5016; }
+.invite-msg.error { color: #b91c1c; }
+
 /* ===== COUNTER ANIMATION ===== */
 .count-up {
   display: inline-block;
@@ -825,6 +868,9 @@ body::before {
   </p>
 
   <button class="cta-btn" onclick="handleSubscribe()">初月無料で始める</button>
+  <p style="margin-top:-68px;margin-bottom:80px;font-size:12px;color:rgba(0,0,0,0.4);font-family:'Noto Sans JP',sans-serif;opacity:0;animation:fadeIn 0.8s 2.6s forwards;">
+    招待コードをお持ちの方は<span style="color:var(--ink);text-decoration:underline;cursor:pointer;" onclick="openInviteModal()">こちら</span>
+  </p>
 
   <div class="hero-scroll">SCROLL</div>
 </section>
@@ -891,6 +937,9 @@ body::before {
       <p class="pricing-daily">無料トライアル中はいつでも解約可能</p>
       <button class="subscribe-btn" id="subscribeBtn" onclick="handleSubscribe()">初月無料で始める</button>
       <p class="subscribe-note" id="subscribeMsg"></p>
+      <p style="margin-top:18px;font-size:13px;color:#666;font-family:'Noto Sans JP',sans-serif;">
+        招待コードをお持ちの方は<span style="color:#b91c1c;text-decoration:underline;cursor:pointer;" onclick="openInviteModal()">こちら</span>
+      </p>
     </div>
   </div>
 </section>
@@ -905,6 +954,25 @@ body::before {
   </div>
   <p class="f-copy">&copy; 2026 生成新聞 All rights reserved.</p>
 </footer>
+
+<!-- INVITE MODAL -->
+<div class="invite-overlay" id="inviteOverlay" onclick="if(event.target===this)closeInviteModal()">
+  <div class="invite-modal">
+    <button class="invite-modal-close" onclick="closeInviteModal()">&times;</button>
+    <div class="invite-title">体験パス</div>
+    <div class="invite-sub">招待コードをお持ちの方は、メールアドレスとコードを入力してください。<br>7日間無料で新聞をお読みいただけます。</div>
+    <div class="invite-field">
+      <label>メールアドレス</label>
+      <input type="email" id="inviteEmail" placeholder="example@email.com">
+    </div>
+    <div class="invite-field">
+      <label>招待コード</label>
+      <input type="text" id="inviteCode" placeholder="例: PAUL" style="text-transform:uppercase;">
+    </div>
+    <button class="invite-submit" id="inviteSubmit" onclick="submitInvite()">体験パスを有効にする</button>
+    <div class="invite-msg" id="inviteMsg"></div>
+  </div>
+</div>
 
 <script>
 // ===== TYPEWRITER for hero =====
@@ -1337,6 +1405,94 @@ async function handleSubscribe() {
     if (!msg) alert('決済ページの作成に失敗しました。時間をおいてお試しください。');
   }
 }
+
+// ===== INVITE PASS =====
+const INVITE_PAYMENT_API = 'https://payment-api.hiroshinagano0113.workers.dev';
+
+function openInviteModal() {
+  document.getElementById('inviteEmail').value = '';
+  document.getElementById('inviteCode').value = '';
+  document.getElementById('inviteSubmit').disabled = false;
+  document.getElementById('inviteSubmit').textContent = '体験パスを有効にする';
+  const msg = document.getElementById('inviteMsg');
+  msg.textContent = '';
+  msg.className = 'invite-msg';
+  // URLパラメータから招待コードを自動入力
+  const urlCode = new URLSearchParams(window.location.search).get('invite');
+  if (urlCode) {
+    document.getElementById('inviteCode').value = urlCode.toUpperCase();
+  }
+  document.getElementById('inviteOverlay').classList.add('show');
+}
+
+function closeInviteModal() {
+  document.getElementById('inviteOverlay').classList.remove('show');
+}
+
+async function submitInvite() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const inviteCode = document.getElementById('inviteCode').value.trim();
+  const btn = document.getElementById('inviteSubmit');
+  const msg = document.getElementById('inviteMsg');
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'メールアドレスを正しく入力してください';
+    msg.className = 'invite-msg error';
+    return;
+  }
+  if (!inviteCode) {
+    msg.textContent = '招待コードを入力してください';
+    msg.className = 'invite-msg error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+  msg.textContent = '';
+  msg.className = 'invite-msg';
+
+  try {
+    const res = await fetch(INVITE_PAYMENT_API + '/api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, inviteCode }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      msg.textContent = data.message;
+      msg.className = 'invite-msg success';
+      setTimeout(() => {
+        localStorage.setItem('auth_email', data.email);
+        localStorage.setItem('invite_user', 'true');
+        localStorage.setItem('invite_expires', data.expiresAt);
+        window.location.href = 'index.html';
+      }, 1500);
+    } else {
+      msg.textContent = data.error || '体験パスの登録に失敗しました';
+      msg.className = 'invite-msg error';
+      btn.disabled = false;
+      btn.textContent = '体験パスを有効にする';
+    }
+  } catch {
+    msg.textContent = '通信エラーが発生しました';
+    msg.className = 'invite-msg error';
+    btn.disabled = false;
+    btn.textContent = '体験パスを有効にする';
+  }
+}
+
+// ページ読み込み時: ?invite= パラメータがあれば自動でモーダルを開く
+(function() {
+  const urlCode = new URLSearchParams(window.location.search).get('invite');
+  if (urlCode !== null) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => openInviteModal());
+    } else {
+      openInviteModal();
+    }
+  }
+})();
 
 // ===== 見本紙リンクを最新に更新 =====
 (function() {
