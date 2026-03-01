@@ -181,7 +181,7 @@ function buildEmailHtml(edition, date, headline) {
               <div style="font-size:11px; color:#999; line-height:1.8;">
                 <span style="letter-spacing:0.2em;">生成新聞</span><br>
                 あなたの関心から、生まれる新聞。<br>
-                <a href="${SITE_URL}" style="color:#999; text-decoration:underline;">配信設定を変更する</a>
+                <a href="${SITE_URL}#cancel" style="color:#999; text-decoration:underline;">購読を解約する</a>
               </div>
             </td>
           </tr>
@@ -216,7 +216,7 @@ ${SITE_URL}
 
 ---
 生成新聞 — あなたの関心から、生まれる新聞。
-配信設定の変更: ${SITE_URL}`;
+購読を解約する: ${SITE_URL}#cancel`;
 }
 
 // ─── Resend APIでメール送信 ───
@@ -292,6 +292,88 @@ async function sendEditionEmails(env, edition) {
   return { sent, failed, total: subscribers.length, errors: errors.slice(0, 5) };
 }
 
+// ─── お知らせメールHTML生成 ───
+
+function buildAnnounceHtml(subject, body) {
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[生成新聞] ${subject}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f0eb; font-family:'Hiragino Mincho ProN','Yu Mincho','MS PMincho',serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0eb;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px; width:100%;">
+          <tr>
+            <td style="border-bottom:2px solid #1a1a1a; padding-bottom:16px; text-align:center;">
+              <div style="font-size:28px; font-weight:700; letter-spacing:0.4em; color:#1a1a1a; margin-right:-0.4em;">生 成 新 聞</div>
+              <div style="font-size:11px; color:#666; margin-top:6px; letter-spacing:0.1em;">お知らせ</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 0 24px;">
+              <div style="font-size:18px; font-weight:700; color:#1a1a1a; line-height:1.6;">${subject}</div>
+              <div style="font-size:13px; color:#444; line-height:1.8; margin-top:16px; white-space:pre-line;">${body}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top:1px solid #ccc; padding-top:20px; text-align:center;">
+              <div style="font-size:11px; color:#999; line-height:1.8;">
+                <span style="letter-spacing:0.2em;">生成新聞</span><br>
+                あなたの関心から、生まれる新聞。<br>
+                <a href="${SITE_URL}#cancel" style="color:#999; text-decoration:underline;">購読を解約する</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function buildAnnounceText(subject, body) {
+  return `[生成新聞] お知らせ
+
+${subject}
+
+${body}
+
+---
+生成新聞 — あなたの関心から、生まれる新聞。
+購読を解約する: ${SITE_URL}#cancel`;
+}
+
+// ─── お知らせメール一括送信 ───
+
+async function sendAnnounceEmails(env, toList, subject, body) {
+  if (!env.RESEND_API_KEY) {
+    return { error: 'RESEND_API_KEY not configured', sentCount: 0 };
+  }
+
+  const html = buildAnnounceHtml(subject, body);
+  const text = buildAnnounceText(subject, body);
+
+  let sentCount = 0;
+  let failed = 0;
+
+  for (const email of toList) {
+    try {
+      await sendEmail(env.RESEND_API_KEY, email, `[生成新聞] ${subject}`, html, text);
+      sentCount++;
+    } catch (error) {
+      failed++;
+      console.error(`Announce email failed: ${email}`, error.message);
+    }
+  }
+
+  return { sentCount, failed, total: toList.length };
+}
+
 // ─── Worker エントリーポイント ───
 
 export default {
@@ -325,6 +407,28 @@ export default {
         return jsonResponse(result, 200, request);
       } catch (error) {
         console.error('Email send error:', error);
+        return jsonResponse({ error: error.message }, 500, request);
+      }
+    }
+
+    // お知らせメール配信エンドポイント（admin.jsから呼ばれる）
+    if (url.pathname === '/send' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const { to, subject, body: text } = body;
+
+        if (!to || !subject || !text) {
+          return jsonResponse({ error: 'to, subject, body are required' }, 400, request);
+        }
+
+        const toList = Array.isArray(to) ? to : [to];
+        console.log(`Announce email triggered: "${subject}" to ${toList.length} recipients`);
+        const result = await sendAnnounceEmails(env, toList, subject, text);
+        console.log(`Announce result: sent=${result.sentCount}, failed=${result.failed}`);
+
+        return jsonResponse(result, 200, request);
+      } catch (error) {
+        console.error('Announce email error:', error);
         return jsonResponse({ error: error.message }, 500, request);
       }
     }

@@ -1666,6 +1666,12 @@ function closeCancelModal() {
   document.getElementById('cancelOverlay').classList.remove('show');
 }
 
+// URLハッシュ #cancel で解約モーダルを自動表示（メールからの導線）
+if (location.hash === '#cancel') {
+  openCancelModal();
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
 async function confirmCancel() {
   const email = localStorage.getItem('auth_email');
   if (!email) return;
