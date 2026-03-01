@@ -400,50 +400,53 @@ async function fetchCultureNews(areaName = '') {
 
 /**
  * 株価・為替・BTCの実データを取得
- * Yahoo Finance (株価・為替) + CoinGecko (BTC)
+ * Stooq CSV API (株価・為替) + CoinGecko (BTC)
  */
 async function fetchMarketData() {
   const ticker = [];
 
   try {
-    // Yahoo Finance: 日経平均, TOPIX, ドル円, NYダウ, S&P500
-    const symbols = '^N225,^TOPIX,USDJPY=X,^DJI,^GSPC';
-    const yahooUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
-    const yahooRes = await fetch(yahooUrl, {
+    // Stooq CSV API: 日経平均, TOPIX, ドル円, NYダウ, S&P500
+    const stooqSymbols = [
+      { symbol: '^nkx', name: '日経平均', isForex: false },
+      { symbol: '^tpx', name: 'TOPIX', isForex: false },
+      { symbol: 'usdjpy', name: 'ドル円', isForex: true },
+      { symbol: '^dji', name: 'NYダウ', isForex: false },
+      { symbol: '^spx', name: 'S&P500', isForex: false },
+    ];
+    const symbolStr = stooqSymbols.map(s => s.symbol).join('+');
+    const stooqUrl = `https://stooq.com/q/l/?s=${symbolStr}&f=sd2t2ohlcv&h&e=csv`;
+    const stooqRes = await fetch(stooqUrl, {
       headers: { 'User-Agent': 'GeneratedNews/1.0' },
     });
 
-    if (yahooRes.ok) {
-      const yahooData = await yahooRes.json();
-      const quotes = yahooData?.quoteResponse?.result || [];
+    if (stooqRes.ok) {
+      const csvText = await stooqRes.text();
+      const lines = csvText.trim().split('\n');
+      // 1行目はヘッダー: Symbol,Date,Time,Open,High,Low,Close,Volume
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 7) continue;
+        const sym = cols[0].trim().toLowerCase();
+        const open = parseFloat(cols[3]);
+        const close = parseFloat(cols[6]);
+        if (isNaN(open) || isNaN(close)) continue;
 
-      const nameMap = {
-        '^N225': '日経平均',
-        '^TOPIX': 'TOPIX',
-        'USDJPY=X': 'ドル円',
-        '^DJI': 'NYダウ',
-        '^GSPC': 'S&P500',
-      };
+        const info = stooqSymbols.find(s => s.symbol === sym);
+        if (!info) continue;
 
-      for (const symbol of ['^N225', '^TOPIX', 'USDJPY=X', '^DJI', '^GSPC']) {
-        const q = quotes.find(r => r.symbol === symbol);
-        if (q && q.regularMarketPrice != null) {
-          const price = q.regularMarketPrice;
-          const change = q.regularMarketChange || 0;
-          const isForex = symbol === 'USDJPY=X';
-
-          ticker.push({
-            name: nameMap[symbol],
-            value: isForex ? price.toFixed(2) : price.toLocaleString('en-US', { maximumFractionDigits: 0 }),
-            change: (change >= 0 ? '+' : '') + (isForex ? change.toFixed(2) : change.toLocaleString('en-US', { maximumFractionDigits: 0 })),
-          });
-        }
+        const change = close - open;
+        ticker.push({
+          name: info.name,
+          value: info.isForex ? close.toFixed(2) : close.toLocaleString('en-US', { maximumFractionDigits: 0 }),
+          change: (change >= 0 ? '+' : '') + (info.isForex ? change.toFixed(2) : change.toLocaleString('en-US', { maximumFractionDigits: 0 })),
+        });
       }
     } else {
-      console.warn('Yahoo Finance API failed:', yahooRes.status);
+      console.warn('Stooq API failed:', stooqRes.status);
     }
   } catch (err) {
-    console.error('Yahoo Finance fetch error:', err);
+    console.error('Stooq fetch error:', err);
   }
 
   try {
