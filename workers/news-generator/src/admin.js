@@ -255,6 +255,66 @@ export async function handleSubscriberUpdate(oldEmail, request, env) {
   return { success: true, subscriber: { id: newEmail, email: newEmail } };
 }
 
+// ===== POST /api/admin/subscribers/:email/apply-invite — 招待コード適用 =====
+
+export async function handleApplyInvite(email, request, env) {
+  if (!env.SUBSCRIBERS) return { error: 'SUBSCRIBERS KV not configured', _status: 500 };
+
+  const body = await request.json().catch(() => ({}));
+  const inviteCode = (body.inviteCode || '').toUpperCase().trim();
+  const days = parseInt(body.days) || 7;
+
+  if (!inviteCode) {
+    return { error: '招待コードを指定してください', _status: 400 };
+  }
+
+  if (days < 1 || days > 365) {
+    return { error: '期間は1〜365日で指定してください', _status: 400 };
+  }
+
+  // 購読者データを取得
+  const raw = await env.SUBSCRIBERS.get(email);
+  if (!raw) {
+    return { error: '購読者が見つかりません', _status: 404 };
+  }
+
+  const subscriber = JSON.parse(raw);
+
+  // ステータスをinviteに変更し、期間を設定
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+  subscriber.status = 'invite';
+  subscriber.inviteCode = inviteCode;
+  subscriber.plan = `体験パス（${days}日間）`;
+  subscriber.expiresAt = expiresAt.toISOString();
+  subscriber.updatedAt = now.toISOString();
+
+  // 有料サブスクの情報は保持する（復帰時に使えるように）
+  // subscriber.customerId, subscriber.subscriptionId はそのまま
+
+  await env.SUBSCRIBERS.put(email, JSON.stringify(subscriber));
+
+  // 招待コードの使用回数を更新
+  const inviteKey = `invite:${inviteCode}`;
+  const inviteRaw = await env.SUBSCRIBERS.get(inviteKey);
+  if (inviteRaw) {
+    const invite = JSON.parse(inviteRaw);
+    invite.usedCount = (invite.usedCount || 0) + 1;
+    await env.SUBSCRIBERS.put(inviteKey, JSON.stringify(invite));
+  }
+
+  console.log(`Invite applied: ${email} → ${inviteCode} (${days}days)`);
+
+  return {
+    success: true,
+    email,
+    inviteCode,
+    days,
+    expiresAt: expiresAt.toISOString(),
+  };
+}
+
 // ===== GET /api/admin/subscribers =====
 
 export async function handleSubscriberList(env) {

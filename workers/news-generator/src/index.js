@@ -22,6 +22,7 @@ import {
   handleAnnounce,
   handleAnnouncementList,
   handleSubscriberUpdate,
+  handleApplyInvite,
 } from './admin.js';
 
 /**
@@ -996,6 +997,16 @@ async function handleRequest(request, env) {
     // POST /api/admin/invites
     if (path === '/api/admin/invites' && request.method === 'POST') {
       const result = await handleInviteCreate(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // POST /api/admin/subscribers/{email}/apply-invite — 招待コード適用
+    const applyInviteMatch = path.match(/^\/api\/admin\/subscribers\/(.+)\/apply-invite$/);
+    if (applyInviteMatch && request.method === 'POST') {
+      const email = decodeURIComponent(applyInviteMatch[1]);
+      const result = await handleApplyInvite(email, request, env);
       const status = result._status || 200;
       delete result._status;
       return jsonResponse(result, status, request);

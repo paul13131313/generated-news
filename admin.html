@@ -934,6 +934,7 @@ function renderSubscribers() {
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">ステータス</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">登録日</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">招待コード</th>
+          <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -954,6 +955,26 @@ function renderSubscribers() {
             <td class="px-4 py-3">${statusBadge(s.status)}</td>
             <td class="px-4 py-3 text-gray-500 text-xs">${s.subscribedAt ? formatDate(s.subscribedAt) : '—'}</td>
             <td class="px-4 py-3 text-gray-500 text-xs font-mono">${s.inviteCode ? escapeHtml(s.inviteCode) : '—'}</td>
+            <td class="px-4 py-3">
+              <span class="invite-action-display" data-email="${escapeHtml(s.email)}">
+                <button onclick="startApplyInvite('${escapeHtml(s.email)}')" class="text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded" title="招待コードを適用して無料にする">🎟️ 招待適用</button>
+              </span>
+              <span class="invite-action-form hidden" data-email="${escapeHtml(s.email)}">
+                <select class="invite-code-select bg-gray-800 border border-gray-600 rounded px-1 py-1 text-xs text-white">
+                  <option value="">コード選択</option>
+                </select>
+                <select class="invite-days-select bg-gray-800 border border-gray-600 rounded px-1 py-1 text-xs text-white ml-1">
+                  <option value="7">7日</option>
+                  <option value="14">14日</option>
+                  <option value="30">30日</option>
+                  <option value="90">90日</option>
+                  <option value="365">365日</option>
+                </select>
+                <button onclick="confirmApplyInvite('${escapeHtml(s.email)}')" class="ml-1 text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded">適用</button>
+                <button onclick="cancelApplyInvite('${escapeHtml(s.email)}')" class="ml-1 text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded">×</button>
+                <span class="invite-error text-red-400 text-xs ml-1"></span>
+              </span>
+            </td>
           </tr>
         `).join('')}
       </tbody>
@@ -1051,6 +1072,95 @@ async function saveEditEmail(oldEmail) {
     errSpan.textContent = `エラー: ${err.message}`;
     saveBtn.disabled = false;
     saveBtn.textContent = '保存';
+  }
+}
+
+// ===== 招待コード適用（購読者に無料体験を付与） =====
+
+let cachedInviteCodes = null;
+
+async function fetchInviteCodes() {
+  if (cachedInviteCodes) return cachedInviteCodes;
+  try {
+    const res = await apiCall('/api/admin/invites');
+    if (res.ok) {
+      const data = await res.json();
+      cachedInviteCodes = (data.invites || []).filter(i => i.active !== false);
+      return cachedInviteCodes;
+    }
+  } catch (e) {}
+  return [];
+}
+
+async function startApplyInvite(email) {
+  const display = document.querySelector(`.invite-action-display[data-email="${CSS.escape(email)}"]`);
+  const form = document.querySelector(`.invite-action-form[data-email="${CSS.escape(email)}"]`);
+  if (!display || !form) return;
+
+  display.classList.add('hidden');
+  form.classList.remove('hidden');
+
+  // 招待コードリストを取得してセレクトボックスに入れる
+  const codes = await fetchInviteCodes();
+  const select = form.querySelector('.invite-code-select');
+  select.innerHTML = '<option value="">コード選択</option>' +
+    codes.map(c => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.code)}</option>`).join('');
+}
+
+function cancelApplyInvite(email) {
+  const display = document.querySelector(`.invite-action-display[data-email="${CSS.escape(email)}"]`);
+  const form = document.querySelector(`.invite-action-form[data-email="${CSS.escape(email)}"]`);
+  if (display) display.classList.remove('hidden');
+  if (form) {
+    form.classList.add('hidden');
+    const errSpan = form.querySelector('.invite-error');
+    if (errSpan) errSpan.textContent = '';
+  }
+}
+
+async function confirmApplyInvite(email) {
+  const form = document.querySelector(`.invite-action-form[data-email="${CSS.escape(email)}"]`);
+  if (!form) return;
+
+  const codeSelect = form.querySelector('.invite-code-select');
+  const daysSelect = form.querySelector('.invite-days-select');
+  const errSpan = form.querySelector('.invite-error');
+  const inviteCode = codeSelect.value;
+  const days = daysSelect.value;
+
+  if (!inviteCode) {
+    errSpan.textContent = 'コードを選択してください';
+    return;
+  }
+
+  // 適用ボタンを無効化
+  const applyBtn = form.querySelectorAll('button')[0];
+  applyBtn.disabled = true;
+  applyBtn.textContent = '適用中…';
+  errSpan.textContent = '';
+
+  try {
+    const res = await apiCall(`/api/admin/subscribers/${encodeURIComponent(email)}/apply-invite`, {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode, days: parseInt(days) }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errSpan.textContent = data.error || '適用に失敗しました';
+      applyBtn.disabled = false;
+      applyBtn.textContent = '適用';
+      return;
+    }
+
+    // 成功: 購読者リストを再読み込み
+    cachedInviteCodes = null;
+    await loadSubscribers();
+  } catch (err) {
+    errSpan.textContent = `エラー: ${err.message}`;
+    applyBtn.disabled = false;
+    applyBtn.textContent = '適用';
   }
 }
 
