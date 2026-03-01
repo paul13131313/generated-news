@@ -2012,10 +2012,15 @@ function renderTicker(tickers) {
   const track = document.getElementById('tickerTrack');
   if (!tickers.length) return;
   const html = tickers.map(t => {
-    const num = parseFloat(String(t.change).replace(/[^0-9.\-]/g, ''));
-    const cls = num < 0 ? 'dn' : 'up';
-    const arrow = num < 0 ? '▼' : '▲';
-    return `<span class="ticker-item">${t.name} ${t.value} <span class="${cls}">${arrow}${t.change.replace(/^[+\-]/, '')}</span></span>`;
+    const ch = String(t.change);
+    // 株価風（+/-で始まる）→ 矢印+色分け、天気風（それ以外）→ そのまま表示
+    if (/^[+\-]/.test(ch)) {
+      const num = parseFloat(ch.replace(/[^0-9.\-]/g, ''));
+      const cls = num < 0 ? 'dn' : 'up';
+      const arrow = num < 0 ? '▼' : '▲';
+      return `<span class="ticker-item">${t.name} ${t.value} <span class="${cls}">${arrow}${ch.replace(/^[+\-]/, '')}</span></span>`;
+    }
+    return `<span class="ticker-item">${t.name} ${t.value} <span style="opacity:0.7">${ch}</span></span>`;
   }).join('');
   // 2セット入れて、1セット分の幅だけスクロール → シームレスループ
   track.innerHTML = html + html;

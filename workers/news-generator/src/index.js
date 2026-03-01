@@ -561,6 +561,91 @@ async function fetchWeatherData(lat = 35.6895, lon = 139.6917) {
 }
 
 /**
+ * 夕刊ティッカー用: 明日の天気を主要都市で取得し、株価風フォーマットで返す
+ * Open-Meteo APIで複数都市の明日の天気を一括取得
+ */
+async function fetchWeatherTicker(userLat = 35.6895, userLon = 139.6917) {
+  const cities = [
+    { name: '東京', lat: 35.6895, lon: 139.6917 },
+    { name: '大阪', lat: 34.6937, lon: 135.5023 },
+    { name: '名古屋', lat: 35.1815, lon: 136.9066 },
+    { name: '札幌', lat: 43.0621, lon: 141.3544 },
+    { name: '福岡', lat: 33.5904, lon: 130.4017 },
+    { name: '仙台', lat: 38.2682, lon: 140.8694 },
+    { name: '那覇', lat: 26.2124, lon: 127.6809 },
+  ];
+
+  // ユーザーの位置情報がデフォルト（東京）でなければ先頭に「現在地」として追加
+  const distFromTokyo = Math.abs(userLat - 35.6895) + Math.abs(userLon - 139.6917);
+  if (distFromTokyo > 0.1) {
+    cities.unshift({ name: '現在地', lat: userLat, lon: userLon });
+  }
+
+  const ticker = [];
+
+  // WMO Weather Code → 天気アイコン（株価の矢印の代わり）
+  const weatherIcon = {
+    0: '☀️', 1: '🌤', 2: '⛅', 3: '☁️',
+    45: '🌫', 48: '🌫', 51: '🌦', 53: '🌧', 55: '🌧',
+    56: '🧊', 57: '🧊', 61: '🌦', 63: '🌧', 65: '🌧',
+    66: '🧊', 67: '🧊', 71: '🌨', 73: '❄️', 75: '❄️',
+    77: '🌨', 80: '🌦', 81: '🌧', 82: '🌧',
+    85: '🌨', 86: '🌨', 95: '⛈', 96: '⛈', 99: '⛈',
+  };
+
+  const weatherName = {
+    0: '快晴', 1: '晴れ', 2: '晴れ時々くもり', 3: 'くもり',
+    45: '霧', 48: '霧', 51: '小雨', 53: '雨', 55: '雨',
+    56: '凍雨', 57: '凍雨', 61: '小雨', 63: '雨', 65: '大雨',
+    66: '凍雨', 67: '凍雨', 71: '小雪', 73: '雪', 75: '大雪',
+    77: '霰', 80: 'にわか雨', 81: 'にわか雨', 82: '激しい雨',
+    85: 'にわか雪', 86: 'にわか雪', 95: '雷雨', 96: '雷雨', 99: '雷雨',
+  };
+
+  // 全都市の座標をカンマ区切りで一括リクエスト
+  const lats = cities.map(c => c.lat).join(',');
+  const lons = cities.map(c => c.lon).join(',');
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Tokyo&forecast_days=2`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn('Weather ticker API failed:', res.status);
+      return ticker;
+    }
+    const data = await res.json();
+
+    // Open-Meteoは複数地点の場合、配列で返す
+    const results = Array.isArray(data) ? data : [data];
+
+    for (let i = 0; i < Math.min(cities.length, results.length); i++) {
+      const daily = results[i]?.daily;
+      if (!daily) continue;
+
+      // 明日のデータ（index 1）。なければ今日（index 0）
+      const idx = daily.temperature_2m_max?.length > 1 ? 1 : 0;
+      const code = daily.weather_code?.[idx] ?? 3;
+      const high = Math.round(daily.temperature_2m_max?.[idx] ?? 0);
+      const low = Math.round(daily.temperature_2m_min?.[idx] ?? 0);
+      const rain = daily.precipitation_probability_max?.[idx] ?? 0;
+      const icon = weatherIcon[code] || '☁️';
+      const name_ja = weatherName[code] || 'くもり';
+
+      // 株価風フォーマット: 都市名 → name, 天気+気温 → value, 降水確率 → change
+      ticker.push({
+        name: cities[i].name,
+        value: `${icon}${name_ja} ${high}/${low}℃`,
+        change: `☂${rain}%`,
+      });
+    }
+  } catch (err) {
+    console.error('Weather ticker fetch error:', err);
+  }
+
+  return ticker;
+}
+
+/**
  * 前の版の記事タイトル一覧をKVから取得（重複排除用）
  */
 async function getPreviousEditionTitles(kvCache, edition) {
@@ -696,28 +781,47 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
   // 4. JSONパース
   const newspaper = parseGeneratedJson(rawText);
 
-  // 5. 株価ティッカー実データ取得（Claudeに生成させない）
-  try {
-    const marketData = await fetchMarketData();
-    if (marketData.length > 0) {
-      newspaper.ticker = marketData;
+  // 5. ティッカー実データ取得（Claudeに生成させない）
+  // 朝刊: 株価・為替（Stooq + CoinGecko）
+  // 夕刊: 明日の天気予報（Open-Meteo 主要7都市）
+  if (edition === 'evening') {
+    try {
+      const weatherTicker = await fetchWeatherTicker(lat, lon);
+      if (weatherTicker.length > 0) {
+        newspaper.ticker = weatherTicker;
+      }
+    } catch (err) {
+      console.error('Weather ticker fetch failed:', err);
     }
-  } catch (err) {
-    console.error('Market data fetch failed, keeping Claude-generated ticker:', err);
+  } else {
+    try {
+      const marketData = await fetchMarketData();
+      if (marketData.length > 0) {
+        newspaper.ticker = marketData;
+      }
+    } catch (err) {
+      console.error('Market data fetch failed:', err);
+    }
   }
 
   // 6. 天気データ実データ取得（Open-Meteo API）
-  try {
-    const weatherData = await fetchWeatherData(lat, lon);
-    if (weatherData && newspaper.weatherFashion) {
-      newspaper.weatherFashion.title = '天気と服装';
-      newspaper.weatherFashion.weather = weatherData.weather;
-      newspaper.weatherFashion.tempHigh = weatherData.tempHigh;
-      newspaper.weatherFashion.tempLow = weatherData.tempLow;
-      newspaper.weatherFashion.rain = weatherData.rain;
+  // 夕刊ではティッカーに天気を表示するため、本紙の天気セクションは非表示
+  if (edition === 'evening') {
+    // 夕刊: weatherFashionを削除してフロント側で非表示にする
+    delete newspaper.weatherFashion;
+  } else {
+    try {
+      const weatherData = await fetchWeatherData(lat, lon);
+      if (weatherData && newspaper.weatherFashion) {
+        newspaper.weatherFashion.title = '天気と服装';
+        newspaper.weatherFashion.weather = weatherData.weather;
+        newspaper.weatherFashion.tempHigh = weatherData.tempHigh;
+        newspaper.weatherFashion.tempLow = weatherData.tempLow;
+        newspaper.weatherFashion.rain = weatherData.rain;
+      }
+    } catch (err) {
+      console.error('Weather data fetch failed:', err);
     }
-  } catch (err) {
-    console.error('Weather data fetch failed:', err);
   }
 
   // 8. SNSトレンド → はてブホットエントリ実データで上書き
