@@ -519,8 +519,8 @@ async function fetchHatenaHotEntries() {
  * 天気データをOpen-Meteo APIから取得（東京・無料・キー不要）
  * WMO Weather Code → 日本語天気名に変換
  */
-async function fetchWeatherData() {
-  const url = 'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Tokyo&forecast_days=1';
+async function fetchWeatherData(lat = 35.6895, lon = 139.6917) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Tokyo&forecast_days=1`;
 
   const res = await fetch(url);
   if (!res.ok) {
@@ -601,9 +601,57 @@ async function getPreviousEditionTitles(kvCache, edition) {
 }
 
 /**
+ * 前の版の催事・ご近所情報URLをKVから取得（重複排除用）
+ * 直近2版（前の版 + その前の版）のURLを収集
+ */
+async function getPreviousCornerUrls(kvCache, edition) {
+  if (!kvCache) return { cultureUrls: new Set(), localUrls: new Set() };
+
+  const cultureUrls = new Set();
+  const localUrls = new Set();
+  const dateStr = getJstDateString();
+  const yesterday = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+  // 直近2版のキーを決定
+  const keysToCheck = [];
+  if (edition === 'evening') {
+    keysToCheck.push(`morning-${dateStr}`);     // 同日朝刊
+    keysToCheck.push(`evening-${yesterdayStr}`); // 前日夕刊
+  } else {
+    keysToCheck.push(`evening-${yesterdayStr}`); // 前日夕刊
+    keysToCheck.push(`morning-${yesterdayStr}`); // 前日朝刊
+  }
+
+  for (const key of keysToCheck) {
+    try {
+      const data = await kvCache.get(key);
+      if (!data) continue;
+      const parsed = JSON.parse(data);
+
+      // 催事URLを収集
+      if (parsed.newspaper?.culture?.items) {
+        for (const item of parsed.newspaper.culture.items) {
+          if (item.url) cultureUrls.add(item.url);
+        }
+      }
+
+      // ご近所情報URLを収集
+      if (parsed.newspaper?.localNews?.items) {
+        for (const item of parsed.newspaper.localNews.items) {
+          if (item.url) localUrls.add(item.url);
+        }
+      }
+    } catch (e) { /* ignore parse error */ }
+  }
+
+  return { cultureUrls, localUrls };
+}
+
+/**
  * 紙面を生成
  */
-async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
+async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35.6895, lon = 139.6917) {
   // 1. ニュース取得
   const articles = await fetchNews(50);
   if (articles.length === 0) {
@@ -613,8 +661,25 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
   // 2. 前の版の記事タイトルを取得（重複排除用）
   const previousTitles = await getPreviousEditionTitles(kvCache, edition);
 
+  // 2b. 前の版の催事・ご近所情報URLを取得（重複排除用）
+  const { cultureUrls: prevCultureUrls, localUrls: prevLocalUrls } = await getPreviousCornerUrls(kvCache, edition);
+
+  // 2c. 逆ジオコーディング（位置情報→地名）
+  let areaName = '恵比寿・渋谷エリア';
+  let geoResult = null;
+  try {
+    geoResult = await reverseGeocode(lat, lon, kvCache);
+    if (geoResult) {
+      const area = geoResult.area || '';
+      const broader = geoResult.broader || '';
+      areaName = area ? `${area}エリア` : (broader ? `${broader}エリア` : areaName);
+    }
+  } catch (err) {
+    console.warn('Reverse geocode failed, using default area:', err.message);
+  }
+
   // 3. プロンプト構築
-  const { systemPrompt, userPrompt } = buildPrompt(articles, edition, previousTitles);
+  const { systemPrompt, userPrompt } = buildPrompt(articles, edition, previousTitles, areaName);
 
   // 3. Claude API呼び出し
   const rawText = await callClaude(apiKey, systemPrompt, userPrompt);
@@ -634,7 +699,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
 
   // 6. 天気データ実データ取得（Open-Meteo API）
   try {
-    const weatherData = await fetchWeatherData();
+    const weatherData = await fetchWeatherData(lat, lon);
     if (weatherData && newspaper.weatherFashion) {
       newspaper.weatherFashion.title = '天気と服装';
       newspaper.weatherFashion.weather = weatherData.weather;
@@ -656,20 +721,47 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
     console.error('Hatena hot entries fetch failed:', err);
   }
 
-  // 10. 催事 → 文化ニュースRSSから実データで上書き
+  // 10. 催事 → 文化ニュースRSSから実データで上書き（前の版と重複するURLを除外）
   try {
     const cultureData = await fetchCultureNews();
     if (cultureData && cultureData.items.length > 0) {
-      newspaper.culture = cultureData;
+      const dedupedItems = cultureData.items.filter(item => !prevCultureUrls.has(item.url));
+      if (dedupedItems.length > 0) {
+        newspaper.culture = { ...cultureData, items: dedupedItems };
+      } else {
+        newspaper.culture = {
+          title: '催事・展覧会',
+          items: [{ title: '※本日の新着催事情報はありませんでした', body: '', url: '', sourceUrl: '', sourceName: '', source: '' }],
+        };
+      }
     }
   } catch (err) {
     console.error('Culture news fetch failed:', err);
   }
 
-  // 10b. ご近所情報 → Google News RSS（恵比寿で検索+タイトルフィルタ）
+  // 10b. ご近所情報 → Google News RSS（位置情報ベースの動的検索）
   try {
-    const localFilter = ['恵比寿', '渋谷', '代官山', '中目黒', '広尾'];
-    const localSearchTerms = ['恵比寿', '渋谷'];
+    // 逆ジオコーディング結果から検索語・フィルタ語を構築
+    const geoArea = geoResult?.area || '';
+    const geoBroader = geoResult?.broader || '';
+    const localSearchTerms = [];
+    const localFilter = [];
+
+    if (geoArea) {
+      localSearchTerms.push(geoArea);
+      localFilter.push(geoArea);
+    }
+    if (geoBroader && geoBroader !== geoArea) {
+      localSearchTerms.push(geoBroader);
+      localFilter.push(geoBroader);
+    }
+
+    // フォールバック: ジオコーディング失敗時はデフォルト
+    if (localSearchTerms.length === 0) {
+      localSearchTerms.push('恵比寿', '渋谷');
+      localFilter.push('恵比寿', '渋谷', '代官山', '中目黒', '広尾');
+    }
+
     const allLocal = [];
 
     for (const term of localSearchTerms) {
@@ -701,10 +793,11 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
       }
     }
 
-    // 重複排除 + タイトルに地名が含まれる記事のみ採用
+    // 重複排除（同一フェッチ内 + 前の版との重複）+ タイトルに地名が含まれる記事のみ採用
     const seenLocalUrl = new Set();
     const filtered = allLocal.filter(a => {
       if (seenLocalUrl.has(a.url)) return false;
+      if (prevLocalUrls.has(a.url)) return false;
       seenLocalUrl.add(a.url);
       return localFilter.some(name => a.title.includes(name));
     });
@@ -712,7 +805,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
     if (filtered.length > 0) {
       newspaper.localNews = {
         title: 'ご近所情報',
-        area: '恵比寿・渋谷エリア',
+        area: areaName,
         items: filtered.slice(0, 4).map(a => {
           // titleからメディア名サフィックスを除去（「 - Yahoo!ニュース」等）
           const cleanTitle = a.title.replace(/\s*[-–—|]\s*[^-–—|]+$/, '').trim() || a.title;
@@ -725,6 +818,12 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
             source: a.source || 'Google News',
           };
         }),
+      };
+    } else {
+      newspaper.localNews = {
+        title: 'ご近所情報',
+        area: areaName,
+        items: [{ title: '※本日の新着ご近所ニュースはありませんでした', body: '', url: '', sourceUrl: '', sourceName: '', source: '' }],
       };
     }
   } catch (err) {
@@ -785,9 +884,9 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache) {
 /**
  * 紙面を生成してKVにキャッシュ
  */
-async function generateAndCache(env, edition) {
+async function generateAndCache(env, edition, lat = 35.6895, lon = 139.6917) {
   const startTime = Date.now();
-  const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY, env.NEWSPAPER_CACHE);
+  const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY, env.NEWSPAPER_CACHE, lat, lon);
   const elapsed = Date.now() - startTime;
 
   const cached = {
@@ -865,6 +964,10 @@ async function handleRequest(request, env) {
 
     const force = url.searchParams.get('force') === 'true';
 
+    // 位置情報パラメータ（デフォルト: 東京都渋谷区）
+    const lat = parseFloat(url.searchParams.get('lat')) || 35.6461;
+    const lon = parseFloat(url.searchParams.get('lon')) || 139.7100;
+
     // キャッシュ確認（force=true でなければ）
     if (!force && env.NEWSPAPER_CACHE) {
       const cacheKey = getCacheKey(edition);
@@ -900,7 +1003,7 @@ async function handleRequest(request, env) {
 
     // キャッシュなし or force → 生成してキャッシュ
     try {
-      const result = await generateAndCache(env, edition);
+      const result = await generateAndCache(env, edition, lat, lon);
       return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Generation error:', error);

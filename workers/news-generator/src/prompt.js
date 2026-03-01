@@ -94,7 +94,7 @@ const SYSTEM_PROMPT = `あなたは「生成新聞」の紙面編集AIです。
 /**
  * ユーザープロンプトを組み立て
  */
-export function buildPrompt(articles, edition = 'morning', previousTitles = []) {
+export function buildPrompt(articles, edition = 'morning', previousTitles = [], areaName = '恵比寿・渋谷エリア') {
   const now = new Date();
   const dateStr = getJapaneseDate(now);
   const issueNum = getIssueNumber(now, edition);
@@ -166,7 +166,7 @@ ${compressed}
     ]
   },
   "localNews": {
-    "area": "恵比寿・渋谷エリア",
+    "area": "${areaName}",
     "items": [
       {
         "title": "ご近所ニュースの見出し",
@@ -188,7 +188,7 @@ ${compressed}
 - weatherFashion: 天気データは別途注入されるので、items（服装アイテム配列）のみ生成する。3〜5個の服装アイテム名のみ。ブランド名は絶対に含めない。長い説明文・形容詞・接続詞は一切不要。「コート」「ニット」「デニム」のような単語のみ
 - snsTrend: items配列は3件ちょうど。ニュース一覧のはてブ記事から話題性の高いものを選び、重複・類似トピック禁止。同じ事件・テーマの別記事も含めない。urlはニュース一覧に含まれる実際のURLを使うこと
 - culture: items配列は3件ちょうど。ニュース一覧の文化カテゴリ記事から、展覧会・映画情報を中心に選ぶ。同じソースサイトから2件以上選ばないこと。artscape、CINRA、cinemacafe、公式サイトなど多様なソースから選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の展覧会・映画・会場を絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する
-- localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から恵比寿・渋谷・代官山エリアに関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
+- localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から${areaName}に関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 
   return { systemPrompt: SYSTEM_PROMPT, userPrompt };

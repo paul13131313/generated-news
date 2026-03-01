@@ -285,6 +285,63 @@
   .profile-msg.success { color: #2d5016; }
   .profile-msg.error { color: var(--accent); }
 
+  /* ===== POSTAL CODE MODAL (位置情報フォールバック) ===== */
+  .postal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 10002;
+    align-items: center; justify-content: center;
+  }
+  .postal-overlay.show { display: flex; }
+  .postal-modal {
+    background: var(--paper); width: 100%; max-width: 400px;
+    margin: 24px; padding: 32px 28px; position: relative;
+    border: 1px solid var(--rule);
+  }
+  .postal-modal-close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; font-size: 22px;
+    cursor: pointer; color: var(--caption); line-height: 1;
+  }
+  .postal-modal-close:hover { color: var(--ink); }
+  .postal-title {
+    font-family: var(--font-mincho); font-size: 18px;
+    font-weight: 800; letter-spacing: 0.1em; margin-bottom: 6px;
+  }
+  .postal-sub {
+    font-family: var(--font-gothic); font-size: 12px;
+    color: var(--caption); margin-bottom: 20px; line-height: 1.6;
+  }
+  .postal-input {
+    width: 100%; font-family: var(--font-gothic); font-size: 16px;
+    padding: 12px 14px; border: 1px solid var(--rule-light);
+    background: #fff; color: var(--ink); outline: none;
+    text-align: center; letter-spacing: 0.2em; margin-bottom: 8px;
+  }
+  .postal-input:focus { border-color: var(--accent); }
+  .postal-input::placeholder { letter-spacing: 0.05em; font-size: 14px; }
+  .postal-result {
+    font-family: var(--font-gothic); font-size: 13px;
+    color: var(--caption); text-align: center;
+    min-height: 1.5em; margin-bottom: 16px;
+  }
+  .postal-result.found { color: var(--ink); font-weight: 600; }
+  .postal-result.error { color: var(--accent); }
+  .postal-submit {
+    width: 100%; font-family: var(--font-gothic); font-size: 14px;
+    font-weight: 700; letter-spacing: 0.1em; padding: 14px;
+    background: var(--ink); color: var(--paper); border: none;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .postal-submit:hover { background: var(--accent); }
+  .postal-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+  .postal-skip {
+    display: block; width: 100%; text-align: center;
+    font-family: var(--font-gothic); font-size: 12px;
+    color: var(--caption); margin-top: 12px; cursor: pointer;
+    background: none; border: none; text-decoration: underline;
+  }
+  .postal-skip:hover { color: var(--ink); }
+
   /* ===== MASTHEAD ===== */
   .masthead {
     padding: 0 16px;
@@ -1057,6 +1114,22 @@
   </div>
 </div>
 
+<!-- POSTAL CODE MODAL (位置情報フォールバック) -->
+<div class="postal-overlay" id="postalOverlay" onclick="if(event.target===this)closePostalModal()">
+  <div class="postal-modal">
+    <button class="postal-modal-close" onclick="closePostalModal()">&times;</button>
+    <div class="postal-title">お届け地域の設定</div>
+    <div class="postal-sub">
+      あなたの地域に合わせた天気・ご近所ニュースをお届けするため、<br>郵便番号を入力してください。
+    </div>
+    <input class="postal-input" id="postalInput" type="text" inputmode="numeric" maxlength="8" placeholder="例: 150-0013" oninput="handlePostalInput(this)">
+    <div class="postal-result" id="postalResult"></div>
+    <button class="postal-submit" id="postalSubmit" onclick="submitPostalCode()" disabled>この地域で設定する</button>
+    <button class="postal-skip" onclick="retryGeolocation()">現在地から自動取得する</button>
+    <button class="postal-skip" onclick="skipPostalCode()">スキップ（東京都渋谷区で配信）</button>
+  </div>
+</div>
+
 <!-- [DISABLED: 課金停止中] 解約モーダル・招待モーダルは無料化に伴い非表示 -->
 <!--
 <div class="cancel-overlay" id="cancelOverlay" onclick="if(event.target===this)closeCancelModal()">...</div>
@@ -1242,9 +1315,15 @@ function updateUserBar() {
     const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
     const emailToggle = getEmailToggleHtml();
     const emailPart = '<span class="user-bar-sep">|</span>' + emailToggle;
+    // 位置情報の表示
+    const loc = JSON.parse(localStorage.getItem('user_location') || 'null');
+    const locLabel = loc ? (loc.area_name || loc.prefecture || '設定済み') : '未設定';
+    const locPart = '<span class="user-bar-sep">|</span>' +
+      '<span class="user-bar-link" onclick="openLocationMenu()" title="お届け地域: ' + escapeForDisplay(locLabel) + '">地域: ' + escapeForDisplay(locLabel) + '</span>';
     bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
       '<span class="user-bar-sep">|</span>' +
       '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
+      locPart +
       pushPart +
       emailPart +
       '<span class="user-bar-sep">|</span>' +
@@ -1463,6 +1542,270 @@ function closeInviteModal() { ... }
 async function submitInvite() { ... }
 */
 
+// ===== LOCATION (位置情報) =====
+// 一時変数: 郵便番号検索結果を保持
+let _postalGeoData = null;
+
+/**
+ * 位置情報を初期化（Geolocation API → 失敗時は郵便番号モーダル表示）
+ * 認証済みユーザーのみ実行
+ */
+function initLocation() {
+  const existing = localStorage.getItem('user_location');
+  if (existing) {
+    // 既に位置情報がある → バックグラウンドで更新チェック
+    tryUpdateLocation();
+    return;
+  }
+  // 位置情報がない → Geolocation APIを試行
+  requestGeolocation();
+}
+
+function requestGeolocation() {
+  if (!navigator.geolocation) {
+    openPostalModal();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const loc = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        area_name: '',
+        prefecture: '',
+        postal_code: '',
+        source: 'geolocation',
+      };
+      // Nominatimで地名取得（Worker経由ではなく直接呼び出し）
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lng}&format=json&zoom=16&accept-language=ja`,
+          { headers: { 'User-Agent': 'GeneratedNews/1.0' } }
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const addr = geoData.address || {};
+          loc.area_name = (addr.quarter || addr.neighbourhood || addr.suburb || addr.city_district || addr.city || '');
+          loc.prefecture = addr.state || '';
+          loc.postal_code = (addr.postcode || '').replace(/\s/g, '');
+        }
+      } catch (e) {
+        console.warn('Nominatim reverse geocode failed:', e);
+      }
+      saveLocation(loc);
+    },
+    () => {
+      // 位置情報拒否 → 郵便番号モーダル表示
+      openPostalModal();
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+  );
+}
+
+/**
+ * バックグラウンドで位置情報を更新（前回位置と1km以上離れている場合のみ）
+ */
+function tryUpdateLocation() {
+  if (!navigator.geolocation) return;
+  const prev = JSON.parse(localStorage.getItem('user_location') || 'null');
+  if (!prev) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const dist = haversineDistance(prev.lat, prev.lng, pos.coords.latitude, pos.coords.longitude);
+      if (dist > 1.0) {
+        // 1km以上移動 → 更新
+        const loc = { ...prev, lat: pos.coords.latitude, lng: pos.coords.longitude, source: 'geolocation' };
+        // 地名も更新（非同期、エラーは無視）
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lng}&format=json&zoom=16&accept-language=ja`,
+          { headers: { 'User-Agent': 'GeneratedNews/1.0' } }
+        ).then(r => r.json()).then(geoData => {
+          const addr = geoData.address || {};
+          loc.area_name = addr.quarter || addr.neighbourhood || addr.suburb || addr.city_district || addr.city || loc.area_name;
+          loc.prefecture = addr.state || loc.prefecture;
+          loc.postal_code = (addr.postcode || loc.postal_code).replace(/\s/g, '');
+          saveLocation(loc);
+        }).catch(() => saveLocation(loc));
+      }
+    },
+    () => { /* 拒否されたら何もしない */ },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+  );
+}
+
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * 位置情報をlocalStorage + payment-api に保存
+ */
+function saveLocation(loc) {
+  localStorage.setItem('user_location', JSON.stringify(loc));
+  // サーバーにも保存（非同期、エラーは無視）
+  const email = localStorage.getItem('auth_email');
+  if (email) {
+    fetch(PAYMENT_API + '/api/location', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, location: loc }),
+    }).catch(() => {});
+  }
+}
+
+// ===== POSTAL CODE MODAL =====
+function openPostalModal() {
+  document.getElementById('postalOverlay').classList.add('show');
+  document.getElementById('postalInput').value = '';
+  document.getElementById('postalResult').textContent = '';
+  document.getElementById('postalSubmit').disabled = true;
+  _postalGeoData = null;
+}
+
+function closePostalModal() {
+  document.getElementById('postalOverlay').classList.remove('show');
+}
+
+function handlePostalInput(input) {
+  // ハイフンなし7桁、またはハイフンあり形式を許容
+  let val = input.value.replace(/[^0-9-]/g, '');
+  input.value = val;
+  const digits = val.replace(/-/g, '');
+  if (digits.length === 7) {
+    lookupPostalCode(digits);
+  } else {
+    document.getElementById('postalResult').textContent = '';
+    document.getElementById('postalResult').className = 'postal-result';
+    document.getElementById('postalSubmit').disabled = true;
+    _postalGeoData = null;
+  }
+}
+
+async function lookupPostalCode(zipcode) {
+  const resultEl = document.getElementById('postalResult');
+  const submitBtn = document.getElementById('postalSubmit');
+  resultEl.textContent = '検索中...';
+  resultEl.className = 'postal-result';
+  submitBtn.disabled = true;
+  _postalGeoData = null;
+
+  try {
+    // 1. zipcloud APIで住所取得
+    const zipRes = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zipcode}`);
+    const zipData = await zipRes.json();
+    if (!zipData.results || zipData.results.length === 0) {
+      resultEl.textContent = '該当する住所が見つかりません';
+      resultEl.className = 'postal-result error';
+      return;
+    }
+    const addr = zipData.results[0];
+    const fullAddress = `${addr.address1}${addr.address2}${addr.address3}`;
+    resultEl.textContent = fullAddress;
+    resultEl.className = 'postal-result found';
+
+    // 2. Nominatimで緯度経度を正引き
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=json&limit=1&accept-language=ja`,
+      { headers: { 'User-Agent': 'GeneratedNews/1.0' } }
+    );
+    const geoResults = await geoRes.json();
+    if (geoResults.length > 0) {
+      _postalGeoData = {
+        lat: parseFloat(geoResults[0].lat),
+        lng: parseFloat(geoResults[0].lon),
+        area_name: addr.address2 + (addr.address3 || ''),
+        prefecture: addr.address1,
+        postal_code: zipcode.slice(0,3) + '-' + zipcode.slice(3),
+        source: 'postal_code',
+      };
+      submitBtn.disabled = false;
+    } else {
+      resultEl.textContent = fullAddress + '（座標の取得に失敗しました。スキップしてください）';
+      resultEl.className = 'postal-result error';
+    }
+  } catch (err) {
+    console.error('Postal code lookup error:', err);
+    resultEl.textContent = '通信エラーが発生しました';
+    resultEl.className = 'postal-result error';
+  }
+}
+
+function submitPostalCode() {
+  if (!_postalGeoData) return;
+  saveLocation(_postalGeoData);
+  closePostalModal();
+}
+
+/**
+ * ユーザーバーの「地域」リンクをクリック時
+ * 現在地を再取得するか、郵便番号で変更するかを選べる
+ */
+function openLocationMenu() {
+  // 簡易的に郵便番号モーダルを開く（現在地更新ボタン付き）
+  openPostalModal();
+}
+
+/**
+ * 「現在地を再取得」ボタン（郵便番号モーダル内から呼ばれる）
+ */
+function retryGeolocation() {
+  closePostalModal();
+  if (!navigator.geolocation) {
+    openPostalModal();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const loc = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        area_name: '',
+        prefecture: '',
+        postal_code: '',
+        source: 'geolocation',
+      };
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lng}&format=json&zoom=16&accept-language=ja`,
+          { headers: { 'User-Agent': 'GeneratedNews/1.0' } }
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const addr = geoData.address || {};
+          loc.area_name = addr.quarter || addr.neighbourhood || addr.suburb || addr.city_district || addr.city || '';
+          loc.prefecture = addr.state || '';
+          loc.postal_code = (addr.postcode || '').replace(/\s/g, '');
+        }
+      } catch (e) { /* ignore */ }
+      saveLocation(loc);
+      updateUserBar();
+    },
+    () => {
+      openPostalModal();
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function skipPostalCode() {
+  // デフォルト: 東京都渋谷区
+  saveLocation({
+    lat: 35.6461,
+    lng: 139.7100,
+    area_name: '渋谷区',
+    prefecture: '東京都',
+    postal_code: '',
+    source: 'default',
+  });
+  closePostalModal();
+}
+
 // セッション検証
 (function() {
   const token = localStorage.getItem('auth_token');
@@ -1477,6 +1820,8 @@ async function submitInvite() { ... }
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_email');
       } else {
+        // 認証成功 → 位置情報を初期化
+        initLocation();
         // メール通知設定を読み込み
         const authEmail = localStorage.getItem('auth_email');
         if (authEmail) {
@@ -1485,6 +1830,10 @@ async function submitInvite() { ... }
             .then(subData => {
               if (subData.email_notify !== undefined) {
                 _emailNotifyActive = subData.email_notify;
+              }
+              // サーバーに保存された位置情報があればlocalStorageに反映
+              if (subData.location && !localStorage.getItem('user_location')) {
+                localStorage.setItem('user_location', JSON.stringify(subData.location));
               }
               updateUserBar();
             }).catch(() => updateUserBar());
@@ -1924,7 +2273,10 @@ function detectEdition() {
 // フォールバック付き: 該当版がまだ生成されていなければ反対の版を取得
 async function fetchNewspaper(edition) {
   if (!edition) edition = detectEdition();
-  const url = `${API_URL}?edition=${edition}`;
+  // 位置情報をlocalStorageから取得してAPIに渡す
+  const loc = JSON.parse(localStorage.getItem('user_location') || 'null');
+  const latParam = loc ? `&lat=${loc.lat}&lon=${loc.lng}` : '';
+  const url = `${API_URL}?edition=${edition}${latParam}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000);
   try {

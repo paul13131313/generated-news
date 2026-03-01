@@ -2,6 +2,18 @@
 
 ## 2026-03-01
 
+### Phase 3 実装: 位置情報パーソナライズ
+- **Geolocation API** — 認証成功時にブラウザの位置情報を自動取得、localStorageとサーバーに保存
+- **郵便番号フォールバック** — 位置情報拒否時に郵便番号入力モーダルを表示、zipcloud API→Nominatim正引きで座標変換
+- **天気コーナー位置連動** — fetchWeatherData(lat, lon)で購読者の位置の天気を取得
+- **ご近所ニュース位置連動** — 逆ジオコーディング結果に基づきGoogle News RSSの検索語を動的生成
+- **プロンプト位置連動** — buildPrompt()にエリア名を動的注入、ローカルニュースの制約文も動的化
+- **購読者locationスキーマ** — payment-apiにPOST /api/locationエンドポイント追加（lat, lng, area_name, prefecture, postal_code, source）
+- **ユーザーバーに地域表示** — 「地域: XXX」リンクから郵便番号モーダルで変更可能
+- **バックグラウンド更新** — アクセス時にhaversine距離1km以上の移動で自動更新
+- **管理画面** — admin.html購読者一覧に「地域」カラム追加
+- **OpenWeather APIキー設定** — wrangler secret put OPENWEATHER_API_KEY
+
 ### Phase 2 実装: 無料化と導線整理
 - **課金フロー停止** — index.html: Stripe Checkout・解約モーダル・招待モーダルのHTML/CSS/JSをコメントアウト、購読管理リンク削除
 - **LP無料化** — lp.html: ヒーローCTA「無料で購読する」に変更、料金セクション「FREE / ¥0」に書き換え、招待モーダル・Stripe JS削除

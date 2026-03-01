@@ -475,6 +475,45 @@ async function handleRequest(request, env) {
     }
   }
 
+  // POST /api/location → 位置情報保存
+  if (path === '/api/location' && request.method === 'POST') {
+    try {
+      const { email, location } = await request.json();
+      if (!email || !email.includes('@')) {
+        return jsonResponse({ error: 'Invalid email' }, 400, request);
+      }
+      if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+        return jsonResponse({ error: 'Invalid location: lat and lng required' }, 400, request);
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const data = await env.SUBSCRIBERS.get(normalizedEmail);
+      if (!data) {
+        return jsonResponse({ error: 'Subscriber not found' }, 404, request);
+      }
+
+      const subscriber = JSON.parse(data);
+      subscriber.location = {
+        lat: location.lat,
+        lng: location.lng,
+        area_name: location.area_name || '',
+        prefecture: location.prefecture || '',
+        postal_code: location.postal_code || '',
+        source: location.source || 'geolocation',
+      };
+      subscriber.updatedAt = new Date().toISOString();
+      await env.SUBSCRIBERS.put(normalizedEmail, JSON.stringify(subscriber));
+
+      return jsonResponse({
+        success: true,
+        location: subscriber.location,
+      }, 200, request);
+    } catch (error) {
+      console.error('Location save error:', error);
+      return jsonResponse({ error: error.message }, 500, request);
+    }
+  }
+
   // GET /api/subscriber/:email → 購読ステータス確認
   if (path.startsWith('/api/subscriber/') && request.method === 'GET') {
     const email = decodeURIComponent(path.replace('/api/subscriber/', ''));
@@ -500,6 +539,7 @@ async function handleRequest(request, env) {
         cancelAtPeriodEnd: false,
         currentPeriodEnd: null,
         email_notify: subscriber.email_notify !== false,
+        location: subscriber.location || null,
       }, 200, request);
     }
 
@@ -510,6 +550,7 @@ async function handleRequest(request, env) {
       cancelAtPeriodEnd: subscriber.cancelAtPeriodEnd || false,
       currentPeriodEnd: subscriber.currentPeriodEnd || null,
       email_notify: subscriber.email_notify !== false,
+      location: subscriber.location || null,
     }, 200, request);
   }
 
@@ -521,6 +562,7 @@ async function handleRequest(request, env) {
       'POST /api/webhook',
       'POST /api/cancel',
       'POST /api/invite',
+      'POST /api/location',
       'GET /api/subscriber/:email',
       'GET /health',
     ],

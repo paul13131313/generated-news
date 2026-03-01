@@ -933,6 +933,7 @@ function renderSubscribers() {
           <th class="text-left px-6 py-3 text-xs text-gray-500 font-medium">メールアドレス</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">ステータス</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">登録日</th>
+          <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">地域</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">招待コード</th>
           <th class="text-left px-4 py-3 text-xs text-gray-500 font-medium">操作</th>
         </tr>
@@ -954,6 +955,7 @@ function renderSubscribers() {
             </td>
             <td class="px-4 py-3">${statusBadge(s.status)}</td>
             <td class="px-4 py-3 text-gray-500 text-xs">${s.subscribedAt ? formatDate(s.subscribedAt) : '—'}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">${s.location ? escapeHtml((s.location.prefecture || '') + (s.location.area_name || '')) : '—'}</td>
             <td class="px-4 py-3 text-gray-500 text-xs font-mono">${s.inviteCode ? escapeHtml(s.inviteCode) : '—'}</td>
             <td class="px-4 py-3">
               <span class="invite-action-display" data-email="${escapeHtml(s.email)}">
