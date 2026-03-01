@@ -452,6 +452,12 @@
     letter-spacing: 0.02em;
   }
   .ticker-track .ticker-item { padding: 0 24px; }
+  .ticker-label {
+    display: inline-block; padding: 0 14px; font-family: var(--font-gothic);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--ink); background: var(--paper); line-height: 20px;
+    vertical-align: middle; white-space: nowrap; margin-right: 8px;
+  }
   .ticker-track .up { color: #5cc779; }
   .ticker-track .dn { color: #e05040; }
 
@@ -1188,6 +1194,7 @@
 
 <!-- TICKER -->
 <div class="ticker gen-animate">
+  <span class="ticker-label" id="tickerLabel"></span>
   <div class="ticker-track" id="tickerTrack"></div>
 </div>
 
@@ -1965,6 +1972,8 @@ function renderNewspaper(data) {
   }
 
   // Ticker
+  const tickerLabel = document.getElementById('tickerLabel');
+  tickerLabel.textContent = isEvening ? '明日の天気' : 'MARKET';
   renderTicker(data.ticker || []);
 
   // Headline body + source
@@ -1974,22 +1983,20 @@ function renderNewspaper(data) {
   renderArticles(data.articles || []);
 
   // ===== コーナー構成の差別化 =====
-  // 朝刊: 数字で読む、天気、ご近所、催事（SNSトレンドは非表示）
-  // 夕刊: SNSトレンド、天気、催事（数字で読む・ご近所は非表示）
+  // 共通: 数字で読む、催事
+  // 朝刊: 天気と服装、ご近所（SNSトレンドは非表示）
+  // 夕刊: SNSトレンド（天気はティッカーに統合、ご近所は非表示）
   renderWeatherFashion(data.weatherFashion);
   renderCulture(data.culture);
+  renderNumbers(data);
 
   if (isEvening) {
-    // 夕刊: SNSトレンド表示、数字で読む・ご近所は非表示
+    // 夕刊: SNSトレンド表示、ご近所は非表示
     renderSnsTrend(data.snsTrend);
-    document.getElementById('numbersHeader').style.display = 'none';
-    const numBody = document.getElementById('highlightsContainer');
-    if (numBody) numBody.style.display = 'none';
     const localBlock = document.getElementById('localNewsBlock');
     if (localBlock) localBlock.style.display = 'none';
   } else {
-    // 朝刊: 数字で読む・ご近所表示、SNSトレンドは非表示
-    renderNumbers(data);
+    // 朝刊: ご近所表示、SNSトレンドは非表示
     renderLocalNews(data.localNews);
     const snsBlock = document.getElementById('snsTrendBlock');
     if (snsBlock) snsBlock.style.display = 'none';
