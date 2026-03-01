@@ -77,48 +77,40 @@ function compressArticles(articles, maxCount = 30) {
 }
 
 /**
- * システムプロンプト
+ * システムプロンプト（朝刊用）
  */
-const SYSTEM_PROMPT = `あなたは「生成新聞」の紙面編集AIです。
-格式ある新聞調の文体で、知的な遊び心を持って紙面を構成してください。
+const SYSTEM_PROMPT_MORNING = `あなたは「生成新聞」の紙面編集AIです。
+朝刊は硬派な報道紙面として構成してください。
 
 文体の特徴:
 - 漢語・熟語を多用する硬質な新聞文体
 - 一文は短く歯切れ良く。体言止めも活用
 - 数字は漢数字（二〇二六年、三十八万円など）
 - 「——」（ダッシュ）で補足説明を挿入する文体
-- 客観的報道調だが、コラムでは随筆的な味わいを出す
+- 客観的報道調で、事実を重視した簡潔な記述
 
 出力はJSON形式のみ。説明文や前置きは不要。`;
 
 /**
- * ユーザープロンプトを組み立て
+ * システムプロンプト（夕刊用）
  */
-export function buildPrompt(articles, edition = 'morning', previousTitles = [], areaName = '恵比寿・渋谷エリア') {
-  const now = new Date();
-  const dateStr = getJapaneseDate(now);
-  const issueNum = getIssueNumber(now, edition);
-  const editionStr = edition === 'evening' ? '夕刊' : '朝刊';
-  const compressed = compressArticles(articles);
+const SYSTEM_PROMPT_EVENING = `あなたは「生成新聞」の紙面編集AIです。
+夕刊はやわらかく親しみやすい紙面として構成してください。
 
-  // 重複排除指示を構築
-  let dedupeInstruction = '';
-  if (previousTitles.length > 0) {
-    const prevEditionLabel = edition === 'evening' ? '本日の朝刊' : '前日の夕刊';
-    dedupeInstruction = `\n\n【重複排除】以下の記事は${prevEditionLabel}で掲載済みです。これらとは異なるニュースを選んでください（同じトピックでも新しい展開があれば「続報」として別角度から取り上げるのはOK）:\n${previousTitles.map(t => `- ${t}`).join('\n')}`;
-  }
+文体の特徴:
+- 読みやすく親しみやすい文体。硬すぎない表現
+- 一文は短く歯切れ良く。語りかけるような柔らかさ
+- 数字は漢数字（二〇二六年、三十八万円など）
+- トレンド、エンタメ、暮らしの話題を中心に
+- ほっこりするニュースや話題性のある記事を優先
 
-  const userPrompt = `以下のニュース一覧から${editionStr}の紙面JSONを生成してください。
+出力はJSON形式のみ。説明文や前置きは不要。`;
 
-日付: ${dateStr}
-版: ${editionStr}
-号数: ${issueNum}${dedupeInstruction}
-
-ニュース一覧:
-${compressed}
-
-以下のJSON構造で出力（全フィールド必須）:
-{
+/**
+ * 共通のJSON構造テンプレート
+ */
+function getJsonTemplate(dateStr, editionStr, issueNum, areaName) {
+  return `{
   "date": "${dateStr}",
   "edition": "${editionStr}",
   "issueNumber": "${issueNum}",
@@ -176,20 +168,82 @@ ${compressed}
       }
     ]
   },
+}`;
 }
 
-制約:
+/**
+ * 朝刊の制約文
+ */
+function getMorningConstraints(areaName) {
+  return `制約:
+- 【朝刊トーン】硬めのニュースを中心に構成する。政治・経済・国際・テクノロジーなど報道性の高い記事を優先
 - articles配列は5件ちょうど。硬いニュース（政治/経済/国際/総合）3件 + 柔らかいニュース（文化/エンタメ/暮らし/スポーツ/テクノロジー）2件のバランスにする
 - articles: 5件中2〜3件にimageKeywordを付与し、残りはnullにする。視覚的にイメージしやすい記事（スポーツ、災害、テクノロジー製品、建造物等）を優先。imageKeywordは記事に登場する具体的な被写体（建物、場所、機器、人物の動作など）を英語2〜4語で表す。「AI」「economy」などの抽象語だけのキーワードは避け、写真に写りうる物理的対象を指定する。日本のニュースならjapan/tokyo等の地域キーワードを含める
 - headline, articlesのsourceUrl/sourceNameは、ニュース一覧から該当する元記事のURLとメディア名をそのまま転記する。URLはニュース一覧に含まれる実際のURLを使うこと
 - numbers配列は5件。各記事やニュースから象徴的な数字を1つ抽出し、numberは数字+単位の簡潔な表記（例: "13万人", "3.2%", "1兆2000億円"）、labelは20字以内の説明。sourceには数字の出典メディア名を記載
-- コラムは具体的なニュースに言及しつつ、哲学的・文学的な深みを持たせる
 - headline.imageKeywordは記事の場面を撮影した報道写真のような画像を検索するためのキーワード。英語2〜4語で、写真に写る物理的対象を具体的に指定する（例: speed skating rink athlete, electric vehicle assembly line）。日本のニュースならjapan/tokyoなど地域キーワードを含める
 - weatherFashion: 天気データは別途注入されるので、items（服装アイテム配列）のみ生成する。3〜5個の服装アイテム名のみ。ブランド名は絶対に含めない。長い説明文・形容詞・接続詞は一切不要。「コート」「ニット」「デニム」のような単語のみ
 - snsTrend: items配列は3件ちょうど。ニュース一覧のはてブ記事から話題性の高いものを選び、重複・類似トピック禁止。同じ事件・テーマの別記事も含めない。urlはニュース一覧に含まれる実際のURLを使うこと
 - culture: items配列は3件ちょうど。ニュース一覧の文化カテゴリ記事から、展覧会・映画情報を中心に選ぶ。同じソースサイトから2件以上選ばないこと。artscape、CINRA、cinemacafe、公式サイトなど多様なソースから選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の展覧会・映画・会場を絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する
 - localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から${areaName}に関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
+}
 
-  return { systemPrompt: SYSTEM_PROMPT, userPrompt };
+/**
+ * 夕刊の制約文
+ */
+function getEveningConstraints(areaName) {
+  return `制約:
+- 【夕刊トーン】やわらかいニュースを中心に構成する。トレンド、エンタメ、暮らし、ほっこりする話題、SNSで話題のネタなどを優先
+- articles配列は5件ちょうど。柔らかいニュース（文化/エンタメ/暮らし/スポーツ/テクノロジー/トレンド）3件 + 硬いニュース（政治/経済/国際/総合）2件のバランスにする（朝刊と逆比率）
+- articles: 5件中2〜3件にimageKeywordを付与し、残りはnullにする。視覚的にイメージしやすい記事（スポーツ、テクノロジー製品、食べ物、イベントの様子等）を優先。imageKeywordは記事に登場する具体的な被写体（建物、場所、機器、人物の動作など）を英語2〜4語で表す。「AI」「economy」などの抽象語だけのキーワードは避け、写真に写りうる物理的対象を指定する。日本のニュースならjapan/tokyo等の地域キーワードを含める
+- headline, articlesのsourceUrl/sourceNameは、ニュース一覧から該当する元記事のURLとメディア名をそのまま転記する。URLはニュース一覧に含まれる実際のURLを使うこと
+- headlineは夕刊らしい親しみやすいトピックを選ぶこと（エンタメ、テクノロジーの新製品、暮らし、スポーツの結果など）。硬い政治・経済ニュースは一面以外のarticlesに回す
+- numbers配列は5件。各記事やニュースから象徴的な数字を1つ抽出し、numberは数字+単位の簡潔な表記（例: "13万人", "3.2%", "1兆2000億円"）、labelは20字以内の説明。sourceには数字の出典メディア名を記載
+- headline.imageKeywordは記事の場面を撮影した報道写真のような画像を検索するためのキーワード。英語2〜4語で、写真に写る物理的対象を具体的に指定する。日本のニュースならjapan/tokyoなど地域キーワードを含める
+- weatherFashion: 天気データは別途注入されるので、items（服装アイテム配列）のみ生成する。3〜5個の服装アイテム名のみ。ブランド名は絶対に含めない。長い説明文・形容詞・接続詞は一切不要。「コート」「ニット」「デニム」のような単語のみ
+- snsTrend: items配列は3件ちょうど。ニュース一覧のはてブ記事から話題性の高いものを選び、重複・類似トピック禁止。同じ事件・テーマの別記事も含めない。urlはニュース一覧に含まれる実際のURLを使うこと
+- culture: items配列は3件ちょうど。ニュース一覧の文化カテゴリ記事から、映画・音楽・エンタメ情報を中心に選ぶ。同じソースサイトから2件以上選ばないこと。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の情報を絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する
+- localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から${areaName}に関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
+- JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
+}
+
+/**
+ * ユーザープロンプトを組み立て
+ */
+export function buildPrompt(articles, edition = 'morning', previousTitles = [], areaName = '恵比寿・渋谷エリア') {
+  const now = new Date();
+  const dateStr = getJapaneseDate(now);
+  const issueNum = getIssueNumber(now, edition);
+  const editionStr = edition === 'evening' ? '夕刊' : '朝刊';
+  const compressed = compressArticles(articles);
+
+  // 重複排除指示を構築
+  let dedupeInstruction = '';
+  if (previousTitles.length > 0) {
+    const prevEditionLabel = edition === 'evening' ? '本日の朝刊' : '前日の夕刊';
+    dedupeInstruction = `\n\n【重複排除】以下の記事は${prevEditionLabel}で掲載済みです。これらとは異なるニュースを選んでください（同じトピックでも新しい展開があれば「続報」として別角度から取り上げるのはOK）:\n${previousTitles.map(t => `- ${t}`).join('\n')}`;
+  }
+
+  // 朝刊・夕刊でシステムプロンプトと制約を分離
+  const systemPrompt = edition === 'evening' ? SYSTEM_PROMPT_EVENING : SYSTEM_PROMPT_MORNING;
+  const constraints = edition === 'evening' ? getEveningConstraints(areaName) : getMorningConstraints(areaName);
+
+  const jsonTemplate = getJsonTemplate(dateStr, editionStr, issueNum, areaName);
+
+  const userPrompt = `以下のニュース一覧から${editionStr}の紙面JSONを生成してください。
+
+日付: ${dateStr}
+版: ${editionStr}
+号数: ${issueNum}${dedupeInstruction}
+
+ニュース一覧:
+${compressed}
+
+以下のJSON構造で出力（全フィールド必須）:
+${jsonTemplate}
+
+${constraints}`;
+
+  return { systemPrompt, userPrompt };
 }

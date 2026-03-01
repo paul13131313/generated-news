@@ -327,13 +327,19 @@ async function handleLocalNews(lat, lon, env) {
  * 文化ニュースRSSから催事データを取得（展示会・映画）
  * Claude生成ではなく実データに基づく催事コーナー
  */
-async function fetchCultureNews() {
+async function fetchCultureNews(areaName = '') {
   try {
     const feeds = [
       { url: 'https://artscape.jp/feed/', name: 'artscape', category: '展示会', format: 'rss2' },
       { url: 'https://www.cinra.net/feed', name: 'CINRA.NET', category: '文化', format: 'rss2' },
       { url: 'https://www.cinemacafe.net/rss/index.rdf', name: 'cinemacafe', category: '映画', format: 'rdf' },
     ];
+
+    // 位置情報がある場合、地域のイベント情報をGoogle Newsから追加取得
+    if (areaName) {
+      const localEventUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(areaName + ' イベント 展覧会')}&hl=ja&gl=JP&ceid=JP:ja`;
+      feeds.push({ url: localEventUrl, name: 'Google News', category: '地域イベント', format: 'rss2' });
+    }
 
     const allItems = [];
 
@@ -723,7 +729,8 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
 
   // 10. 催事 → 文化ニュースRSSから実データで上書き（前の版と重複するURLを除外）
   try {
-    const cultureData = await fetchCultureNews();
+    const geoAreaForCulture = geoResult?.broader || geoResult?.area || '';
+    const cultureData = await fetchCultureNews(geoAreaForCulture);
     if (cultureData && cultureData.items.length > 0) {
       const dedupedItems = cultureData.items.filter(item => !prevCultureUrls.has(item.url));
       if (dedupedItems.length > 0) {

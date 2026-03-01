@@ -1063,6 +1063,37 @@
   .subscribe-toast .toast-close:hover { opacity: 1; }
 
   /* [DISABLED: 課金停止中] CANCEL MODAL / INVITE MODAL のCSSは無料化に伴い削除 */
+
+  /* ===== 夕刊デザイン差別化 ===== */
+  body.evening-edition {
+    --paper: #faf5e8;
+    --paper-mid: #f0e8d5;
+    --accent: #c46520;
+    --rule-light: #d4c9b0;
+  }
+  body.evening-edition .masthead-center h1 {
+    color: #3a2a18;
+  }
+  body.evening-edition .masthead-en {
+    color: #8a7a68;
+  }
+  body.evening-edition .edition-btn.active {
+    background: #c46520;
+    border-color: #c46520;
+  }
+  body.evening-edition .issue-badge {
+    border-color: #c46520;
+    color: #c46520;
+  }
+  body.evening-edition .ticker {
+    background: #3a2a18;
+  }
+  body.evening-edition .sec-rule span {
+    color: #c46520;
+  }
+  body.evening-edition footer {
+    border-top-color: #d4c9b0;
+  }
 </style>
 </head>
 <body>
@@ -1921,13 +1952,16 @@ function renderNewspaper(data) {
   // ヒーローキャンバスのテーマ更新
   updateHeroTheme(data);
 
-  // Edition buttons
+  // Edition buttons & body class
+  const isEvening = data.edition === '夕刊';
   const mBtn = document.getElementById('btnMorning');
   const eBtn = document.getElementById('btnEvening');
-  if (data.edition === '夕刊') {
+  if (isEvening) {
     eBtn.classList.add('active'); mBtn.classList.remove('active');
+    document.body.classList.add('evening-edition');
   } else {
     mBtn.classList.add('active'); eBtn.classList.remove('active');
+    document.body.classList.remove('evening-edition');
   }
 
   // Ticker
@@ -1939,15 +1973,27 @@ function renderNewspaper(data) {
   // Articles
   renderArticles(data.articles || []);
 
-  // Highlights / Numbers
-  renderNumbers(data);
-
-  // 新コーナー
+  // ===== コーナー構成の差別化 =====
+  // 朝刊: 数字で読む、天気、ご近所、催事（SNSトレンドは非表示）
+  // 夕刊: SNSトレンド、天気、催事（数字で読む・ご近所は非表示）
   renderWeatherFashion(data.weatherFashion);
-  // ご近所情報はnewspaper本体のデータを使用（step 10bで恵比寿・渋谷に限定済み）
-  renderLocalNews(data.localNews);
   renderCulture(data.culture);
-  renderSnsTrend(data.snsTrend);
+
+  if (isEvening) {
+    // 夕刊: SNSトレンド表示、数字で読む・ご近所は非表示
+    renderSnsTrend(data.snsTrend);
+    document.getElementById('numbersHeader').style.display = 'none';
+    const numBody = document.getElementById('highlightsContainer');
+    if (numBody) numBody.style.display = 'none';
+    const localBlock = document.getElementById('localNewsBlock');
+    if (localBlock) localBlock.style.display = 'none';
+  } else {
+    // 朝刊: 数字で読む・ご近所表示、SNSトレンドは非表示
+    renderNumbers(data);
+    renderLocalNews(data.localNews);
+    const snsBlock = document.getElementById('snsTrendBlock');
+    if (snsBlock) snsBlock.style.display = 'none';
+  }
 
 
   // Footer — 配達時刻を固定表示（朝刊=06:00、夕刊=17:00）
