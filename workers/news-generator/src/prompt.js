@@ -169,6 +169,10 @@ function getJsonTemplate(dateStr, editionStr, issueNum, areaName) {
       }
     ]
   },
+  "tomorrowForecast": {
+    "message": "明日に向けた前向きな一言（20字以内）",
+    "events": ["明日の注目イベント・催事（1〜2件、20字以内ずつ）"]
+  },
 }`;
 }
 
@@ -206,6 +210,7 @@ function getEveningConstraints(areaName) {
 - snsTrend: items配列は3件ちょうど。ニュース一覧のはてブ記事から話題性の高いものを選び、重複・類似トピック禁止。同じ事件・テーマの別記事も含めない。urlはニュース一覧に含まれる実際のURLを使うこと
 - culture: items配列は3件ちょうど。ニュース一覧の文化カテゴリ記事から、映画・音楽・エンタメ情報を中心に選ぶ。同じソースサイトから2件以上選ばないこと。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の情報を絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する
 - localNews: items配列は3〜4件。ニュース一覧のローカルカテゴリ記事から${areaName}に関連するものを選ぶ。【重要】ニュース一覧に含まれる実際の記事のみ使用すること。架空の店舗・イベント・ニュースを絶対に捏造しない。RSSにない情報は書かない。sourceUrl/sourceNameはニュース一覧から該当記事のURL・メディア名を転記する。該当するローカル記事がない場合はitems配列を空にすること
+- tomorrowForecast: 夕刊専用コーナー。messageは明日に向けた前向きな一言（20字以内、例:「よい週末を」「明日も頑張ろう」）。eventsは${areaName}周辺で明日開催される注目イベント・催事を1〜2件（ニュース一覧から推測可能なもののみ。不明なら空配列[]）
 - JSONのみ出力。マークダウンのコードブロック(\`\`\`)で囲まないこと`;
 }
 
@@ -226,9 +231,23 @@ export function buildPrompt(articles, edition = 'morning', previousTitles = [], 
     dedupeInstruction = `\n\n【重複排除】以下の記事は${prevEditionLabel}で掲載済みです。これらとは異なるニュースを選んでください（同じトピックでも新しい展開があれば「続報」として別角度から取り上げるのはOK）:\n${previousTitles.map(t => `- ${t}`).join('\n')}`;
   }
 
+  // 「数字で読む」日替わりフォーマット（曜日ローテーション）
+  const numbersFormats = [
+    { key: 'ranking', label: 'ランキング形式（「○○トップ5」「△△ワースト3」など順位付き）' },
+    { key: 'comparison', label: '比較形式（「AとBを比べると」「○○ vs △△」など2つ以上の対比）' },
+    { key: 'trend', label: '推移形式（「○○は10年で△倍に」「過去5年で○%増」など時系列の変化）' },
+    { key: 'correlation', label: '意外な相関形式（「○○と△△の意外な関係」「○○が増えると△△も」など）' },
+    { key: 'conversion', label: '換算形式（「○○を△△に換算すると」「東京ドーム○個分」など身近なもので例え）' },
+    { key: 'probability', label: '確率形式（「今日○○が起きる確率は」「○人に1人が」など）' },
+    { key: 'global', label: '世界の数字形式（「世界で今日○○が△△回」「地球上で毎秒○○が」など地球規模）' },
+  ];
+  const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const todayFormat = numbersFormats[jstNow.getDay()];
+
   // 朝刊・夕刊でシステムプロンプトと制約を分離
   const systemPrompt = edition === 'evening' ? SYSTEM_PROMPT_EVENING : SYSTEM_PROMPT_MORNING;
-  const constraints = edition === 'evening' ? getEveningConstraints(areaName) : getMorningConstraints(areaName);
+  let constraints = edition === 'evening' ? getEveningConstraints(areaName) : getMorningConstraints(areaName);
+  constraints += `\n- numbers: 今日は【${todayFormat.label}】で5件書いてください。すべての数字をこの切り口で統一すること`;
 
   const jsonTemplate = getJsonTemplate(dateStr, editionStr, issueNum, areaName);
 

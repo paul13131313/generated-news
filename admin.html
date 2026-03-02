@@ -6,6 +6,8 @@
 <title>生成新聞 — 管理画面</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   body { font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif; }
   .nav-item { transition: background 0.15s; }
@@ -90,6 +92,10 @@
       <button onclick="showSection('announce')" id="nav-announce"
         class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
         <span>📣</span> お知らせ配信
+      </button>
+      <button onclick="showSection('breaking')" id="nav-breaking"
+        class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-200 flex items-center gap-2.5">
+        <span>🚨</span> 号外発行
       </button>
       <div class="border-t border-gray-800 my-2"></div>
       <button onclick="showSection('diagnose')" id="nav-diagnose"
@@ -232,6 +238,18 @@
           </button>
         </div>
         <div id="issue-result" class="hidden"></div>
+      </div>
+
+      <!-- PDF見本紙生成 -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">PDF見本紙を生成</h2>
+        <p class="text-sm text-gray-400 mb-4">
+          今日の紙面のハイライトをA4一枚にまとめたPDFを生成します。QRコード付きで印刷・配布に使えます。
+        </p>
+        <button onclick="generateSamplePDF()"
+          class="bg-gray-700 text-white font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-gray-600 transition-colors">
+          PDF見本紙を生成
+        </button>
       </div>
 
       <!-- 発行済み一覧 -->
@@ -419,6 +437,48 @@
       </div>
     </section>
 
+    <!-- ===== 号外発行 ===== -->
+    <section id="section-breaking" class="hidden p-8">
+      <h1 class="text-xl font-bold text-white mb-6">🚨 号外発行</h1>
+
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
+        <h2 class="text-sm font-bold text-gray-300 mb-4">号外を発行する</h2>
+        <p class="text-sm text-gray-400 mb-4">
+          速報ニュースを号外として発行します。プッシュ通知で全購読者に即時配信されます。
+        </p>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 block mb-1">見出し（必須）</label>
+          <input id="breaking-headline" type="text" placeholder="例: 日経平均、史上最高値を更新"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500">
+        </div>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 block mb-1">本文（必須）</label>
+          <textarea id="breaking-summary" rows="5" placeholder="号外の詳細を入力してください…"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500 resize-y"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="text-xs text-gray-500 block mb-1">出典（任意）</label>
+          <input id="breaking-source" type="text" placeholder="例: 日本経済新聞"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500">
+        </div>
+        <button onclick="issueBreaking()" id="btn-breaking"
+          class="bg-red-700 text-white font-bold text-sm px-6 py-2.5 rounded-lg hover:bg-red-600 transition-colors">
+          号外を発行する
+        </button>
+        <div id="breaking-result" class="mt-3 hidden"></div>
+      </div>
+
+      <div class="bg-gray-900 rounded-xl border border-gray-800">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 class="text-sm font-bold text-gray-300">発行履歴</h2>
+          <button onclick="loadBreakingList()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">更新</button>
+        </div>
+        <div id="breaking-list">
+          <div class="p-6 text-sm text-gray-500">読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== 購読フロー診断 ===== -->
     <section id="section-diagnose" class="hidden p-8">
       <h1 class="text-xl font-bold text-white mb-6">購読フロー診断</h1>
@@ -557,7 +617,7 @@ function logout() {
 // ===== セクション切り替え =====
 
 function showSection(name) {
-  ['dashboard', 'preview', 'pages', 'sample', 'subscribers', 'invites', 'logs', 'content', 'announce', 'diagnose'].forEach(s => {
+  ['dashboard', 'preview', 'pages', 'sample', 'subscribers', 'invites', 'logs', 'content', 'announce', 'breaking', 'diagnose'].forEach(s => {
     document.getElementById(`section-${s}`).classList.add('hidden');
     document.getElementById(`nav-${s}`).classList.remove('active');
   });
@@ -572,6 +632,7 @@ function showSection(name) {
   if (name === 'logs') loadDeliveryLogs();
   if (name === 'content') loadContent();
   if (name === 'announce') loadAnnounceHistory();
+  if (name === 'breaking') loadBreakingList();
 }
 
 // ===== ダッシュボード =====
@@ -1883,6 +1944,330 @@ async function runFullDiagnose() {
   summaryEl.innerHTML = `<span class="text-lg">${icon}</span> <strong>${total}件中 ${passed}件 正常</strong>`;
 
   setDiagnoseBtn('btn-full-diagnose', false);
+}
+
+// ===== 号外発行 =====
+
+async function issueBreaking() {
+  const headline = document.getElementById('breaking-headline').value.trim();
+  const summary = document.getElementById('breaking-summary').value.trim();
+  const source = document.getElementById('breaking-source').value.trim();
+  const resultEl = document.getElementById('breaking-result');
+
+  if (!headline || !summary) {
+    resultEl.className = 'mt-3 text-sm text-red-400';
+    resultEl.textContent = '見出しと本文は必須です';
+    return;
+  }
+
+  const btn = document.getElementById('btn-breaking');
+  btn.disabled = true;
+  btn.textContent = '発行中…';
+
+  try {
+    const res = await apiCall('/api/admin/breaking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ headline, summary, source }),
+    });
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (data.error) {
+      resultEl.className = 'mt-3 text-sm text-red-400';
+      resultEl.textContent = data.error;
+      return;
+    }
+
+    const url = `https://seiseishinbun.com/?breaking=${data.breaking.id}`;
+    resultEl.className = 'mt-3 text-sm text-green-400';
+    resultEl.innerHTML = `号外を発行しました（Push: ${data.breaking.pushSent ?? 0}件送信）<br>
+      <a href="${url}" target="_blank" class="text-blue-400 underline">${url}</a>
+      <button onclick="copyText('${url}')" class="ml-2 text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded">コピー</button>`;
+
+    document.getElementById('breaking-headline').value = '';
+    document.getElementById('breaking-summary').value = '';
+    document.getElementById('breaking-source').value = '';
+    loadBreakingList();
+  } catch (err) {
+    resultEl.className = 'mt-3 text-sm text-red-400';
+    resultEl.textContent = '発行に失敗しました: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '号外を発行する';
+  }
+}
+
+async function loadBreakingList() {
+  const el = document.getElementById('breaking-list');
+  try {
+    const res = await apiCall('/api/admin/breaking/list');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const data = await res.json();
+
+    if (!data.breakings || data.breakings.length === 0) {
+      el.innerHTML = '<div class="p-6 text-sm text-gray-500">まだ号外が発行されていません</div>';
+      return;
+    }
+
+    el.innerHTML = data.breakings.map(b => {
+      const dt = new Date(b.issuedAt);
+      const dateStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      const url = `https://seiseishinbun.com/?breaking=${b.id}`;
+      return `
+        <div class="flex items-center gap-3 px-6 py-3 border-b border-gray-800 last:border-0">
+          <div class="shrink-0 text-xs text-gray-500 w-20">${dateStr}</div>
+          <div class="shrink-0">
+            <span class="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded">号外</span>
+          </div>
+          <div class="flex-1 text-sm text-gray-300 truncate">${escapeHtml(b.headline)}</div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="copyText('${url}')" class="text-xs text-gray-500 hover:text-white transition-colors px-2 py-1 bg-gray-800 rounded">URL</button>
+            <a href="${url}" target="_blank" class="text-xs text-gray-500 hover:text-white transition-colors">開く</a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="p-6 text-sm text-red-400">読み込みに失敗しました: ${err.message}</div>`;
+  }
+}
+
+// ===== PDF見本紙生成 =====
+
+async function generateSamplePDF() {
+  const btn = document.querySelector('[onclick="generateSamplePDF()"]');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+
+  try {
+    // 最新の見本紙データを取得
+    const res = await apiCall('/api/admin/sample/list');
+    if (res.status === 401) { clearToken(); location.reload(); return; }
+    const listData = await res.json();
+    if (!listData.samples || listData.samples.length === 0) {
+      alert('見本紙がまだ発行されていません。先にWeb見本紙を発行してください。');
+      return;
+    }
+
+    const latestSample = listData.samples[0];
+    const sampleUrl = `https://seiseishinbun.com/?sample=${latestSample.id}`;
+
+    // 見本紙の実データを取得
+    const dataRes = await fetch(`https://news-generator.hiroshinagano0113.workers.dev/api/sample/${latestSample.id}`);
+    if (!dataRes.ok) throw new Error('見本紙データの取得に失敗しました');
+    const newspaper = await dataRes.json();
+
+    // Canvas でA4相当の画像を生成（2倍解像度）
+    const W = 1240;
+    const H = 1754;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // ── 背景
+    ctx.fillStyle = '#FDF5E6';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── 外枠
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(40, 40, W - 80, H - 80);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(46, 46, W - 92, H - 92);
+
+    let y = 90;
+    const LX = 70;
+    const RX = W - 70;
+    const CW = RX - LX;
+
+    // ── 日付
+    const now = new Date();
+    const edLabel = latestSample.edition === 'morning' ? '朝刊' : '夕刊';
+    const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${'日月火水木金土'[now.getDay()]}） ${edLabel}`;
+    ctx.fillStyle = '#666';
+    ctx.font = '22px "Hiragino Kaku Gothic ProN", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(dateStr, W / 2, y);
+    y += 20;
+
+    // ── 新聞タイトル
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 72px "Hiragino Mincho ProN", serif';
+    ctx.fillText('生 成 新 聞', W / 2, y + 70);
+    y += 90;
+
+    // ── 飾り罫線
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(LX, y); ctx.lineTo(RX, y); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(LX, y + 5); ctx.lineTo(RX, y + 5); ctx.stroke();
+    y += 25;
+
+    // ── 一面見出し
+    const headline = newspaper.headline || newspaper.articles?.[0]?.title || '本日のニュース';
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 48px "Hiragino Mincho ProN", serif';
+    ctx.textAlign = 'center';
+    const headlineLines = wrapText(ctx, headline, CW - 40);
+    headlineLines.forEach(line => {
+      ctx.fillText(line, W / 2, y + 48);
+      y += 56;
+    });
+    y += 10;
+
+    // ── 一面リード
+    const lead = newspaper.articles?.[0]?.content || '';
+    if (lead) {
+      ctx.font = '24px "Hiragino Kaku Gothic ProN", sans-serif';
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'left';
+      const leadLines = wrapText(ctx, lead, CW - 40);
+      leadLines.slice(0, 4).forEach(line => {
+        ctx.fillText(line, LX + 20, y + 24);
+        y += 32;
+      });
+      y += 10;
+    }
+
+    // ── 区切り線
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(LX, y); ctx.lineTo(RX, y); ctx.stroke();
+    y += 25;
+
+    // ── 数字で読む
+    if (newspaper.numbers && newspaper.numbers.length > 0) {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = 'bold 30px "Hiragino Mincho ProN", serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('数字で読む', LX + 20, y + 30);
+      y += 50;
+
+      ctx.font = '22px "Hiragino Kaku Gothic ProN", sans-serif';
+      ctx.fillStyle = '#333';
+      newspaper.numbers.slice(0, 3).forEach(item => {
+        const num = item.number || item.value || '';
+        const label = item.label || item.title || '';
+        const text = `${num}  ${label}`;
+        const lines = wrapText(ctx, text, CW - 60);
+        lines.forEach(line => {
+          ctx.fillText(line, LX + 30, y + 22);
+          y += 28;
+        });
+        y += 8;
+      });
+      y += 10;
+
+      ctx.strokeStyle = '#999';
+      ctx.beginPath(); ctx.moveTo(LX, y); ctx.lineTo(RX, y); ctx.stroke();
+      y += 25;
+    }
+
+    // ── 天気と服装
+    const wf = newspaper.weatherFashion;
+    if (wf) {
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = 'bold 30px "Hiragino Mincho ProN", serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('天気と服装', LX + 20, y + 30);
+      y += 50;
+
+      ctx.font = '22px "Hiragino Kaku Gothic ProN", sans-serif';
+      ctx.fillStyle = '#333';
+      const weatherText = `${wf.area || ''} ${wf.weather || ''} 最高${wf.tempHigh ?? ''}℃ / 最低${wf.tempLow ?? ''}℃`;
+      ctx.fillText(weatherText, LX + 30, y + 22);
+      y += 34;
+
+      if (wf.comment) {
+        ctx.fillStyle = '#666';
+        ctx.font = '20px "Hiragino Kaku Gothic ProN", sans-serif';
+        ctx.fillText(wf.comment, LX + 30, y + 20);
+        y += 30;
+      }
+
+      if (wf.items && wf.items.length > 0) {
+        ctx.fillStyle = '#555';
+        ctx.font = '20px "Hiragino Kaku Gothic ProN", sans-serif';
+        ctx.fillText('おすすめ: ' + wf.items.join(' / '), LX + 30, y + 20);
+        y += 30;
+      }
+      y += 10;
+
+      ctx.strokeStyle = '#999';
+      ctx.beginPath(); ctx.moveTo(LX, y); ctx.lineTo(RX, y); ctx.stroke();
+      y += 25;
+    }
+
+    // ── QRコードを生成
+    const qr = qrcode(0, 'M');
+    qr.addData(sampleUrl);
+    qr.make();
+    const qrSize = 180;
+    const qrModules = qr.getModuleCount();
+    const qrCellSize = qrSize / qrModules;
+    const qrX = W / 2 - qrSize / 2;
+    const qrY = Math.max(y, H - 380);
+
+    // QRコード描画
+    ctx.fillStyle = '#FDF5E6';
+    ctx.fillRect(qrX - 15, qrY - 15, qrSize + 30, qrSize + 30);
+    for (let row = 0; row < qrModules; row++) {
+      for (let col = 0; col < qrModules; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillRect(qrX + col * qrCellSize, qrY + row * qrCellSize, qrCellSize + 0.5, qrCellSize + 0.5);
+        }
+      }
+    }
+
+    // QRコード下ラベル
+    ctx.fillStyle = '#666';
+    ctx.font = '18px "Hiragino Kaku Gothic ProN", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('スマートフォンで読む →  seiseishinbun.com', W / 2, qrY + qrSize + 30);
+
+    // ── フッター
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '20px "Hiragino Mincho ProN", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('あなたの街から、生まれる新聞。', W / 2, H - 80);
+
+    ctx.fillStyle = '#999';
+    ctx.font = '16px "Hiragino Kaku Gothic ProN", sans-serif';
+    ctx.fillText('AIが毎朝・毎夕、あなただけの新聞を届けます', W / 2, H - 55);
+
+    // ── Canvas → PDF
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    pdf.save(`生成新聞_見本紙_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`);
+
+  } catch (err) {
+    alert('PDF生成に失敗しました: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'PDF見本紙を生成';
+  }
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const lines = [];
+  let current = '';
+  for (const ch of text) {
+    const test = current + ch;
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current);
+      current = ch;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 </script>
 </body>

@@ -649,3 +649,76 @@ export async function handleSampleGet(id, env) {
     },
   };
 }
+
+// ===== POST /api/admin/breaking — 号外発行 =====
+
+export async function handleBreaking(request, env) {
+  const { headline, summary, source } = await request.json();
+  if (!headline || !summary) {
+    return { error: 'headline と summary は必須です', _status: 400 };
+  }
+
+  const id = crypto.randomUUID().slice(0, 8);
+  const now = new Date().toISOString();
+  const breakingData = {
+    id,
+    headline,
+    summary,
+    source: source || '',
+    issuedAt: now,
+  };
+
+  // KVに保存（30日保持）
+  await env.NEWSPAPER_CACHE.put(
+    `breaking:${id}`,
+    JSON.stringify(breakingData),
+    { expirationTtl: 30 * 24 * 3600 }
+  );
+
+  // 号外一覧インデックスを更新
+  const indexRaw = await env.NEWSPAPER_CACHE.get('breaking:index');
+  const index = indexRaw ? JSON.parse(indexRaw) : [];
+  index.unshift({ id, headline, issuedAt: now });
+  if (index.length > 50) index.length = 50;
+  await env.NEWSPAPER_CACHE.put('breaking:index', JSON.stringify(index));
+
+  // Push通知を送信
+  if (env.PUSH_API) {
+    try {
+      const pushRes = await env.PUSH_API.fetch('https://push-api/api/push/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          edition: 'breaking',
+          title: '【号外】' + headline,
+          body: summary.slice(0, 100),
+          url: `./index.html?breaking=${id}`,
+          tag: `breaking-${id}`,
+        }),
+      });
+      const pushResult = await pushRes.json();
+      breakingData.pushSent = pushResult.sent || 0;
+    } catch (pushError) {
+      console.error('Breaking push failed:', pushError);
+      breakingData.pushSent = 0;
+    }
+  }
+
+  return { success: true, breaking: breakingData };
+}
+
+// ===== GET /api/admin/breaking/list — 号外履歴 =====
+
+export async function handleBreakingList(env) {
+  const indexRaw = await env.NEWSPAPER_CACHE.get('breaking:index');
+  const index = indexRaw ? JSON.parse(indexRaw) : [];
+  return { breakings: index };
+}
+
+// ===== GET /api/breaking/{id} (公開エンドポイント・認証不要) =====
+
+export async function handleBreakingGet(id, env) {
+  const raw = await env.NEWSPAPER_CACHE.get(`breaking:${id}`);
+  if (!raw) return { error: '号外が見つかりません', _status: 404 };
+  return JSON.parse(raw);
+}

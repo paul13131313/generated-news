@@ -23,6 +23,9 @@ import {
   handleAnnouncementList,
   handleSubscriberUpdate,
   handleApplyInvite,
+  handleBreaking,
+  handleBreakingList,
+  handleBreakingGet,
 } from './admin.js';
 
 /**
@@ -629,6 +632,41 @@ async function fetchWeatherTicker(userLat = 35.6895, userLon = 139.6917) {
 }
 
 /**
+ * 夕刊「明日の予報」用: 翌日の天気予報データを取得
+ */
+async function fetchTomorrowForecast(lat = 35.6895, lon = 139.6917) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Tokyo&forecast_days=2`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const daily = data?.daily;
+    if (!daily || !daily.temperature_2m_max || daily.temperature_2m_max.length < 2) return null;
+
+    const weatherCodeMap = {
+      0: '快晴', 1: '晴れ', 2: '晴れ時々くもり', 3: 'くもり',
+      45: '霧', 48: '霧', 51: '小雨', 53: '雨', 55: '雨',
+      56: '凍雨', 57: '凍雨', 61: '小雨', 63: '雨', 65: '大雨',
+      66: '凍雨', 67: '凍雨', 71: '小雪', 73: '雪', 75: '大雪',
+      77: '霰', 80: 'にわか雨', 81: 'にわか雨', 82: '激しい雨',
+      85: 'にわか雪', 86: 'にわか雪', 95: '雷雨', 96: '雷雨', 99: '雷雨',
+    };
+
+    const code = daily.weather_code?.[1];
+    return {
+      weather: weatherCodeMap[code] || 'くもり',
+      tempHigh: String(Math.round(daily.temperature_2m_max[1])),
+      tempLow: String(Math.round(daily.temperature_2m_min[1])),
+      rain: String(daily.precipitation_probability_max?.[1] ?? 0) + '%',
+    };
+  } catch (err) {
+    console.error('Tomorrow forecast fetch error:', err);
+    return null;
+  }
+}
+
+/**
  * 前の版の記事タイトル一覧をKVから取得（重複排除用）
  */
 async function getPreviousEditionTitles(kvCache, edition) {
@@ -792,6 +830,22 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
   if (edition === 'evening') {
     // 夕刊: weatherFashionを削除してフロント側で非表示にする
     delete newspaper.weatherFashion;
+    // 夕刊: 明日の予報コーナー用データを取得
+    try {
+      const tomorrowData = await fetchTomorrowForecast(lat, lon);
+      if (tomorrowData) {
+        newspaper.tomorrowForecast = {
+          title: '明日の予報',
+          area: areaName.replace(/エリア$/, ''),
+          weather: tomorrowData.weather,
+          tempHigh: tomorrowData.tempHigh,
+          tempLow: tomorrowData.tempLow,
+          rain: tomorrowData.rain,
+        };
+      }
+    } catch (err) {
+      console.error('Tomorrow forecast fetch failed:', err);
+    }
   } else {
     try {
       const weatherData = await fetchWeatherData(lat, lon);
@@ -1154,6 +1208,15 @@ async function handleRequest(request, env) {
     return jsonResponse(result, status, request);
   }
 
+  // ===== 号外: 公開取得 (認証不要) =====
+  const breakingMatch = path.match(/^\/api\/breaking\/([^/]+)$/);
+  if (breakingMatch && request.method === 'GET') {
+    const result = await handleBreakingGet(breakingMatch[1], env);
+    const status = result._status || 200;
+    delete result._status;
+    return jsonResponse(result, status, request);
+  }
+
   // ===== Admin API: 以下はJWT認証必須 =====
   if (path.startsWith('/api/admin/')) {
     const isAdmin = await requireAdmin(request, env);
@@ -1275,6 +1338,20 @@ async function handleRequest(request, env) {
     // GET /api/admin/announcements — お知らせ履歴
     if (path === '/api/admin/announcements' && request.method === 'GET') {
       const result = await handleAnnouncementList(env);
+      return jsonResponse(result, 200, request);
+    }
+
+    // POST /api/admin/breaking — 号外発行
+    if (path === '/api/admin/breaking' && request.method === 'POST') {
+      const result = await handleBreaking(request, env);
+      const status = result._status || 200;
+      delete result._status;
+      return jsonResponse(result, status, request);
+    }
+
+    // GET /api/admin/breaking/list — 号外履歴
+    if (path === '/api/admin/breaking/list' && request.method === 'GET') {
+      const result = await handleBreakingList(env);
       return jsonResponse(result, 200, request);
     }
 

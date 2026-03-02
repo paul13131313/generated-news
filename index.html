@@ -478,26 +478,27 @@
   /* ===== TOP ARTICLE ===== */
   .top-article {
     padding: 20px 0 18px;
-    border-bottom: 2px solid var(--rule);
+    border-bottom: 3px double var(--rule);
   }
 
   .kicker {
     font-family: var(--font-gothic);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--accent);
-    letter-spacing: 0.12em;
-    margin-bottom: 8px;
+    letter-spacing: 0.15em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
   }
 
   .top-headline {
     font-family: var(--font-mincho);
-    font-weight: 800;
-    font-size: 30px;
-    line-height: 1.35;
+    font-weight: 900;
+    font-size: 34px;
+    line-height: 1.3;
     letter-spacing: -0.02em;
-    margin-bottom: 6px;
-    min-height: 2.7em;
+    margin-bottom: 8px;
+    min-height: 2.6em;
   }
 
   .top-sub {
@@ -566,11 +567,15 @@
     padding: 22px 0 14px;
   }
   .sec-rule::before, .sec-rule::after {
-    content: ''; flex: 1; height: 1px; background: var(--rule);
+    content: ''; flex: 1; height: 0;
+    border-top: 2px solid var(--rule);
+    border-bottom: 1px solid var(--rule-light);
+    padding-top: 2px;
   }
   .sec-rule span {
     font-family: var(--font-mincho);
-    font-size: 14px; font-weight: 700; letter-spacing: 0.2em;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.25em;
+    white-space: nowrap;
   }
 
   /* ===== DUO STORIES ===== */
@@ -578,7 +583,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid var(--rule);
-    padding-bottom: 16px;
+    border-top: 1px solid var(--rule-light);
+    padding: 14px 0 16px;
   }
   .duo-item { padding: 0 12px; }
   .duo-item:first-child { padding-left: 0; }
@@ -885,6 +891,89 @@
     margin: 0;
   }
 
+  /* ===== 明日の予報（夕刊のみ） ===== */
+  .tomorrow-block {
+    margin: 24px 0 0;
+    padding: 0;
+    border-top: 2px solid var(--rule);
+  }
+  .tomorrow-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .tomorrow-title {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+  }
+  .tomorrow-area {
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--caption);
+  }
+  .tomorrow-body {
+    padding: 12px 0;
+  }
+  .tomorrow-weather {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: var(--font-gothic);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .tomorrow-icon {
+    font-size: 22px;
+  }
+  .tomorrow-desc {
+    font-weight: 600;
+  }
+  .tomorrow-temps {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 18px;
+  }
+  .tomorrow-temps small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--caption);
+  }
+  .tomorrow-rain {
+    font-size: 12px;
+    color: var(--caption);
+  }
+  .tomorrow-events {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--rule-light);
+  }
+  .tomorrow-event-item {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    color: var(--ink);
+    padding: 3px 0;
+    line-height: 1.5;
+  }
+  .tomorrow-event-item::before {
+    content: '▸ ';
+    color: var(--caption);
+  }
+  .tomorrow-message {
+    font-family: var(--font-mincho);
+    font-size: 13px;
+    color: var(--caption);
+    padding: 8px 10px;
+    border-top: 1px solid var(--rule-light);
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
   /* ===== ご近所情報 ===== */
   .local-block {
     margin: 24px 0 0;
@@ -1008,38 +1097,46 @@
     line-height: 1.7;
   }
 
-  /* ===== FOOTER ===== */
+  /* ===== FOOTER (奥付) ===== */
   footer {
-    padding: 24px 16px;
+    padding: 20px 16px 24px;
     text-align: center;
-    border-top: 3px solid var(--rule);
+    border-top: 2px solid var(--rule);
     margin-top: 16px;
+  }
+  footer::before {
+    content: '';
+    display: block;
+    border-top: 1px solid var(--rule-light);
+    margin-bottom: 20px;
+    margin-top: -18px;
   }
   footer .f-logo {
     font-family: var(--font-mincho);
-    font-weight: 800; font-size: 18px;
-    letter-spacing: 0.3em; margin-right: -0.3em;
+    font-weight: 900; font-size: 20px;
+    letter-spacing: 0.35em; margin-right: -0.35em;
   }
   footer .f-tagline {
     font-family: var(--font-mincho);
-    font-size: 14px; color: var(--caption);
-    margin-top: 6px; letter-spacing: 0.06em;
+    font-size: 13px; color: var(--caption);
+    margin-top: 6px; letter-spacing: 0.08em;
   }
   footer .f-edition-info {
     font-family: var(--font-gothic);
-    font-size: 11px; color: var(--caption);
-    margin-top: 10px; letter-spacing: 0.04em;
+    font-size: 10px; color: var(--caption);
+    margin-top: 12px; letter-spacing: 0.06em;
     line-height: 1.8;
   }
   footer .f-stamp {
     display: inline-flex; align-items: center; gap: 6px;
-    margin-top: 14px; padding: 5px 14px;
-    border: 1px solid var(--rule-light);
+    margin-top: 14px; padding: 4px 16px;
+    border: 1px solid var(--rule);
     font-family: var(--font-gothic);
-    font-size: 10px; color: var(--caption); letter-spacing: 0.12em;
+    font-size: 9px; color: var(--caption); letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
   footer .f-dot {
-    width: 6px; height: 6px; border-radius: 50%;
+    width: 5px; height: 5px; border-radius: 50%;
     background: var(--accent);
     animation: pulse 2s ease-in-out infinite;
   }
@@ -1167,6 +1264,68 @@
   body.evening-edition footer {
     border-top-color: #d4c9b0;
   }
+
+  /* ===== 号外モード ===== */
+  .breaking-banner {
+    display: none;
+    background: #b91c1c;
+    color: #fff;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .breaking-banner a {
+    color: #fca5a5;
+    margin-left: 12px;
+    text-decoration: underline;
+  }
+  body.breaking-mode .masthead-top .edition-toggle { display: none; }
+  body.breaking-mode .ticker { display: none; }
+  body.breaking-mode .content > *:not(.breaking-article) { display: none; }
+  body.breaking-mode footer .gen-art-section { display: none; }
+
+  .breaking-label {
+    display: inline-block;
+    background: #b91c1c;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    padding: 6px 24px;
+    margin-bottom: 16px;
+    border: 3px solid #b91c1c;
+  }
+  .breaking-article {
+    padding: 30px 20px;
+  }
+  .breaking-article .breaking-headline {
+    font-family: "Hiragino Mincho ProN", "游明朝", serif;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+  }
+  .breaking-article .breaking-summary {
+    font-size: 17px;
+    line-height: 1.9;
+    color: #333;
+    margin-bottom: 16px;
+  }
+  .breaking-article .breaking-source {
+    font-size: 13px;
+    color: #888;
+  }
+  .breaking-article .breaking-time {
+    font-size: 13px;
+    color: #888;
+    margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -1235,6 +1394,12 @@
 <div class="invite-overlay" id="inviteOverlay" onclick="if(event.target===this)closeInviteModal()">...</div>
 -->
 
+<!-- 号外バナー -->
+<div class="breaking-banner" id="breakingBanner">
+  【号外】速報ニュースをお届けしています
+  <a href="./index.html">通常の紙面に戻る</a>
+</div>
+
 <!-- MASTHEAD -->
 <header class="masthead gen-animate">
   <div class="masthead-top">
@@ -1260,6 +1425,15 @@
 </div>
 
 <main class="content">
+
+  <!-- 号外記事（通常は非表示） -->
+  <div class="breaking-article" id="breakingArticle" style="display:none;">
+    <div class="breaking-label">号 外</div>
+    <h2 class="breaking-headline" id="breakingHeadline"></h2>
+    <p class="breaking-summary" id="breakingSummary"></p>
+    <p class="breaking-source" id="breakingSource"></p>
+    <p class="breaking-time" id="breakingTime"></p>
+  </div>
 
   <!-- TOP ARTICLE -->
   <article class="top-article gen-animate">
@@ -1332,6 +1506,24 @@
   <!-- 7. ネットで話題（はてブホットエントリ） -->
   <div class="corner-block gen-animate" id="snsTrendBlock" style="display:none;">
     <div class="corner-body" id="snsTrendBody"></div>
+  </div>
+
+  <!-- 8. 明日の予報（夕刊のみ） -->
+  <div class="tomorrow-block gen-animate" id="tomorrowBlock" style="display:none;">
+    <div class="tomorrow-head">
+      <span class="tomorrow-title">明日の予報</span>
+      <span class="tomorrow-area" id="tomorrowArea"></span>
+    </div>
+    <div class="tomorrow-body">
+      <div class="tomorrow-weather">
+        <span class="tomorrow-icon" id="tomorrowIcon"></span>
+        <span class="tomorrow-desc" id="tomorrowDesc"></span>
+        <span class="tomorrow-temps" id="tomorrowTemps"></span>
+        <span class="tomorrow-rain" id="tomorrowRain"></span>
+      </div>
+      <div class="tomorrow-events" id="tomorrowEvents"></div>
+    </div>
+    <div class="tomorrow-message" id="tomorrowMessage"></div>
   </div>
 
   <!-- 9. 数字で読む -->
@@ -2037,15 +2229,17 @@ function renderNewspaper(data) {
   renderNumbers(data);
 
   if (isEvening) {
-    // 夕刊: SNSトレンド表示、ご近所は非表示
+    // 夕刊: SNSトレンド表示、ご近所は非表示、明日の予報表示
     renderSnsTrend(data.snsTrend);
+    renderTomorrowForecast(data.tomorrowForecast);
     const localBlock = document.getElementById('localNewsBlock');
     if (localBlock) localBlock.style.display = 'none';
   } else {
-    // 朝刊: ご近所表示、SNSトレンドは非表示
+    // 朝刊: ご近所表示、SNSトレンド・明日の予報は非表示
     renderLocalNews(data.localNews);
     const snsBlock = document.getElementById('snsTrendBlock');
     if (snsBlock) snsBlock.style.display = 'none';
+    document.getElementById('tomorrowBlock').style.display = 'none';
   }
 
 
@@ -2513,6 +2707,38 @@ function renderWeatherFashion(wf) {
   document.getElementById('weatherItems').innerHTML = items.map(item => `<span>${item}</span>`).join('');
 }
 
+function renderTomorrowForecast(tf) {
+  const block = document.getElementById('tomorrowBlock');
+  if (!tf) {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = '';
+
+  if (tf.area) document.getElementById('tomorrowArea').textContent = tf.area;
+  document.getElementById('tomorrowIcon').textContent = getWeatherIcon(tf.weather);
+  document.getElementById('tomorrowDesc').textContent = tf.weather || '';
+  document.getElementById('tomorrowTemps').innerHTML = `${tf.tempHigh || '─'}<small>℃</small> / ${tf.tempLow || '─'}<small>℃</small>`;
+  document.getElementById('tomorrowRain').textContent = tf.rain ? `☂ ${tf.rain}` : '';
+
+  const eventsEl = document.getElementById('tomorrowEvents');
+  const events = tf.events || [];
+  if (events.length > 0) {
+    eventsEl.innerHTML = events.map(e => `<div class="tomorrow-event-item">${e}</div>`).join('');
+    eventsEl.style.display = '';
+  } else {
+    eventsEl.style.display = 'none';
+  }
+
+  const msgEl = document.getElementById('tomorrowMessage');
+  if (tf.message) {
+    msgEl.textContent = tf.message;
+    msgEl.style.display = '';
+  } else {
+    msgEl.style.display = 'none';
+  }
+}
+
 function renderCulture(culture) {
   const block = document.getElementById('cultureBlock');
   const bodyEl = document.getElementById('cultureBody');
@@ -2671,9 +2897,34 @@ function switchEdition(ed) {
     openInviteModal();
   }
 
+  // 号外モード: ?breaking=ID がURLにある場合
+  const breakingId = new URLSearchParams(window.location.search).get('breaking');
+  if (breakingId) {
+    document.body.classList.add('breaking-mode');
+    const banner = document.getElementById('breakingBanner');
+    if (banner) banner.style.display = 'block';
+    fetch(`https://news-generator.hiroshinagano0113.workers.dev/api/breaking/${breakingId}`)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        document.getElementById('breakingArticle').style.display = 'block';
+        document.getElementById('breakingHeadline').textContent = data.headline || '';
+        document.getElementById('breakingSummary').textContent = data.summary || '';
+        if (data.source) document.getElementById('breakingSource').textContent = '出典: ' + data.source;
+        if (data.issuedAt) {
+          const dt = new Date(data.issuedAt);
+          document.getElementById('breakingTime').textContent =
+            `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日 ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')} 配信`;
+        }
+        // 号外モードでは通常紙面のレンダリングをスキップ
+        newspaperData = FALLBACK;
+      })
+      .catch(err => { console.warn('Breaking fetch failed:', err); newspaperData = FALLBACK; })
+      .finally(() => { apiDone = true; tryReveal(); });
+  }
+
   // 見本紙モード: ?sample=ID がURLにある場合
   const sampleId = new URLSearchParams(window.location.search).get('sample');
-  if (sampleId) {
+  if (!breakingId && sampleId) {
     // 見本紙バナーを表示
     const banner = document.getElementById('sampleBanner');
     if (banner) banner.style.display = 'flex';
@@ -2686,7 +2937,7 @@ function switchEdition(ed) {
       .then(data => { newspaperData = data.newspaper; })
       .catch(err => { console.warn('Sample fetch failed:', err); newspaperData = FALLBACK; })
       .finally(() => { apiDone = true; tryReveal(); });
-  } else {
+  } else if (!breakingId) {
     // 通常モード: Start API fetch immediately with detected edition
     // API側にフォールバックロジックがあるため、フロントはシンプルにリクエスト
     fetchNewspaper(initialEdition).then(result => {
