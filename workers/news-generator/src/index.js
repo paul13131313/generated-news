@@ -360,29 +360,12 @@ async function fetchCultureNews(areaName = '') {
       return true;
     });
 
-    // ソース多様化: 各ソースから最大1件ずつ選び、3件ちょうどに
-    const seenSource = new Set();
-    const diverse = [];
-    for (const a of deduped) {
-      if (seenSource.has(a.sourceName)) continue;
-      seenSource.add(a.sourceName);
-      diverse.push(a);
-      if (diverse.length >= 3) break;
-    }
-    // 3件に満たない場合は残りから補充
-    if (diverse.length < 3) {
-      for (const a of deduped) {
-        if (diverse.includes(a)) continue;
-        diverse.push(a);
-        if (diverse.length >= 3) break;
-      }
-    }
-
-    if (diverse.length === 0) return null;
+    // 全候補を返す（呼び出し元で前版との重複除外後に3件に絞る）
+    if (deduped.length === 0) return null;
 
     return {
       title: '催事',
-      items: diverse.map(a => ({
+      items: deduped.map(a => ({
         type: a.sourceCategory,
         title: a.title,
         description: a.summary ? a.summary.slice(0, 30) : '',
@@ -745,7 +728,7 @@ async function getPreviousCornerUrls(kvCache, edition) {
 /**
  * 紙面を生成
  */
-async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35.6895, lon = 139.6917) {
+async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35.6461, lon = 139.7100) {
   // 1. ニュース取得
   const articles = await fetchNews(50);
   if (articles.length === 0) {
@@ -834,14 +817,31 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
     console.error('Hatena hot entries fetch failed:', err);
   }
 
-  // 10. 催事 → 文化ニュースRSSから実データで上書き（前の版と重複するURLを除外）
+  // 10. 催事 → 文化ニュースRSSから実データで上書き（前の版と重複するURLを除外 → ソース多様化 → 3件選択）
   try {
     const geoAreaForCulture = geoResult?.broader || geoResult?.area || '';
     const cultureData = await fetchCultureNews(geoAreaForCulture);
     if (cultureData && cultureData.items.length > 0) {
+      // 前の版と重複するURLを除外
       const dedupedItems = cultureData.items.filter(item => !prevCultureUrls.has(item.url));
       if (dedupedItems.length > 0) {
-        newspaper.culture = { ...cultureData, items: dedupedItems };
+        // ソース多様化: 各ソースから最大1件ずつ選び、3件に絞る
+        const seenSource = new Set();
+        const diverse = [];
+        for (const a of dedupedItems) {
+          if (seenSource.has(a.sourceName)) continue;
+          seenSource.add(a.sourceName);
+          diverse.push(a);
+          if (diverse.length >= 3) break;
+        }
+        if (diverse.length < 3) {
+          for (const a of dedupedItems) {
+            if (diverse.includes(a)) continue;
+            diverse.push(a);
+            if (diverse.length >= 3) break;
+          }
+        }
+        newspaper.culture = { ...cultureData, items: diverse };
       } else {
         newspaper.culture = {
           title: '催事・展覧会',
@@ -998,7 +998,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
 /**
  * 紙面を生成してKVにキャッシュ
  */
-async function generateAndCache(env, edition, lat = 35.6895, lon = 139.6917) {
+async function generateAndCache(env, edition, lat = 35.6461, lon = 139.7100) {
   const startTime = Date.now();
   const result = await generateNewspaper(env.CLAUDE_API_KEY, edition, env.UNSPLASH_ACCESS_KEY, env.NEWSPAPER_CACHE, lat, lon);
   const elapsed = Date.now() - startTime;
