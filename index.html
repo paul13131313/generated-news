@@ -1102,12 +1102,7 @@
 </head>
 <body>
 
-<!-- SAMPLE BANNER（見本紙モード時のみ表示） -->
-<div id="sampleBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-family:'Noto Serif JP',serif;display:none;align-items:center;justify-content:center;gap:12px;">
-  <span style="background:#fff;color:#b91c1c;font-weight:700;font-size:11px;padding:2px 8px;border-radius:2px;">見本紙</span>
-  <span>これは見本紙です。毎朝・毎夕、あなただけの新聞をお届けします。</span>
-  <a href="lp.html" style="background:#fff;color:#b91c1c;font-weight:700;font-size:12px;padding:4px 14px;border-radius:2px;text-decoration:none;white-space:nowrap;">無料で購読する</a>
-</div>
+<!-- [REMOVED: ログイン不要化] 見本紙バナーは不要 -->
 
 <!-- SUBSCRIBE TOAST -->
 <div class="subscribe-toast" id="subscribeToast">
@@ -1129,8 +1124,8 @@
   </ul>
 </div>
 
-<!-- PROFILE MODAL -->
-<div class="profile-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
+<!-- [DISABLED: ログイン不要化] PROFILE MODAL — 将来的に復活の可能性あり -->
+<div class="profile-overlay" id="profileOverlay" style="display:none" onclick="if(event.target===this)closeProfile()">
   <div class="profile-modal">
     <button class="profile-modal-close" onclick="closeProfile()">&times;</button>
     <div class="profile-title">関心プロファイル</div>
@@ -1306,6 +1301,8 @@ function getPushToggleHtml() {
   return '<span class="push-toggle-wrap" onclick="togglePushSubscription()" id="pushToggle"><span class="push-toggle-label">通知</span><span class="push-toggle-track' + onClass + '"><span class="push-toggle-thumb"></span></span></span>';
 }
 
+// [DISABLED: ログイン不要化] メール通知トグルはログイン前提のため一時非表示
+/*
 function getEmailToggleHtml() {
   const onClass = _emailNotifyActive ? ' on' : '';
   return '<span class="push-toggle-wrap" onclick="toggleEmailNotify()" id="emailToggle"><span class="push-toggle-label">メール</span><span class="push-toggle-track' + onClass + '"><span class="push-toggle-thumb"></span></span></span>';
@@ -1330,6 +1327,7 @@ async function toggleEmailNotify() {
     console.error('Email notify toggle failed:', e);
   }
 }
+*/
 // Check actual push subscription state on load
 if ('serviceWorker' in navigator && 'PushManager' in window) {
   navigator.serviceWorker.ready.then(function(reg) {
@@ -1342,33 +1340,18 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 
 function updateUserBar() {
   const bar = document.getElementById('userBar');
-  const email = localStorage.getItem('auth_email');
-
-  if (email) {
-    // 認証ユーザー
-    const pushToggle = getPushToggleHtml();
-    const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
-    const emailToggle = getEmailToggleHtml();
-    const emailPart = '<span class="user-bar-sep">|</span>' + emailToggle;
-    // 位置情報の表示
-    const loc = JSON.parse(localStorage.getItem('user_location') || 'null');
-    const locLabel = loc ? (loc.area_name || loc.prefecture || '設定済み') : '未設定';
-    const locPart = '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="openLocationMenu()" title="お届け地域: ' + escapeForDisplay(locLabel) + '">地域: ' + escapeForDisplay(locLabel) + '</span>';
-    bar.innerHTML = '<span class="user-bar-email">' + email + '</span>' +
-      '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="openProfile()">関心設定</span>' +
-      locPart +
-      pushPart +
-      emailPart +
-      '<span class="user-bar-sep">|</span>' +
-      '<span class="user-bar-link" onclick="handleLogoutIndex()">ログアウト</span>';
-  } else {
-    // 未認証
-    bar.innerHTML = '<a class="user-bar-link" href="lp.html">ログイン / 新規登録</a>';
-  }
+  // ログイン不要化: 位置情報と通知トグルのみ表示
+  const pushToggle = getPushToggleHtml();
+  const pushPart = pushToggle ? '<span class="user-bar-sep">|</span>' + pushToggle : '';
+  const loc = JSON.parse(localStorage.getItem('user_location') || 'null');
+  const locLabel = loc ? (loc.area_name || loc.prefecture || '設定済み') : '未設定';
+  bar.innerHTML =
+    '<span class="user-bar-link" onclick="openLocationMenu()" title="お届け地域: ' + escapeForDisplay(locLabel) + '">地域: ' + escapeForDisplay(locLabel) + '</span>' +
+    pushPart;
 }
 
+// [DISABLED: ログイン不要化] handleLogoutIndex は不要
+/*
 function handleLogoutIndex() {
   const token = localStorage.getItem('auth_token');
   if (token) {
@@ -1381,8 +1364,7 @@ function handleLogoutIndex() {
   localStorage.removeItem('auth_email');
   updateUserBar();
 }
-
-// [DISABLED: 課金停止中] handleInviteLogout は無料化に伴い不要
+*/
 
 // ===== WEB PUSH 通知 =====
 async function togglePushSubscription() {
@@ -1453,6 +1435,8 @@ async function togglePushSubscription() {
   }
 }
 
+// [DISABLED: ログイン不要化] 関心プロファイル機能は将来的に復活の可能性があるためコメントアウト
+/*
 // ===== PROFILE MODAL =====
 const ALL_CATEGORIES = ['総合', 'テクノロジー', '国際', '経済', '社会', '政治', 'スポーツ', 'エンタメ', '文化', '暮らし'];
 let profileCategories = [];
@@ -1461,17 +1445,12 @@ let profileKeywords = [];
 function openProfile() {
   const token = localStorage.getItem('auth_token');
   if (!token) return;
-
   const overlay = document.getElementById('profileOverlay');
   const msg = document.getElementById('profileMsg');
   msg.textContent = '';
   msg.className = 'profile-msg';
-
-  // カテゴリボタン生成
   renderCategoryButtons();
   renderKeywordTags();
-
-  // サーバーからプロファイル取得
   fetch(AUTH_API + '/api/profile', {
     headers: { 'Authorization': 'Bearer ' + token },
   }).then(r => r.json()).then(data => {
@@ -1482,7 +1461,6 @@ function openProfile() {
       renderKeywordTags();
     }
   }).catch(() => {});
-
   overlay.classList.add('show');
 }
 
@@ -1525,25 +1503,22 @@ function removeKeyword(idx) {
   profileKeywords.splice(idx, 1);
   renderKeywordTags();
 }
+*/
 
+/*
 async function saveProfile() {
   const token = localStorage.getItem('auth_token');
   if (!token) return;
-
   const btn = document.getElementById('profileSave');
   const msg = document.getElementById('profileMsg');
   btn.disabled = true;
   btn.textContent = '保存中...';
   msg.textContent = '';
   msg.className = 'profile-msg';
-
   try {
     const res = await fetch(AUTH_API + '/api/profile', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ categories: profileCategories, keywords: profileKeywords }),
     });
     const data = await res.json();
@@ -1562,6 +1537,7 @@ async function saveProfile() {
   btn.disabled = false;
   btn.textContent = '保存する';
 }
+*/
 
 // [DISABLED: 課金停止中] 解約・招待パス機能は無料化に伴い停止
 const PAYMENT_API = 'https://payment-api.hiroshinagano0113.workers.dev';
@@ -1581,9 +1557,21 @@ async function submitInvite() { ... }
 // 一時変数: 郵便番号検索結果を保持
 let _postalGeoData = null;
 
+// デフォルト位置情報（東京都渋谷区）
+const DEFAULT_LOCATION = {
+  lat: 35.6461,
+  lng: 139.7100,
+  area_name: '渋谷区',
+  prefecture: '東京都',
+  postal_code: '150-0002',
+  source: 'default',
+};
+
 /**
- * 位置情報を初期化（Geolocation API → 失敗時は郵便番号モーダル表示）
- * 認証済みユーザーのみ実行
+ * 位置情報を初期化
+ * ①localStorageにあればそれを使用（バックグラウンドで更新チェック）
+ * ②なければGeolocation APIを試行（バックグラウンド）
+ * ③拒否/タイムアウト → デフォルト地域で即表示（モーダルは出さない）
  */
 function initLocation() {
   const existing = localStorage.getItem('user_location');
@@ -1592,13 +1580,15 @@ function initLocation() {
     tryUpdateLocation();
     return;
   }
-  // 位置情報がない → Geolocation APIを試行
+  // 位置情報がない → Geolocation APIをバックグラウンドで試行
   requestGeolocation();
 }
 
 function requestGeolocation() {
   if (!navigator.geolocation) {
-    openPostalModal();
+    // Geolocation非対応 → デフォルト地域で即表示
+    saveLocation({ ...DEFAULT_LOCATION });
+    updateUserBar();
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -1628,10 +1618,12 @@ function requestGeolocation() {
         console.warn('Nominatim reverse geocode failed:', e);
       }
       saveLocation(loc);
+      updateUserBar();
     },
     () => {
-      // 位置情報拒否 → 郵便番号モーダル表示
-      openPostalModal();
+      // 位置情報拒否 → デフォルト地域で即表示（モーダルは出さない）
+      saveLocation({ ...DEFAULT_LOCATION });
+      updateUserBar();
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
   );
@@ -1679,19 +1671,10 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * 位置情報をlocalStorage + payment-api に保存
+ * 位置情報をlocalStorageに保存
  */
 function saveLocation(loc) {
   localStorage.setItem('user_location', JSON.stringify(loc));
-  // サーバーにも保存（非同期、エラーは無視）
-  const email = localStorage.getItem('auth_email');
-  if (email) {
-    fetch(PAYMENT_API + '/api/location', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, location: loc }),
-    }).catch(() => {});
-  }
 }
 
 // ===== POSTAL CODE MODAL =====
@@ -1744,12 +1727,34 @@ async function lookupPostalCode(zipcode) {
     resultEl.textContent = fullAddress;
     resultEl.className = 'postal-result found';
 
-    // 2. Nominatimで緯度経度を正引き
-    const geoRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullAddress)}&format=json&limit=1&accept-language=ja`,
-      { headers: { 'User-Agent': 'GeneratedNews/1.0' } }
-    );
-    const geoResults = await geoRes.json();
+    // 2. Nominatimで緯度経度を正引き（構造化クエリ + countrycodes で精度向上）
+    let geoResults = [];
+
+    // 2a. まず構造化クエリで検索（town=区+町域、state=都道府県で精度を上げる）
+    const structuredUrl = `https://nominatim.openstreetmap.org/search?` +
+      `city=${encodeURIComponent(addr.address2)}` +
+      `&state=${encodeURIComponent(addr.address1)}` +
+      (addr.address3 ? `&street=${encodeURIComponent(addr.address3)}` : '') +
+      `&countrycodes=jp&format=json&limit=1&accept-language=ja`;
+    const geoRes1 = await fetch(structuredUrl, { headers: { 'User-Agent': 'GeneratedNews/1.0' } });
+    geoResults = await geoRes1.json();
+
+    // 2b. 構造化クエリで見つからなければ、自由テキスト + countrycodes で再検索
+    if (geoResults.length === 0) {
+      const freeUrl = `https://nominatim.openstreetmap.org/search?` +
+        `q=${encodeURIComponent(fullAddress)}&countrycodes=jp&format=json&limit=1&accept-language=ja`;
+      const geoRes2 = await fetch(freeUrl, { headers: { 'User-Agent': 'GeneratedNews/1.0' } });
+      geoResults = await geoRes2.json();
+    }
+
+    // 2c. それでも見つからなければ、郵便番号で直接検索
+    if (geoResults.length === 0) {
+      const postalUrl = `https://nominatim.openstreetmap.org/search?` +
+        `postalcode=${zipcode}&countrycodes=jp&format=json&limit=1&accept-language=ja`;
+      const geoRes3 = await fetch(postalUrl, { headers: { 'User-Agent': 'GeneratedNews/1.0' } });
+      geoResults = await geoRes3.json();
+    }
+
     if (geoResults.length > 0) {
       _postalGeoData = {
         lat: parseFloat(geoResults[0].lat),
@@ -1759,6 +1764,7 @@ async function lookupPostalCode(zipcode) {
         postal_code: zipcode.slice(0,3) + '-' + zipcode.slice(3),
         source: 'postal_code',
       };
+      console.log('Postal geocode result:', fullAddress, '→', _postalGeoData.lat, _postalGeoData.lng);
       submitBtn.disabled = false;
     } else {
       resultEl.textContent = fullAddress + '（座標の取得に失敗しました。スキップしてください）';
@@ -1841,51 +1847,10 @@ function skipPostalCode() {
   closePostalModal();
 }
 
-// セッション検証
+// ログイン不要化: 位置情報ベースで即紙面表示
 (function() {
-  const token = localStorage.getItem('auth_token');
-  const isInvite = localStorage.getItem('invite_user') === 'true';
-
-  if (token) {
-    // 認証ユーザー
-    fetch(AUTH_API + '/api/me', {
-      headers: { 'Authorization': 'Bearer ' + token },
-    }).then(r => r.json()).then(data => {
-      if (!data.authenticated) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_email');
-      } else {
-        // 認証成功 → 位置情報を初期化
-        initLocation();
-        // メール通知設定を読み込み
-        const authEmail = localStorage.getItem('auth_email');
-        if (authEmail) {
-          fetch(PAYMENT_API + '/api/subscriber/' + encodeURIComponent(authEmail))
-            .then(r => r.json())
-            .then(subData => {
-              if (subData.email_notify !== undefined) {
-                _emailNotifyActive = subData.email_notify;
-              }
-              // サーバーに保存された位置情報があればlocalStorageに反映
-              if (subData.location && !localStorage.getItem('user_location')) {
-                localStorage.setItem('user_location', JSON.stringify(subData.location));
-              }
-              updateUserBar();
-            }).catch(() => updateUserBar());
-          return;
-        }
-      }
-      updateUserBar();
-    }).catch(() => updateUserBar());
-  } else {
-    // 未認証 → LPにリダイレクト（見本紙パラメータは除外）
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('sample')) {
-      window.location.href = 'lp.html';
-      return;
-    }
-    updateUserBar();
-  }
+  initLocation();
+  updateUserBar();
 })();
 
 // ===== FALLBACK DATA =====

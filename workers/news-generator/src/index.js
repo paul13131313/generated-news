@@ -1093,25 +1093,25 @@ async function handleRequest(request, env) {
       }
       console.log(`Cache miss: ${cacheKey}`);
 
-      // フォールバック: 該当版がなければ反対の版を返す（生成はしない）
-      const fallbackEdition = edition === 'morning' ? 'evening' : 'morning';
-      const fallbackKey = getCacheKey(fallbackEdition);
-      const fallbackData = await env.NEWSPAPER_CACHE.get(fallbackKey);
-      if (fallbackData) {
-        console.log(`Fallback cache hit: ${fallbackKey}`);
-        const parsed = JSON.parse(fallbackData);
-        return jsonResponse(parsed, 200, request);
-      }
-
-      // 前日の反対版も試す（日付をまたいだ直後のケース）
+      // フォールバック: 深夜0時を過ぎてキャッシュキーが変わった場合に対応
+      // 優先順: ①前日の同版 → ②当日の反対版 → ③前日の反対版
       const yesterday = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
       const yesterdayStr = yesterday.toISOString().slice(0, 10);
-      const yesterdayKey = `${fallbackEdition}-${yesterdayStr}`;
-      const yesterdayData = await env.NEWSPAPER_CACHE.get(yesterdayKey);
-      if (yesterdayData) {
-        console.log(`Yesterday fallback cache hit: ${yesterdayKey}`);
-        const parsed = JSON.parse(yesterdayData);
-        return jsonResponse(parsed, 200, request);
+      const fallbackEdition = edition === 'morning' ? 'evening' : 'morning';
+
+      const fallbackKeys = [
+        `${edition}-${yesterdayStr}`,          // ①前日の同版（最も適切）
+        `${fallbackEdition}-${getJstDateString()}`, // ②当日の反対版
+        `${fallbackEdition}-${yesterdayStr}`,  // ③前日の反対版
+      ];
+
+      for (const fbKey of fallbackKeys) {
+        const fbData = await env.NEWSPAPER_CACHE.get(fbKey);
+        if (fbData) {
+          console.log(`Fallback cache hit: ${fbKey}`);
+          const parsed = JSON.parse(fbData);
+          return jsonResponse(parsed, 200, request);
+        }
       }
     }
 
