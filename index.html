@@ -11,14 +11,14 @@
 <meta http-equiv="Expires" content="0">
 <title>生成新聞 — 第〇〇七号</title>
 <meta name="description" content="AIがあなただけの朝刊・夕刊を毎日届ける、生成AIによるパーソナライズド新聞。">
-<meta property="og:title" content="生成新聞 — あなたの関心から、生まれる新聞。">
+<meta property="og:title" content="生成新聞 — あなたの街から、生まれる新聞。">
 <meta property="og:description" content="AIがあなただけの朝刊・夕刊を毎日届ける、生成AIによるパーソナライズド新聞。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://seiseishinbun.com/">
 <meta property="og:image" content="https://seiseishinbun.com/ogp.png">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="生成新聞 — あなたの関心から、生まれる新聞。">
+<meta name="twitter:title" content="生成新聞 — あなたの街から、生まれる新聞。">
 <meta name="twitter:description" content="AIがあなただけの朝刊・夕刊を毎日届ける、生成AIによるパーソナライズド新聞。">
 <meta name="twitter:image" content="https://seiseishinbun.com/ogp.png">
 <meta name="theme-color" content="#111111">
@@ -776,27 +776,20 @@
   /* ===== 天気と服装 ===== */
   .weather-block {
     margin: 24px 0 0;
-    padding: 20px 0 16px;
+    padding: 0;
     border-top: 2px solid var(--rule);
   }
-  .weather-header {
+  .weather-head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--rule-light);
-    gap: 16px;
-  }
-  .weather-title-row {
-    display: flex;
     align-items: baseline;
-    gap: 10px;
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--rule-light);
   }
   .weather-title {
     font-family: var(--font-mincho);
     font-weight: 800;
-    font-size: 18px;
+    font-size: 16px;
     letter-spacing: 0.15em;
     color: var(--ink);
   }
@@ -807,58 +800,89 @@
     letter-spacing: 0.08em;
     color: var(--caption);
   }
-  .weather-data {
-    text-align: left;
-    margin-top: 6px;
+  .weather-body {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    gap: 0;
   }
-  .weather-data-temp {
-    font-family: var(--font-mincho);
-    font-weight: 800;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--ink);
+  .weather-icon-col {
+    text-align: center;
+    min-width: 72px;
+    padding-right: 14px;
+    border-right: 1px solid var(--rule-light);
+  }
+  .weather-icon {
+    font-size: 32px;
     line-height: 1;
   }
-  .weather-data-temp small {
-    font-size: 16px;
-    font-weight: 400;
+  .weather-desc {
+    font-family: var(--font-gothic);
+    font-size: 11px;
     color: var(--caption);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
   }
-  .weather-data-detail {
+  .weather-data-col {
+    padding-left: 14px;
+    flex: 1;
+  }
+  .weather-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1.6;
+  }
+  .weather-data-label {
     font-family: var(--font-gothic);
     font-size: 10px;
     color: var(--caption);
-    margin-top: 2px;
+    min-width: 24px;
     letter-spacing: 0.03em;
   }
-  .weather-advice {
+  .weather-data-val {
+    font-family: var(--font-mincho);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .weather-data-val small {
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .weather-rain-row .weather-data-val {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .weather-comment {
+    font-family: var(--font-gothic);
+    font-size: 12px;
+    color: var(--caption);
+    padding: 8px 10px;
+    border-top: 1px solid var(--rule-light);
+    border-bottom: 1px solid var(--rule-light);
+    letter-spacing: 0.03em;
+    line-height: 1.5;
+  }
+  .weather-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    padding: 0;
-    align-items: flex-end;
-    justify-content: flex-end;
-    max-width: 50%;
-  }
-  .weather-item-tag {
+    gap: 0;
+    padding: 10px 0 14px;
     font-family: var(--font-gothic);
     font-size: 11px;
-    letter-spacing: 0.05em;
     color: var(--ink);
-    background: rgba(0,0,0,0.06);
-    border: none;
-    padding: 5px 12px;
-    border-radius: 14px;
+    letter-spacing: 0.04em;
   }
-  .weather-tip-row {
-    margin-top: 10px;
-    padding: 8px 10px;
-    background: rgba(0,0,0,0.02);
-    border-left: 2px solid var(--accent);
-    font-family: var(--font-gothic);
-    font-size: 11px;
-    color: var(--caption);
-    line-height: 1.5;
+  .weather-items span::after {
+    content: '／';
+    color: var(--rule-light);
+    margin: 0 6px;
+  }
+  .weather-items span:last-child::after {
+    content: '';
+    margin: 0;
   }
 
   /* ===== ご近所情報 ===== */
@@ -1024,6 +1048,48 @@
     50% { opacity: 1; transform: scale(1.4); }
   }
 
+  /* ===== SHARE BUTTON ===== */
+  .share-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 8px 0;
+    margin-top: 4px;
+  }
+  .share-btn {
+    font-family: var(--font-gothic);
+    font-size: 11px;
+    color: var(--caption);
+    background: none;
+    border: 1px solid var(--rule-light);
+    padding: 5px 12px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .share-btn:hover {
+    color: var(--ink);
+    border-color: var(--rule);
+  }
+  .share-links {
+    display: flex;
+    gap: 6px;
+  }
+  .share-links a {
+    font-family: var(--font-gothic);
+    font-size: 10px;
+    color: var(--caption);
+    text-decoration: none;
+    padding: 4px 8px;
+    border: 1px solid var(--rule-light);
+    letter-spacing: 0.04em;
+  }
+  .share-links a:hover {
+    color: var(--ink);
+    border-color: var(--rule);
+  }
+
   /* ===== SUBSCRIBE TOAST ===== */
   .subscribe-toast {
     display: none;
@@ -1118,7 +1184,7 @@
 <div class="gen-overlay" id="genOverlay">
   <div class="gen-title">生成新聞</div>
   <ul class="gen-steps" id="genSteps">
-    <li>関心領域を分析中…</li>
+    <li>あなたの街を特定中…</li>
     <li>ニュースソースを収集中…</li>
     <li>記事を構成中…</li>
     <li>紙面レイアウトを生成中…</li>
@@ -1206,6 +1272,13 @@
       <div class="photo-credit" id="photoCredit"></div>
     </div>
     <div class="body-text" id="headlineBody"></div>
+    <div class="share-bar" id="shareBar" style="display:none;">
+      <button class="share-btn" onclick="shareHeadline()">この一面をシェア</button>
+      <div class="share-links">
+        <a href="#" id="shareX" target="_blank" rel="noopener">X</a>
+        <a href="#" id="shareLINE" target="_blank" rel="noopener">LINE</a>
+      </div>
+    </div>
   </article>
 
   <!-- ARTICLES (generated dynamically) -->
@@ -1222,17 +1295,23 @@
 
   <!-- 4. 天気と服装 -->
   <div class="weather-block gen-animate" id="weatherFashionBlock" style="display:none;">
-    <div class="weather-header">
-      <div>
-        <div class="weather-title-row">
-          <span class="weather-title">天気と服装</span>
-          <span class="weather-area">恵比寿</span>
-        </div>
-        <div class="weather-data" id="weatherData"></div>
-      </div>
-      <div class="weather-advice" id="weatherAdvice"></div>
+    <div class="weather-head">
+      <span class="weather-title">天気と服装</span>
+      <span class="weather-area" id="weatherArea">恵比寿</span>
     </div>
-    <div class="weather-tip-row" id="weatherTip"></div>
+    <div class="weather-body">
+      <div class="weather-icon-col">
+        <div class="weather-icon" id="weatherIcon"></div>
+        <div class="weather-desc" id="weatherDesc"></div>
+      </div>
+      <div class="weather-data-col">
+        <div class="weather-row"><span class="weather-data-label">最高</span><span class="weather-data-val" id="weatherHigh"></span></div>
+        <div class="weather-row"><span class="weather-data-label">最低</span><span class="weather-data-val" id="weatherLow"></span></div>
+        <div class="weather-row weather-rain-row"><span class="weather-data-label">☂</span><span class="weather-data-val" id="weatherRainVal"></span></div>
+      </div>
+    </div>
+    <div class="weather-comment" id="weatherComment" style="display:none;"></div>
+    <div class="weather-items" id="weatherItems"></div>
   </div>
 
   <!-- 5. ご近所情報 -->
@@ -1263,7 +1342,7 @@
 
 <footer>
   <div class="f-logo">生成新聞</div>
-  <div class="f-tagline">あなたの関心から、生まれる新聞。</div>
+  <div class="f-tagline">あなたの街から、生まれる新聞。</div>
   <div class="f-edition-info">朝刊 06:00 ／ 夕刊 17:00</div>
   <div class="f-stamp">
     <span class="f-dot"></span>
@@ -1943,6 +2022,9 @@ function renderNewspaper(data) {
   // Headline body + source
   renderHeadlineBody(data.headline.body, data.headline.sourceUrl, data.headline.sourceName);
 
+  // Share bar setup
+  setupShareBar(data);
+
   // Articles
   renderArticles(data.articles || []);
 
@@ -2221,22 +2303,214 @@ function fetchLocalNewsWithGeolocation() {
   );
 }
 
+// ===== SHARE IMAGE =====
+function generateShareImage(data) {
+  return new Promise(resolve => {
+    const W = 1200, H = 630;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // 背景（紙面のクリーム色）
+    ctx.fillStyle = '#f3ede2';
+    ctx.fillRect(0, 0, W, H);
+
+    // 上部の罫線
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(60, 60);
+    ctx.lineTo(W - 60, 60);
+    ctx.stroke();
+
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(60, 66);
+    ctx.lineTo(W - 60, 66);
+    ctx.stroke();
+
+    // 日付
+    ctx.fillStyle = '#555';
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(data.date || '', 80, 100);
+
+    // 号数
+    ctx.textAlign = 'right';
+    ctx.fillText(data.issueNumber || '', W - 80, 100);
+
+    // タイトル「生成新聞」
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 52px serif';
+    ctx.textAlign = 'center';
+    ctx.letterSpacing = '0.2em';
+    ctx.fillText('生 成 新 聞', W / 2, 165);
+
+    // サブタイトル
+    ctx.fillStyle = '#888';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('GENERATED DAILY NEWS', W / 2, 195);
+
+    // 区切り線
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(80, 220);
+    ctx.lineTo(W - 80, 220);
+    ctx.stroke();
+
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(80, 225);
+    ctx.lineTo(W - 80, 225);
+    ctx.stroke();
+
+    // 一面見出し（自動改行）
+    const headline = data.headline ? data.headline.title : '';
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 44px serif';
+    ctx.textAlign = 'center';
+
+    const maxWidth = W - 200;
+    const lines = [];
+    let line = '';
+    for (const ch of headline) {
+      const testLine = line + ch;
+      if (ctx.measureText(testLine).width > maxWidth) {
+        lines.push(line);
+        line = ch;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) lines.push(line);
+
+    const lineHeight = 60;
+    const startY = 290;
+    lines.slice(0, 3).forEach((l, i) => {
+      ctx.fillText(l, W / 2, startY + i * lineHeight);
+    });
+
+    // 下部の区切り線
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(80, H - 130);
+    ctx.lineTo(W - 80, H - 130);
+    ctx.stroke();
+
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(80, H - 125);
+    ctx.lineTo(W - 80, H - 125);
+    ctx.stroke();
+
+    // タグライン
+    ctx.fillStyle = '#555';
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('あなたの街から、生まれる新聞。', W / 2, H - 90);
+
+    // URL
+    ctx.fillStyle = '#888';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('seiseishinbun.com', W / 2, H - 60);
+
+    canvas.toBlob(blob => resolve(blob), 'image/png');
+  });
+}
+
+function setupShareBar(data) {
+  const bar = document.getElementById('shareBar');
+  bar.style.display = '';
+
+  const headline = data.headline ? data.headline.title : '';
+  const shareText = `${headline}｜生成新聞`;
+  const shareUrl = 'https://seiseishinbun.com/';
+
+  // X share link
+  const xLink = document.getElementById('shareX');
+  xLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+
+  // LINE share link
+  const lineLink = document.getElementById('shareLINE');
+  lineLink.href = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+}
+
+async function shareHeadline() {
+  if (!currentNewspaper) return;
+  const blob = await generateShareImage(currentNewspaper);
+  if (!blob) return;
+
+  if (navigator.share && navigator.canShare) {
+    const file = new File([blob], 'generated-news.png', { type: 'image/png' });
+    const shareData = { files: [file] };
+    if (navigator.canShare(shareData)) {
+      navigator.share(shareData);
+      return;
+    }
+  }
+
+  // Fallback: download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'generated-news.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function getWeatherIcon(weather) {
+  if (!weather) return '─';
+  if (weather.includes('雷')) return '⚡';
+  if (weather.includes('大雪') || weather.includes('霰')) return '❄';
+  if (weather.includes('雪')) return '❄';
+  if (weather.includes('大雨') || weather.includes('激しい')) return '☔';
+  if (weather.includes('雨')) return '☂';
+  if (weather.includes('霧')) return '▓';
+  if (weather.includes('くもり') || weather === '晴れ時々くもり') return '☁';
+  if (weather.includes('快晴') || weather.includes('晴れ')) return '☀';
+  return '☁';
+}
+
 function renderWeatherFashion(wf) {
   const block = document.getElementById('weatherFashionBlock');
-  const dataEl = document.getElementById('weatherData');
-  const adviceEl = document.getElementById('weatherAdvice');
-  const tipEl = document.getElementById('weatherTip');
   if (!wf) {
     block.style.display = 'none';
     return;
   }
   block.style.display = '';
-  dataEl.innerHTML =
-    `<div class="weather-data-temp">${wf.tempHigh || ''}℃ <small>/ ${wf.tempLow || ''}℃</small></div>` +
-    `<div class="weather-data-detail">${wf.weather || ''}　降水 ${wf.rain || ''}</div>`;
-  const items = wf.items || (wf.advice ? wf.advice.split(/[・\/\s]+/).filter(Boolean) : []);
-  adviceEl.innerHTML = items.map(item => `<span class="weather-item-tag">${item}</span>`).join('');
-  tipEl.style.display = 'none';
+
+  // エリア名
+  const areaEl = document.getElementById('weatherArea');
+  if (wf.area) areaEl.textContent = wf.area;
+
+  // アイコン・天気テキスト
+  document.getElementById('weatherIcon').textContent = getWeatherIcon(wf.weather);
+  document.getElementById('weatherDesc').textContent = wf.weather || '';
+
+  // 気温
+  document.getElementById('weatherHigh').innerHTML = `${wf.tempHigh || '─'}<small>℃</small>`;
+  document.getElementById('weatherLow').innerHTML = `${wf.tempLow || '─'}<small>℃</small>`;
+
+  // 降水確率
+  document.getElementById('weatherRainVal').textContent = wf.rain || '─';
+
+  // 一言コメント
+  const commentEl = document.getElementById('weatherComment');
+  if (wf.comment) {
+    commentEl.textContent = wf.comment;
+    commentEl.style.display = '';
+  } else {
+    commentEl.style.display = 'none';
+  }
+
+  // 服装アイテム
+  const items = wf.items || [];
+  document.getElementById('weatherItems').innerHTML = items.map(item => `<span>${item}</span>`).join('');
 }
 
 function renderCulture(culture) {

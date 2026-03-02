@@ -2,7 +2,7 @@
   "id": "/generated-news/",
   "name": "生成新聞",
   "short_name": "生成新聞",
-  "description": "あなたの関心から、生まれる新聞。AIがあなただけの朝刊・夕刊を、毎日届けます。",
+  "description": "あなたの街から、生まれる新聞。AIがあなただけの朝刊・夕刊を、毎日届けます。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

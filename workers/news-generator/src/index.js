@@ -801,6 +801,7 @@ async function generateNewspaper(apiKey, edition, unsplashKey, kvCache, lat = 35
         newspaper.weatherFashion.tempHigh = weatherData.tempHigh;
         newspaper.weatherFashion.tempLow = weatherData.tempLow;
         newspaper.weatherFashion.rain = weatherData.rain;
+        newspaper.weatherFashion.area = areaName.replace(/エリア$/, '');
       }
     } catch (err) {
       console.error('Weather data fetch failed:', err);

@@ -181,7 +181,7 @@ function buildEmailHtml(edition, date, headline) {
             <td style="border-top:1px solid #ccc; padding-top:20px; text-align:center;">
               <div style="font-size:11px; color:#999; line-height:1.8;">
                 <span style="letter-spacing:0.2em;">生成新聞</span><br>
-                あなたの関心から、生まれる新聞。<br>
+                あなたの街から、生まれる新聞。<br>
                 <a href="${SITE_URL}#cancel" style="color:#999; text-decoration:underline;">購読を解約する</a>
               </div>
             </td>
@@ -216,7 +216,7 @@ ${headlineBody.slice(0, 200)}
 ${SITE_URL}
 
 ---
-生成新聞 — あなたの関心から、生まれる新聞。
+生成新聞 — あなたの街から、生まれる新聞。
 購読を解約する: ${SITE_URL}#cancel`;
 }
 
@@ -324,7 +324,7 @@ function buildAnnounceHtml(subject, body) {
             <td style="border-top:1px solid #ccc; padding-top:20px; text-align:center;">
               <div style="font-size:11px; color:#999; line-height:1.8;">
                 <span style="letter-spacing:0.2em;">生成新聞</span><br>
-                あなたの関心から、生まれる新聞。<br>
+                あなたの街から、生まれる新聞。<br>
                 <a href="${SITE_URL}#cancel" style="color:#999; text-decoration:underline;">購読を解約する</a>
               </div>
             </td>
@@ -345,7 +345,7 @@ ${subject}
 ${body}
 
 ---
-生成新聞 — あなたの関心から、生まれる新聞。
+生成新聞 — あなたの街から、生まれる新聞。
 購読を解約する: ${SITE_URL}#cancel`;
 }
 
