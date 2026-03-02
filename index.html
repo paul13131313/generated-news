@@ -2222,24 +2222,25 @@ function renderNewspaper(data) {
 
   // ===== コーナー構成の差別化 =====
   // 共通: 数字で読む、催事
-  // 朝刊: 天気と服装、ご近所（SNSトレンドは非表示）
-  // 夕刊: SNSトレンド（天気はティッカーに統合、ご近所は非表示）
-  renderWeatherFashion(data.weatherFashion);
+  // 朝刊: 天気と服装、ご近所（SNSトレンド・明日の予報は非表示）
+  // 夕刊: 明日の予報、SNSトレンド（天気と服装・ご近所は非表示）
   renderCulture(data.culture);
   renderNumbers(data);
 
   if (isEvening) {
-    // 夕刊: SNSトレンド表示、ご近所は非表示、明日の予報表示
-    renderSnsTrend(data.snsTrend);
+    // 夕刊: 天気と服装を非表示、明日の予報・SNSトレンドを表示
+    document.getElementById('weatherFashionBlock').style.display = 'none';
     renderTomorrowForecast(data.tomorrowForecast);
+    renderSnsTrend(data.snsTrend);
     const localBlock = document.getElementById('localNewsBlock');
     if (localBlock) localBlock.style.display = 'none';
   } else {
-    // 朝刊: ご近所表示、SNSトレンド・明日の予報は非表示
+    // 朝刊: 天気と服装・ご近所を表示、明日の予報・SNSトレンドは非表示
+    renderWeatherFashion(data.weatherFashion);
     renderLocalNews(data.localNews);
+    document.getElementById('tomorrowBlock').style.display = 'none';
     const snsBlock = document.getElementById('snsTrendBlock');
     if (snsBlock) snsBlock.style.display = 'none';
-    document.getElementById('tomorrowBlock').style.display = 'none';
   }
 
 
